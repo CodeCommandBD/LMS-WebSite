@@ -16,12 +16,10 @@ export const registerUser = async (req, res) => {
     // check if user already exists
     const user = await User.findOne({ email });
     if (user) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Account already exists with this email",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Account already exists with this email",
+      });
     }
 
     const newUser = await User.create({
@@ -82,7 +80,17 @@ export const loginUser = async (req, res) => {
         sameSite: "strict",
         maxAge: 60 * 60 * 1000,
       })
-      .json({ success: true, message: "Login successful", user, token });
+      .json({
+        success: true,
+        message: "Login successful",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        token,
+      });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
