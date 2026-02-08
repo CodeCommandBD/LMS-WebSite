@@ -85,10 +85,12 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center gap-4 ml-4">
-                <Avatar className="ring-2 ring-white/50 hover:ring-white transition-all duration-300">
-                  <AvatarImage src="https://github.com/shadcn.png" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
+                <Link to="/profile">
+                  <Avatar className="ring-2 ring-white/50 hover:ring-white transition-all duration-300">
+                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>
+                </Link>
                 <Button
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
