@@ -1,12 +1,35 @@
 import { GraduationCap } from "lucide-react";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { logoutUser } from "@/services/authApi";
+import { clearUser } from "@/store/slices/authSlice";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: logoutUser,
+    onSuccess: () => {
+      dispatch(clearUser());
+      toast.success("Logged out successfully!");
+      navigate("/login");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Logout failed. Please try again.");
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   return (
     <div className="z-50 w-full fixed top-0 backdrop-blur-md bg-gradient-to-r from-indigo-600/90 via-purple-600/90 to-pink-600/90 shadow-lg border-b border-white/20">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -66,8 +89,12 @@ const Navbar = () => {
                   <AvatarImage src="https://github.com/shadcn.png" />
                   <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <Button className="bg-red-500 hover:bg-red-600 text-white cursor-pointer font-semibold transition-all duration-300 hover:scale-105 shadow-md">
-                  <Link to="/logout">Logout</Link>
+                <Button
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  className="bg-red-500 hover:bg-red-600 text-white cursor-pointer font-semibold transition-all duration-300 hover:scale-105 shadow-md"
+                >
+                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
                 </Button>
               </div>
             )}
