@@ -3,9 +3,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useSelector } from "react-redux";
 
 const Navbar = () => {
-  const user = false;
+  const { user } = useSelector((state) => state.auth);
   return (
     <div className="z-50 w-full fixed top-0 backdrop-blur-md bg-gradient-to-r from-indigo-600/90 via-purple-600/90 to-pink-600/90 shadow-lg border-b border-white/20">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
