@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React from "react";
+import { useState } from "react";
+
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,10 +13,12 @@ import { registerUser } from "@/services/authApi";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [showPassword, setShowPassword] = useState(false);
 
   // React Hook Form setup with Zod validation
   const {
@@ -108,11 +111,25 @@ const Signup = () => {
               <Label className="block text-gray-700 font-bold mb-2">
                 Password
               </Label>
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                {...register("password")}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  {...register("password")}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.password.message}
