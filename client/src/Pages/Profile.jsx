@@ -9,8 +9,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useSelector } from "react-redux";
 
 const Profile = () => {
+  const { user } = useSelector((state) => state.auth);
   return (
     <div className="mt-20 bg-gray-100 h-screen">
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -19,32 +23,33 @@ const Profile = () => {
             {/* profile picture */}
             <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg">
               <img
-                src="https://github.com/shadcn.png"
+                src={user.protoUrl || "https://github.com/shadcn.png"}
                 alt=""
                 className="object-cover w-full h-full "
               />
             </div>
             {/* profile information */}
             <div className="space-y-2">
-              <h1 className="text-lg font-semibold">Shanto Kumar Das</h1>
+              <h1 className="text-lg font-semibold">
+                {user.name || "No name available"}
+              </h1>
               <p className="font-bold">
                 Email :{" "}
                 <span className="font-semibold text-blue-500">
-                  shanto@gmail.com
+                  {user.email || "No email available"}
                 </span>
               </p>
               <p className="font-bold">
                 Role :{" "}
-                <span className="font-semibold text-blue-500">Student</span>
+                <span className="font-semibold text-blue-500">
+                  {user.role || "No role available"}
+                </span>
               </p>
-              <p className="font-bold">
-                Joined On :{" "}
-                <span className="font-semibold text-blue-500">2023</span>
-              </p>
+
               <p className="font-bold">
                 Bio :{" "}
                 <span className="font-semibold text-blue-500">
-                  I am a student
+                  {user.bio || "No bio available"}
                 </span>
               </p>
               <Dialog className="">
@@ -59,40 +64,34 @@ const Profile = () => {
                     <DialogDescription>
                       <form action="" className="space-y-4">
                         <div className="space-y-2">
-                          <label htmlFor="name">Name</label>
-                          <input
+                          <Label htmlFor="profilePicture">
+                            Profile Picture
+                          </Label>
+                          <Input
+                            type="file"
+                            id="profilePicture"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input
                             type="text"
                             id="name"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label htmlFor="email">Email</label>
-                          <input
+                          <Label htmlFor="email">Email</Label>
+                          <Input
                             type="email"
                             id="email"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label htmlFor="role">Role</label>
-                          <input
-                            type="text"
-                            id="role"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label htmlFor="joinedOn">Joined On</label>
-                          <input
-                            type="text"
-                            id="joinedOn"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label htmlFor="bio">Bio</label>
-                          <input
+                          <Label htmlFor="bio">Bio</Label>
+                          <Input
                             type="text"
                             id="bio"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2"
