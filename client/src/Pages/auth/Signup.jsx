@@ -13,7 +13,7 @@ import { registerUser } from "@/services/authApi";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import toast from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -173,7 +173,14 @@ const Signup = () => {
               type="submit"
               disabled={signupMutation.isPending}
             >
-              {signupMutation.isPending ? "Signing up..." : "Sign Up"}
+              {signupMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Signing up...
+                </span>
+              ) : (
+                "Sign Up"
+              )}
             </Button>
 
             <p className="text-center text-gray-600 mt-4">
