@@ -1,14 +1,27 @@
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { createBrowserRouter } from "react-router";
-import { RouterProvider } from "react-router-dom";
-import Home from './Pages/Home';
-import Courses from './Pages/Courses';
-import Login from './Pages/auth/Login';
-import Signup from './Pages/auth/Signup';
-import CourseCardDetails from './components/CourseCardDetails';
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.jsx";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Provider } from "react-redux";
+import { store } from "./store/store.js";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Home from "./Pages/Home";
+import Courses from "./Pages/Courses";
+import Login from "./Pages/auth/Login";
+import Signup from "./Pages/auth/Signup";
+import CourseCardDetails from "./components/CourseCardDetails";
 
+// Create a client for TanStack Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+// Create router
 const router = createBrowserRouter([
   {
     path: "/",
@@ -38,8 +51,10 @@ const router = createBrowserRouter([
   },
 ]);
 
-createRoot(document.getElementById('root')).render(
-
-    <RouterProvider router={router} />
-
-)
+createRoot(document.getElementById("root")).render(
+  <Provider store={store}>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </Provider>,
+);
