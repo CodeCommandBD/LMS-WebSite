@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
 
 const Signup = () => {
+  
   return (
     <div className="mt-20 flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg w-full max-w-md">
