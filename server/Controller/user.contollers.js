@@ -8,11 +8,11 @@ export const registerUser = async (req, res) => {
         }
        const user = await User.findOne({email});
        if(user){
-           return res.status(400).json({ success: false, message: "User already exists with this email" });
+           return res.status(400).json({ success: false, message: "Account already exists with this email" });
        }
 
        await User.create({ name, email, password, role });
-       return res.status(201).json({ success: true, message: "User created successfully" });
+       return res.status(201).json({ success: true, message: "Account created successfully" });
 
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
