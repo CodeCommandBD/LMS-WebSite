@@ -3,64 +3,166 @@ import { Label } from "@/components/ui/label";
 import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema } from "@/schemas/signupSchema";
+import { useMutation } from "@tanstack/react-query";
+import { registerUser } from "@/services/authApi";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/store/slices/authSlice";
 
 const Signup = () => {
-  
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // React Hook Form setup with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      role: "student",
+    },
+  });
+
+  // TanStack Query mutation for signup
+  const signupMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (data) => {
+      // Update Redux state with user data
+      if (data.success && data.user) {
+        dispatch(setUser(data.user));
+        alert("Signup successful! Please login.");
+        reset();
+        navigate("/login");
+      }
+    },
+    onError: (error) => {
+      alert(error.message || "Signup failed. Please try again.");
+    },
+  });
+
+  // Form submit handler
+  const onSubmit = (data) => {
+    signupMutation.mutate(data);
+  };
+
   return (
     <div className="mt-20 flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-gray-700 ">
+        <h1 className="text-2xl font-bold mb-4 text-center text-gray-700">
           Sign Up
         </h1>
         <p className="text-center text-gray-600 mb-8">
           Join us today! It's quick and easy.
         </p>
         <div>
-          <form onSubmit={""} className="flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
+            {/* Name Field */}
             <div>
               <Label className="block text-gray-700 font-bold mb-2">
                 Full Name
               </Label>
-              <Input type="text" placeholder="Enter your name" />
+              <Input
+                type="text"
+                placeholder="Enter your name"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
+
+            {/* Email Field */}
             <div>
               <Label className="block text-gray-700 font-bold mb-2">
                 Email
               </Label>
-              <Input type="email" placeholder="Enter your email" />
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
+
+            {/* Password Field */}
             <div>
               <Label className="block text-gray-700 font-bold mb-2">
                 Password
               </Label>
-              <Input type="password" placeholder="Enter your password" />
+              <Input
+                type="password"
+                placeholder="Enter your password"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
+
+            {/* Role Field */}
             <div>
               <Label className="block text-gray-700 font-bold mb-2">Role</Label>
-
-              <RadioGroup defaultValue="option-one" className="flex gap-3">
+              <RadioGroup defaultValue="student" className="flex gap-3">
                 <div className="flex items-center gap-3">
                   <RadioGroupItem
-                    className="text-blue-500 "
-                    value="option-one"
-                    id="option-one"
+                    className="text-blue-500"
+                    value="student"
+                    id="student"
+                    {...register("role")}
                   />
-                  <Label htmlFor="option-one">Student</Label>
+                  <Label htmlFor="student">Student</Label>
                 </div>
                 <div className="flex items-center gap-3">
                   <RadioGroupItem
                     className="text-blue-500"
-                    value="option-two"
-                    id="option-two"
+                    value="teacher"
+                    id="teacher"
+                    {...register("role")}
                   />
-                  <Label htmlFor="option-two">Teacher</Label>
+                  <Label htmlFor="teacher">Teacher</Label>
                 </div>
               </RadioGroup>
+              {errors.role && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.role.message}
+                </p>
+              )}
             </div>
-            <Button className="bg-blue-500 text-white hover:bg-blue-600 cursor-pointer" type="submit">Sign Up</Button>
+
+            {/* Submit Button */}
+            <Button
+              className="bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+              type="submit"
+              disabled={signupMutation.isPending}
+            >
+              {signupMutation.isPending ? "Signing up..." : "Sign Up"}
+            </Button>
+
             <p className="text-center text-gray-600 mt-4">
-              Already have an account? <Link to="/login" className="text-blue-500 hover:underline">Login</Link>
+              Already have an account?{" "}
+              <Link to="/login" className="text-blue-500 hover:underline">
+                Login
+              </Link>
             </p>
           </form>
         </div>
