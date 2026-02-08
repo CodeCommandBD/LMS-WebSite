@@ -9,7 +9,13 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// CORS configuration for credentials support
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Client URL
+    credentials: true, // Allow cookies
+  }),
+);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
