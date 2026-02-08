@@ -40,12 +40,14 @@ const Signup = () => {
   const signupMutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (data) => {
-      // Update Redux state with user data
-      if (data.success && data.user) {
+      // Update Redux state with user data if available
+      if (data.user) {
         dispatch(setUser(data.user));
-        toast.success(
-          "Account created successfully! Redirecting to login...",
-        );
+      }
+
+      // Always show success message
+      if (data.success) {
+        toast.success("Account created successfully! Redirecting to login...");
         reset();
         setTimeout(() => navigate("/login"), 1500);
       }
@@ -55,9 +57,7 @@ const Signup = () => {
       const errorMessage = error.message?.toLowerCase() || "";
 
       if (errorMessage.includes("email") && errorMessage.includes("already")) {
-        toast.error(
-          "This email is already registered. Please login instead.",
-        );
+        toast.error("This email is already registered. Please login instead.");
       } else if (
         errorMessage.includes("network") ||
         errorMessage.includes("fetch")
