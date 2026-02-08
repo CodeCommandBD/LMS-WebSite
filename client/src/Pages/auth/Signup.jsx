@@ -43,13 +43,35 @@ const Signup = () => {
       // Update Redux state with user data
       if (data.success && data.user) {
         dispatch(setUser(data.user));
-        toast.success("Signup successful! Please login.");
+        toast.success(
+          "Account created successfully! Redirecting to login...",
+        );
         reset();
-        navigate("/login");
+        setTimeout(() => navigate("/login"), 1500);
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Signup failed. Please try again.");
+      // Handle different error scenarios with user-friendly messages
+      const errorMessage = error.message?.toLowerCase() || "";
+
+      if (errorMessage.includes("email") && errorMessage.includes("already")) {
+        toast.error(
+          "This email is already registered. Please login instead.",
+        );
+      } else if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("fetch")
+      ) {
+        toast.error(
+          "Network error. Please check your connection and try again.",
+        );
+      } else if (errorMessage.includes("validation")) {
+        toast.error("Please check your input and try again.");
+      } else if (errorMessage.includes("server")) {
+        toast.error("Server error. Please try again later.");
+      } else {
+        toast.error(error.message || "Signup failed. Please try again.");
+      }
     },
   });
 
