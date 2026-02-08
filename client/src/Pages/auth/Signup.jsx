@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { registerUser } from "@/services/authApi";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
+import toast from "react-hot-toast";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -39,13 +40,13 @@ const Signup = () => {
       // Update Redux state with user data
       if (data.success && data.user) {
         dispatch(setUser(data.user));
-        alert("Signup successful! Please login.");
+        toast.success("Signup successful! Please login.");
         reset();
         navigate("/login");
       }
     },
     onError: (error) => {
-      alert(error.message || "Signup failed. Please try again.");
+      toast.error(error.message || "Signup failed. Please try again.");
     },
   });
 
