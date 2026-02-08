@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { getCurrentUser } from "@/services/authApi";
@@ -7,25 +8,22 @@ export const useAuthInit = () => {
   const dispatch = useDispatch();
 
   // Fetch current user with TanStack Query
-  const { isLoading } = useQuery({
+  const { data, isError, isSuccess, isLoading } = useQuery({
     queryKey: ["currentUser"],
     queryFn: getCurrentUser,
     retry: false, // Don't retry on auth failure
-    staleTime: Infinity, // Don't refetch automatically
+    refetchOnMount: true, // Always refetch on component mount
     refetchOnWindowFocus: false, // Don't refetch on window focus
-
-    // Success callback - runs when API call succeeds
-    onSuccess: (data) => {
-      if (data?.user) {
-        dispatch(setUser(data.user));
-      }
-    },
-
-    // Error callback - runs when API call fails
-    onError: () => {
-      dispatch(clearUser());
-    },
   });
+
+  // Update Redux state when query data changes
+  useEffect(() => {
+    if (isSuccess && data?.user) {
+      dispatch(setUser(data.user));
+    } else if (isError) {
+      dispatch(clearUser());
+    }
+  }, [isSuccess, isError, data, dispatch]);
 
   return { isLoading };
 };
