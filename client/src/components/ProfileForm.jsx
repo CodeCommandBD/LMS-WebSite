@@ -28,7 +28,7 @@ export const ProfileForm = ({ user, onSuccess, isLoading }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {  // 5MB
         toast.error("File size must be less than 5MB");
         return;
       }
