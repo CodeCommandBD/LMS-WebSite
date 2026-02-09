@@ -20,6 +20,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+// Serve uploaded files statically
+app.use("/uploads", express.static("uploads"));
+
 // routes api
 app.use("/api/v1/users", userRouter);
 

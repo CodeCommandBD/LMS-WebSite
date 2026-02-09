@@ -87,8 +87,12 @@ const Navbar = () => {
               <div className="flex items-center gap-4 ml-4">
                 <Link to="/profile">
                   <Avatar className="ring-2 ring-white/50 hover:ring-white transition-all duration-300">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>CN</AvatarFallback>
+                    <AvatarImage
+                      src={user?.photoUrl || "https://github.com/shadcn.png"}
+                    />
+                    <AvatarFallback>
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Link>
                 <Button

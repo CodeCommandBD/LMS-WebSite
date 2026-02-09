@@ -88,6 +88,9 @@ export const loginUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          photoUrl: user.profilePicture
+            ? `http://localhost:4000/${user.profilePicture}`
+            : null,
         },
         token,
       });
@@ -115,6 +118,10 @@ export const getCurrentUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        bio: user.bio,
+        photoUrl: user.profilePicture
+          ? `http://localhost:4000/${user.profilePicture}`
+          : null,
       },
     });
   } catch (error) {
@@ -128,6 +135,72 @@ export const logoutUser = async (req, res) => {
       .status(200)
       .clearCookie("token", { maxAge: 0 })
       .json({ success: true, message: "Logout successful" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email, bio } = req.body;
+    const userId = req.user.id; // From auth middleware
+
+    // Validation
+    if (!name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and email are required",
+      });
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already in use by another account",
+      });
+    }
+
+    // Prepare update data
+    const updateData = {
+      name,
+      email,
+      bio: bio || "",
+    };
+
+    // If profile picture is uploaded, add it to update data
+    if (req.file) {
+      updateData.profilePicture = req.file.path; // Multer will provide this
+    }
+
+    // Update user
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        bio: updatedUser.bio,
+        photoUrl: updatedUser.profilePicture
+          ? `http://localhost:4000/${updatedUser.profilePicture}`
+          : null,
+      },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
