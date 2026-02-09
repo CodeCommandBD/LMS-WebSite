@@ -22,10 +22,11 @@ export const getCurrentUser = async () => {
 
 export const updateProfile = async (userData) => {
   const headers = {};
-
-  // If userData is FormData, let axios set Content-Type automatically
-  // Otherwise, explicitly set JSON header
-  if (!(userData instanceof FormData)) {
+  
+  // Check if userData is FormData
+  const isFormData = userData instanceof FormData;
+  
+  if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
 
