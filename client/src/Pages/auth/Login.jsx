@@ -26,6 +26,7 @@ const Login = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
+  
   const {
     register,
     handleSubmit,
