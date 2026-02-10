@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
+import fs from "fs";
 
 export const registerUser = async (req, res) => {
   try {
@@ -89,7 +91,9 @@ export const loginUser = async (req, res) => {
           email: user.email,
           role: user.role,
           photoUrl: user.profilePicture
-            ? `http://localhost:4000/${user.profilePicture}`
+            ? user.profilePicture.startsWith("http")
+              ? user.profilePicture
+              : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
             : null,
         },
         token,
@@ -120,7 +124,9 @@ export const getCurrentUser = async (req, res) => {
         role: user.role,
         bio: user.bio,
         photoUrl: user.profilePicture
-          ? `http://localhost:4000/${user.profilePicture}`
+          ? user.profilePicture.startsWith("http")
+            ? user.profilePicture
+            : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
           : null,
       },
     });
@@ -171,7 +177,23 @@ export const updateProfile = async (req, res) => {
 
     // If profile picture is uploaded, add it to update data
     if (req.file) {
-      updateData.profilePicture = req.file.path; // Multer will provide this
+      // Upload to Cloudinary
+      const uploadResult = await uploadToCloudinary(req.file.path);
+
+      if (uploadResult.success) {
+        updateData.profilePicture = uploadResult.url;
+
+        // Remove file from local storage after successful upload
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (err) {
+          console.error("Error deleting local file:", err);
+        }
+      } else {
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to upload image" });
+      }
     }
 
     // Update user
@@ -197,7 +219,9 @@ export const updateProfile = async (req, res) => {
         role: updatedUser.role,
         bio: updatedUser.bio,
         photoUrl: updatedUser.profilePicture
-          ? `http://localhost:4000/${updatedUser.profilePicture}`
+          ? updatedUser.profilePicture.startsWith("http")
+            ? updatedUser.profilePicture
+            : `${process.env.BACKEND_URL || "http://localhost:4000"}/${updatedUser.profilePicture}`
           : null,
       },
     });
