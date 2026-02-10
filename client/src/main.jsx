@@ -12,6 +12,7 @@ import Login from "./Pages/auth/Login";
 import Signup from "./Pages/auth/Signup";
 import CourseCardDetails from "./components/CourseCardDetails";
 import Profile from "./Pages/Profile";
+import AdminDashboard from "./Pages/admin/AdminDashboard";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -53,6 +54,10 @@ const router = createBrowserRouter([
         path: "/profile",
         element: <Profile />,
       },
+      {
+        path: "/admin/dashboard",
+        element: <AdminDashboard />,
+      }
     ],
   },
 ]);
