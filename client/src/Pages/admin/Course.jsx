@@ -56,10 +56,9 @@ const Course = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px] text-center">
-                Course Name
+                Course
               </TableHead>
               <TableHead className="text-center">Price</TableHead>
-              <TableHead className="text-center">Discount</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-center">Action</TableHead>
             </TableRow>
@@ -68,13 +67,11 @@ const Course = () => {
             {courses.map((course) => (
               <TableRow key={course._id}>
                 <TableCell className="font-medium text-center">
+                  <img src={course.thumbnail} alt="thumbnail" />
                   {course.courseTitle}
                 </TableCell>
                 <TableCell className="text-center">
-                  {course.price ? `৳${course.price}` : "Free"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {course.discount ? `${course.discount}%` : "—"}
+                  {course.price ? `৳${course.price}` : "N/A"}
                 </TableCell>
                 <TableCell className="text-center">
                   <span
