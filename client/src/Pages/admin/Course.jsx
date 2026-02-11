@@ -85,10 +85,13 @@ const Course = () => {
                   </span>
                 </TableCell>
                 <TableCell className="text-center">
-                  <Button className="mr-2 bg-blue-500 hover:bg-blue-600 text-white">
-                    <Pencil />
-                  </Button>
-                  <Button className="bg-red-500 hover:bg-red-600 text-white">
+                  <Link to={`/admin/course/${course._id}`}>
+                    <Button className="mr-2 bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
+                      <Pencil />
+                    </Button>
+                  </Link>
+
+                  <Button className="bg-red-500 hover:bg-red-600 text-white cursor-pointer">
                     <Trash />
                   </Button>
                 </TableCell>
