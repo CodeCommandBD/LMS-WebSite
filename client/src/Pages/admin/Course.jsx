@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Link } from "react-router";
 
 const invoices = [
   {
@@ -58,8 +59,11 @@ const invoices = [
 
 const Course = () => {
   return (
-    <div className="md:p-10 p-4 w-full h-screen">
-      <Button>Add Course</Button>
+    <div className="md:p-10 p-4 w-full h-screen bg-gray-50">
+      <Button className="flex items-center gap-2">
+        <Plus />
+        <Link to="/admin/createCourse">Add Course</Link>
+      </Button>
       <Table className="mt-10">
         <TableHeader>
           <TableRow>

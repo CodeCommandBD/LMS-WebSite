@@ -4,7 +4,7 @@ import { NavLink } from "react-router";
 
 const AdminSideBar = () => {
   return (
-    <div className="w-[250px] sm:w-[300px] space-y-8 border-r border-gray-300 dark:border-gray-700  bg-[#f4f4f5] sticky left-0 top-20 h-[calc(100vh-5rem)]">
+    <div className="w-[250px] sm:w-[300px] space-y-8 border-r border-gray-300 dark:border-gray-700 bg-gray-300  sticky left-0 top-20 h-[calc(100vh-5rem)]">
       <div className="space-y-4 ">
         <h1 className="font-bold text-center text-xl mt-5">Admin Dashboard</h1>
       </div>
