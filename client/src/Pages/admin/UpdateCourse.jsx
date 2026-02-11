@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { Link } from 'react-router'
+import CourseTab from './CourseTab'
 
 const UpdateCourse = () => {
   return (
@@ -11,6 +12,7 @@ const UpdateCourse = () => {
                <Button className='cursor-pointer'>Go to lectures page</Button>
             </Link>
         </div>
+        <CourseTab/>
     </div>
   )
 }
