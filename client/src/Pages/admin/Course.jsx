@@ -3,7 +3,6 @@ import React from "react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -58,6 +57,7 @@ const invoices = [
 ];
 
 const Course = () => {
+  
   return (
     <div className="md:p-10 p-4 w-full h-screen bg-gray-50">
       <Button className="flex items-center gap-2">
