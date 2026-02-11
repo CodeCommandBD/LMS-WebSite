@@ -5,7 +5,7 @@ import {
   logoutUser,
   getCurrentUser,
   updateProfile,
-} from "../Controller/user.contollers.js";
+} from "../Controller/user.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { uploadProfilePicture } from "../middleware/upload.middleware.js";
 

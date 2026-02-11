@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
-import userRouter from "./Routers/user.routers.js";
-
+import userRouter from "./Routers/user.route.js";
+import courseRouter from "./Routers/course.route.js";
 dotenv.config();
 
 const app = express();
@@ -25,5 +25,6 @@ app.use("/uploads", express.static("uploads"));
 
 // routes api
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/courses", courseRouter);
 
 export default app;
