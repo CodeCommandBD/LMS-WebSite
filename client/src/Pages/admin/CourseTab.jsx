@@ -17,9 +17,111 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { editCourseSchema } from "@/schemas/editCourseSchema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { editCourse, getCourseById } from "@/services/courseApi";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
 const CourseTab = () => {
+  const params = useParams();
+  const courseId = params.id;
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Fetch course data by ID
+  const {
+    data: courseData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: () => getCourseById(courseId),
+    enabled: !!courseId,
+  });
+
+  const course = courseData?.course;
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(editCourseSchema),
+    defaultValues: {
+      courseTitle: "",
+      subTitle: "",
+      category: "",
+      description: "",
+      courseLevel: "",
+      price: 0,
+    },
+  });
+
+  // Populate form when course data arrives
+  React.useEffect(() => {
+    if (course) {
+      reset({
+        courseTitle: course.courseTitle || "",
+        subTitle: course.subTitle || "",
+        category: course.category || "",
+        description: course.description || "",
+        courseLevel: course.courseLevel || "",
+        price: course.price || 0,
+      });
+    }
+  }, [course, reset]);
+
+  const editCourseMutation = useMutation({
+    mutationFn: ({ courseId, formData }) => editCourse(courseId, formData),
+    onSuccess: () => {
+      toast.success("Course edited successfully");
+      queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
+      reset();
+      navigate("/admin/courses");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const onSubmit = (data) => {
+    const formData = new FormData();
+    formData.append("courseTitle", data.courseTitle);
+    formData.append("subTitle", data.subTitle);
+    formData.append("description", data.description);
+    formData.append("category", data.category);
+    formData.append("courseLevel", data.courseLevel);
+    formData.append("price", data.price);
+    if (data.courseThumbnail && data.courseThumbnail[0]) {
+      formData.append("courseThumbnail", data.courseThumbnail[0]);
+    }
+    editCourseMutation.mutate({ courseId, formData });
+  };
+
+  if (isLoading || editCourseMutation.isPending) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center text-red-500 py-10">
+        <p>Failed to load course data.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Card>
@@ -42,56 +144,94 @@ const CourseTab = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-3">
                 <Label>Title</Label>
-                <Input type="text" placeholder="Enter course title" />
+                <Input
+                  {...register("courseTitle")}
+                  type="text"
+                  placeholder="Enter course title"
+                />
               </div>
               <div className="flex flex-col gap-3">
                 <Label>Subtitle</Label>
                 <Input
+                  {...register("subTitle")}
                   type="text"
                   placeholder="Ex. Complete Web Development Bootcamp"
                 />
               </div>
               <div className="flex flex-col gap-3">
                 <Label>Description</Label>
-                <RichTextEditor />
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor
+                      content={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
               </div>
               <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
                 <div className="flex flex-col gap-3">
                   <Label>Category</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="web-development">
-                        Web Development
-                      </SelectItem>
-                      <SelectItem value="mobile-development">
-                        Mobile Development
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="web-development">
+                            Web Development
+                          </SelectItem>
+                          <SelectItem value="mobile-development">
+                            Mobile Development
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <div className="flex flex-col gap-3">
                   <Label>Course Level</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select course level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="courseLevel"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select course level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Beginner">Beginner</SelectItem>
+                          <SelectItem value="Intermediate">
+                            Intermediate
+                          </SelectItem>
+                          <SelectItem value="Advanced">Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <div className="flex flex-col gap-3">
                   <Label>Price</Label>
-                  <Input type="number" placeholder="200" />
+                  <Input
+                    {...register("price")}
+                    type="number"
+                    placeholder="200"
+                  />
                 </div>
               </div>
               <div className="flex flex-col gap-3">
@@ -102,16 +242,22 @@ const CourseTab = () => {
                   placeholder="Upload course thumbnail"
                   type="file"
                   id="courseThumbnail"
+                  {...register("courseThumbnail")}
                 />
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
               <Link to="/admin/courses">
-                <Button variant="destructive" className="cursor-pointer text-white">
+                <Button
+                  variant="destructive"
+                  className="cursor-pointer text-white"
+                >
                   Cancel
                 </Button>
               </Link>
-              <Button className="cursor-pointer text-white">Update Course</Button>
+              <Button className="cursor-pointer text-white">
+                Update Course
+              </Button>
             </div>
           </form>
         </CardContent>
