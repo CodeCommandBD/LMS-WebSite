@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 const CourseTab = () => {
+  const [previewThumbnail, setPreviewThumbnail] = useState("");
   const params = useParams();
   const courseId = params.id;
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ const CourseTab = () => {
     control,
     formState: { errors },
     reset,
+    watch,
   } = useForm({
     resolver: zodResolver(editCourseSchema),
     defaultValues: {
@@ -76,8 +78,24 @@ const CourseTab = () => {
         courseLevel: course.courseLevel || "",
         price: course.price || 0,
       });
+      setPreviewThumbnail(course.courseThumbnail || "");
     }
   }, [course, reset]);
+
+  const selectThumbnail = (file) => {
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        toast.error("File size should be less than 10MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewThumbnail(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const editCourseMutation = useMutation({
     mutationFn: ({ courseId, formData }) => editCourse(courseId, formData),
@@ -242,8 +260,16 @@ const CourseTab = () => {
                   placeholder="Upload course thumbnail"
                   type="file"
                   id="courseThumbnail"
+                  onChange={(e) => selectThumbnail(e.target.files[0])}
                   {...register("courseThumbnail")}
                 />
+                {previewThumbnail && (
+                  <img
+                    src={previewThumbnail}
+                    alt="Course Thumbnail"
+                    className="w-full md:w-64 my-2 object-cover rounded-md"
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
