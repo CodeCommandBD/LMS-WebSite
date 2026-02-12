@@ -27,9 +27,29 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer upload instance
+// Create multer upload instance for profile pictures
 export const uploadProfilePicture = multer({
   storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
+
+// Configure storage for course thumbnails
+const courseStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/courses");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "course-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+// Create multer upload instance for course thumbnails
+export const uploadCourseThumbnail = multer({
+  storage: courseStorage,
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit

@@ -7,7 +7,7 @@ const courseSchema = new mongoose.Schema(
       required: true,
       default: "",
     },
-    subtitle: {
+    subTitle: {
       type: String,
       default: "",
     },
@@ -19,7 +19,7 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    courseLavel: {
+    courseLevel: {
       type: String,
       enum: ["Beginner", "Intermediate", "Advanced"],
       default: "Beginner",
