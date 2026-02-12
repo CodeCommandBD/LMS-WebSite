@@ -101,9 +101,8 @@ const CourseTab = () => {
     mutationFn: ({ courseId, formData }) => editCourse(courseId, formData),
     onSuccess: () => {
       toast.success("Course edited successfully");
+      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
-      reset();
-      navigate("/admin/courses");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -255,19 +254,24 @@ const CourseTab = () => {
               <div className="flex flex-col gap-3">
                 <Label>Course Thumbnail</Label>
                 <Input
+                  {...register("courseThumbnail")}
+                  onChange={(e) => {
+                    register("courseThumbnail").onChange(e);
+                    if (e.target.files && e.target.files[0]) {
+                      selectThumbnail(e.target.files[0]);
+                    }
+                  }}
                   accept="image/*"
                   className="cursor-pointer w-fit"
                   placeholder="Upload course thumbnail"
                   type="file"
                   id="courseThumbnail"
-                  onChange={(e) => selectThumbnail(e.target.files[0])}
-                  {...register("courseThumbnail")}
                 />
                 {previewThumbnail && (
                   <img
                     src={previewThumbnail}
                     alt="Course Thumbnail"
-                    className="w-full md:w-64 my-2 object-cover rounded-md"
+                    className="w-[200px] h-[200px] my-2 object-cover rounded-md"
                   />
                 )}
               </div>
