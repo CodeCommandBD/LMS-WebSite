@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,113 +16,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Link, useParams } from "react-router";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { editCourseSchema } from "@/schemas/editCourseSchema";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { editCourse, getCourseById } from "@/services/courseApi";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { Controller } from "react-hook-form";
+import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import useEditCourse from "@/hooks/useEditCourse";
 
 const CourseTab = () => {
-  const [previewThumbnail, setPreviewThumbnail] = useState("");
-  const params = useParams();
-  const courseId = params.id;
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  // Fetch course data by ID
-  const {
-    data: courseData,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["course", courseId],
-    queryFn: () => getCourseById(courseId),
-    enabled: !!courseId,
-  });
-
-  const course = courseData?.course;
-
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors },
-    reset,
-    watch,
-  } = useForm({
-    resolver: zodResolver(editCourseSchema),
-    defaultValues: {
-      courseTitle: "",
-      subTitle: "",
-      category: "",
-      description: "",
-      courseLevel: "",
-      price: 0,
-    },
-  });
+    previewThumbnail,
+    selectThumbnail,
+    onSubmit,
+    isLoading,
+    isError,
+    isPending,
+  } = useEditCourse();
 
-  // Populate form when course data arrives
-  React.useEffect(() => {
-    if (course) {
-      reset({
-        courseTitle: course.courseTitle || "",
-        subTitle: course.subTitle || "",
-        category: course.category || "",
-        description: course.description || "",
-        courseLevel: course.courseLevel || "",
-        price: course.price || 0,
-      });
-      setPreviewThumbnail(course.courseThumbnail || "");
-    }
-  }, [course, reset]);
-
-  const selectThumbnail = (file) => {
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
-        toast.error("File size should be less than 10MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewThumbnail(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const editCourseMutation = useMutation({
-    mutationFn: ({ courseId, formData }) => editCourse(courseId, formData),
-    onSuccess: () => {
-      toast.success("Course edited successfully");
-      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
-      queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const onSubmit = (data) => {
-    const formData = new FormData();
-    formData.append("courseTitle", data.courseTitle);
-    formData.append("subTitle", data.subTitle);
-    formData.append("description", data.description);
-    formData.append("category", data.category);
-    formData.append("courseLevel", data.courseLevel);
-    formData.append("price", data.price);
-    if (data.courseThumbnail && data.courseThumbnail[0]) {
-      formData.append("courseThumbnail", data.courseThumbnail[0]);
-    }
-    editCourseMutation.mutate({ courseId, formData });
-  };
-
-  if (isLoading || editCourseMutation.isPending) {
+  if (isLoading || isPending) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
