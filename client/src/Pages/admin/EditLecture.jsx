@@ -70,6 +70,7 @@ const EditLecture = () => {
   const watchedVideoUrl = watch("videoUrl");
   const isYoutubeMode = isYoutube; // Use local variable for clarity if needed, or just use isYoutube state
   const previewUrl = (isYoutube ? watchedVideoUrl : videoPreview) || "";
+  const isFree = watch("isFree");
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -250,6 +251,7 @@ const EditLecture = () => {
           <div className="mt-10 flex items-center gap-2">
             <Switch
               id="free-switch"
+              checked={isFree}
               onCheckedChange={(checked) => setValue("isFree", checked)}
             />
             <Label htmlFor="free-switch">Is this video FREE</Label>
