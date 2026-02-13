@@ -1,5 +1,6 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import ReactPlayer from "react-player";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -213,15 +214,15 @@ const EditLecture = () => {
               />
             )}
             {videoPreview && (
-              <div className="mt-4">
+              <div className="mt-4 w-full h-64 md:h-96">
                 <Label className="mb-2 block">Video Preview</Label>
-                <video
-                  src={videoPreview}
-                  controls
-                  className="w-full h-auto rounded-lg border border-gray-200"
-                >
-                  Your browser does not support the video tag.
-                </video>
+                <ReactPlayer
+                  url={videoPreview}
+                  controls={true}
+                  width="100%"
+                  height="100%"
+                  className="rounded-lg border border-gray-200 overflow-hidden"
+                />
               </div>
             )}
           </div>
