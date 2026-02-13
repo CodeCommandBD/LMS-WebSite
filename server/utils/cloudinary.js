@@ -43,7 +43,9 @@ export const uploadToCloudinary = async (filePath, folder = "lms") => {
  */
 export const deleteFromCloudinary = async (publicId) => {
   try {
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "video",
+    });
     return {
       success: true,
       result: result,

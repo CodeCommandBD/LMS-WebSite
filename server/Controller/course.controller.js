@@ -2,7 +2,6 @@ import Course from "../models/course.model.js";
 import Lecture from "../models/lecture.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
-
 // Create a new course with title, category, and the logged-in user as creator
 export const createCourse = async (req, res) => {
   try {
@@ -263,12 +262,42 @@ export const editLecture = async (req, res) => {
     if (lectureTitle) lecture.lectureTitle = lectureTitle;
     if (videoInfo?.videoUrl) lecture.videoUrl = videoInfo.videoUrl;
     if (videoInfo?.publicId) lecture.publicId = videoInfo.publicId;
-    if (isPreviewFree !== undefined) lecture.isPreviewFree = isPreviewFree; // Check explicitly for undefined
+    if (isPreviewFree !== undefined) lecture.isPreviewFree = isPreviewFree;
+
+    // Handle video upload or YouTube URL
+    if (req.file) {
+      // 1. Upload to Cloudinary
+      const result = await uploadToCloudinary(req.file.path, "lms/lectures");
+      if (!result.success) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to upload video" });
+      }
+
+      // 2. Delete old video if exists
+      if (lecture.publicId) {
+        await deleteFromCloudinary(lecture.publicId);
+      }
+
+      // 3. Update lecture with new video
+      lecture.videoUrl = result.url;
+      lecture.publicId = result.publicId;
+
+      // 4. Delete local file
+      // fs.unlinkSync(req.file.path); // Assuming fs is imported, or handled by middleware/cleanup
+    } else if (req.body.videoUrl) {
+      // Handle YouTube URL
+      // If switching to YouTube, delete old Cloudinary video
+      if (lecture.publicId) {
+        await deleteFromCloudinary(lecture.publicId);
+      }
+      lecture.videoUrl = req.body.videoUrl;
+      lecture.publicId = null; // Clear publicId as it's not a Cloudinary video
+    }
 
     await lecture.save();
 
     // 3. Ensure lecture is linked to the course
-    // Use findByIdAndUpdate to add to set (unique), preventing duplicates efficiently
     const course = await Course.findById(courseId);
     if (course && !course.lectures.includes(lecture._id)) {
       course.lectures.push(lecture._id);
@@ -279,6 +308,44 @@ export const editLecture = async (req, res) => {
       success: true,
       lecture,
       message: "Lecture updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteLecture = async (req, res) => {
+  try {
+    const { courseId, lectureId } = req.params;
+
+    // 1. Find lecture
+    const lecture = await Lecture.findById(lectureId);
+    if (!lecture) {
+      return res.status(404).json({
+        success: false,
+        message: "Lecture not found",
+      });
+    }
+
+    // 2. Delete video from Cloudinary if exists
+    if (lecture.publicId) {
+      await deleteFromCloudinary(lecture.publicId);
+    }
+
+    // 3. Remove lecture from course
+    await Course.findByIdAndUpdate(courseId, {
+      $pull: { lectures: lectureId },
+    });
+
+    // 4. Delete lecture document
+    await Lecture.findByIdAndDelete(lectureId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Lecture deleted successfully",
     });
   } catch (error) {
     return res.status(500).json({

@@ -24,6 +24,7 @@ const EditLecture = () => {
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoPreview, setVideoPreview] = useState("");
+  const [isYoutube, setIsYoutube] = useState(false);
 
   const {
     register,
@@ -53,8 +54,12 @@ const EditLecture = () => {
       if (lecture) {
         setValue("lectureTitle", lecture.lectureTitle);
         setValue("isFree", lecture.isPreviewFree);
+        setValue("videoUrl", lecture.videoUrl);
         if (lecture.videoUrl) {
           setVideoPreview(lecture.videoUrl); // Assuming backend returns videoUrl
+          if (!lecture.publicId) {
+            setIsYoutube(true);
+          }
         }
       }
     }
@@ -74,6 +79,9 @@ const EditLecture = () => {
       formData.append("lectureTitle", data.lectureTitle);
       if (data.lectureVideo && data.lectureVideo[0]) {
         formData.append("video", data.lectureVideo[0]); // Ensure backend expects "video"
+      }
+      if (data.videoUrl) {
+        formData.append("videoUrl", data.videoUrl);
       }
       formData.append("isPreviewFree", data.isFree);
 
@@ -176,16 +184,34 @@ const EditLecture = () => {
             )}
           </div>
           <div className="mt-10 flex flex-col gap-3">
-            <Label>Lecture Video</Label>
-            <Input
-              type="file"
-              accept="video/*"
-              {...register("lectureVideo")}
-              onChange={(e) => {
-                handleVideoChange(e);
-                register("lectureVideo").onChange(e); // Ensure react-hook-form also gets the event
-              }}
-            />
+            <div className="flex items-center justify-between">
+              <Label>Lecture Video</Label>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="video-source-switch"
+                  checked={isYoutube}
+                  onCheckedChange={setIsYoutube}
+                />
+                <Label htmlFor="video-source-switch">YouTube Link</Label>
+              </div>
+            </div>
+            {isYoutube ? (
+              <Input
+                type="text"
+                placeholder="Enter YouTube URL"
+                {...register("videoUrl")}
+              />
+            ) : (
+              <Input
+                type="file"
+                accept="video/*"
+                {...register("lectureVideo")}
+                onChange={(e) => {
+                  handleVideoChange(e);
+                  register("lectureVideo").onChange(e); // Ensure react-hook-form also gets the event
+                }}
+              />
+            )}
             {videoPreview && (
               <div className="mt-4">
                 <Label className="mb-2 block">Video Preview</Label>

@@ -10,6 +10,7 @@ import {
   createLecture,
   editLecture,
   getCourseLectures,
+  deleteLecture,
 } from "../Controller/course.controller.js";
 import {
   uploadCourseThumbnail,
@@ -42,5 +43,6 @@ router.put(
   uploadMedia.single("video"),
   editLecture,
 );
+router.delete("/:courseId/lectures/:lectureId", authenticate, deleteLecture);
 
 export default router;
