@@ -40,16 +40,27 @@ export const deleteCourseService = async (courseId) => {
   return response.data;
 };
 
-
 // edit lecture
-export const editLectureService = async (courseId, lectureId, lectureData) => {
-  const response = await api.put(`/courses/${courseId}/lectures/${lectureId}`, lectureData);
+export const editLectureService = async (
+  courseId,
+  lectureId,
+  lectureData,
+  onUploadProgress,
+) => {
+  const response = await api.put(
+    `/courses/${courseId}/lectures/${lectureId}`,
+    lectureData,
+    {
+      onUploadProgress: onUploadProgress,
+    },
+  );
   return response.data;
 };
 
-
 // delete lecture
 export const deleteLectureService = async (courseId, lectureId) => {
-  const response = await api.delete(`/courses/${courseId}/lectures/${lectureId}`);
+  const response = await api.delete(
+    `/courses/${courseId}/lectures/${lectureId}`,
+  );
   return response.data;
 };

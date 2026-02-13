@@ -9,9 +9,12 @@ import {
   deleteCourse,
   createLecture,
   editLecture,
-  getCourseLectures
+  getCourseLectures,
 } from "../Controller/course.controller.js";
-import { uploadCourseThumbnail } from "../middleware/upload.middleware.js";
+import {
+  uploadCourseThumbnail,
+  uploadMedia,
+} from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -26,9 +29,18 @@ router.put(
 );
 router.get("/:courseId", authenticate, getCourseById);
 router.delete("/:courseId", authenticate, deleteCourse);
-router.post("/:courseId/lectures", authenticate, createLecture);
+router.post(
+  "/:courseId/lectures",
+  authenticate,
+  uploadMedia.single("video"),
+  createLecture,
+);
 router.get("/:courseId/lectures", authenticate, getCourseLectures);
-router.put("/:courseId/lectures/:lectureId", authenticate, editLecture);
-
+router.put(
+  "/:courseId/lectures/:lectureId",
+  authenticate,
+  uploadMedia.single("video"),
+  editLecture,
+);
 
 export default router;
