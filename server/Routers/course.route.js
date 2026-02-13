@@ -6,6 +6,7 @@ import {
   getCourseById,
   getCreatorCourses,
   getPublicCourses,
+  deleteCourse,
 } from "../Controller/course.controller.js";
 import { uploadCourseThumbnail } from "../middleware/upload.middleware.js";
 
@@ -21,5 +22,6 @@ router.put(
   editCourse,
 );
 router.get("/:courseId", authenticate, getCourseById);
+router.delete("/:courseId", authenticate, deleteCourse);
 
 export default router;

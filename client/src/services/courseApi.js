@@ -14,17 +14,20 @@ export const getInstructorCourses = async () => {
   return response.data.courses;
 };
 
-
-// edit a course 
+// edit a course
 
 export const editCourse = async (courseId, courseData) => {
   const response = await api.put(`/courses/${courseId}`, courseData);
   return response.data;
 };
 
-
 // get course by id
 export const getCourseById = async (courseId) => {
   const response = await api.get(`/courses/${courseId}`);
+  return response.data;
+};
+
+export const deleteCourseService = async (courseId) => {
+  const response = await api.delete(`/courses/${courseId}`);
   return response.data;
 };

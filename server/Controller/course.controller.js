@@ -151,3 +151,29 @@ export const getCourseById = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    // Check if the user is the creator
+    if (course.creator.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    await Course.findByIdAndDelete(courseId);
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Course deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

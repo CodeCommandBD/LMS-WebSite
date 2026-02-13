@@ -106,8 +106,6 @@ const CreateCourse = () => {
                   <SelectItem value="spring"> Spring</SelectItem>
                   <SelectItem value="hibernate"> Hibernate</SelectItem>
                   <SelectItem value="mybatis"> MyBatis</SelectItem>
-                  <SelectItem value="hibernate"> Hibernate</SelectItem>
-                  <SelectItem value="hibernate"> Hibernate</SelectItem>
                 </SelectContent>
               </Select>
             )}

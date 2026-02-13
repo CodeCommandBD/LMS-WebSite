@@ -7,7 +7,7 @@ const RichTextEditor = ({ content, onChange }) => {
   const config = useMemo(
     () => ({
       readonly: false,
-      placeholder: "Write your course description here...",
+      placeholder: "",
       height: 300,
       toolbarButtonSize: "middle",
       buttons: [
