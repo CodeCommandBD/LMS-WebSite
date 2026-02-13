@@ -2,6 +2,7 @@ import Course from "../models/course.model.js";
 import Lecture from "../models/lecture.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
+
 // Create a new course with title, category, and the logged-in user as creator
 export const createCourse = async (req, res) => {
   try {
@@ -137,7 +138,7 @@ export const getCourseById = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseId).populate("lectures");
 
     if (!course) {
       return res
@@ -282,7 +283,7 @@ export const editLecture = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

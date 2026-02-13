@@ -27,6 +27,14 @@ export const getCourseById = async (courseId) => {
   return response.data;
 };
 
+// create a lecture
+export const createLectureService = async (courseId, lectureTitle) => {
+  const response = await api.post(`/courses/${courseId}/lectures`, {
+    lectureTitle,
+  });
+  return response.data;
+};
+
 export const deleteCourseService = async (courseId) => {
   const response = await api.delete(`/courses/${courseId}`);
   return response.data;
