@@ -34,7 +34,7 @@ const courseSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    lecture: [
+    lectures: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Lecture",

@@ -1,4 +1,5 @@
 import Course from "../models/course.model.js";
+import Lecture from "../models/lecture.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 // Create a new course with title, category, and the logged-in user as creator
@@ -152,6 +153,7 @@ export const getCourseById = async (req, res) => {
   }
 };
 
+// delete course
 export const deleteCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -173,6 +175,49 @@ export const deleteCourse = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Course deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// create lecture
+
+export const createLecture = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { lectureTitle } = req.body;
+
+    if (!lectureTitle || !courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Lecture title is required",
+      });
+    }
+
+    // 1. Check if course exists first
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    // 2. Create Lecture
+    const lecture = await Lecture.create({
+      lectureTitle,
+      course: courseId,
+    });
+
+    // 3. Update Course
+    course.lectures.push(lecture._id);
+    await course.save();
+
+    return res.status(201).json({
+      success: true,
+      lecture,
+      course,
+      message: "Lecture created successfully",
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
