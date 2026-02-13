@@ -34,8 +34,8 @@ export const getPublicCourses = async (req, res) => {
     const courses = await Course.find({ isPublished: true });
     if (!courses || courses.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No courses found" });
+        .status(200)
+        .json({ success: true, courses: [], message: "No courses found" });
     }
     return res.status(200).json({
       success: true,
@@ -56,8 +56,8 @@ export const getCreatorCourses = async (req, res) => {
     // Find all courses where the creator matches the logged-in user
     const courses = await Course.find({ creator: userId });
     if (!courses || courses.length === 0) {
-      return res.status(404).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         courses: [],
         message: "No courses found",
       });
@@ -76,25 +76,31 @@ export const getCreatorCourses = async (req, res) => {
 export const editCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
-
     const { courseTitle, category, subTitle, description, courseLevel, price } =
       req.body;
-
     const file = req.file;
 
+    // 1. Check if course exists and belongs to user
     let course = await Course.findById(courseId);
-
     if (!course) {
       return res
         .status(404)
         .json({ success: false, message: "Course not found" });
     }
-
     if (course.creator.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    // Upload thumbnail to Cloudinary if a file was provided
+    // 2. Prepare Update Object
+    const updateData = {};
+    if (courseTitle !== undefined) updateData.courseTitle = courseTitle;
+    if (category !== undefined) updateData.category = category;
+    if (subTitle !== undefined) updateData.subTitle = subTitle;
+    if (description !== undefined) updateData.description = description;
+    if (courseLevel !== undefined) updateData.courseLevel = courseLevel;
+    if (price !== undefined) updateData.price = price;
+
+    // 3. Upload Thumbnail if exists
     if (file) {
       const result = await uploadToCloudinary(file.path, "lms/courses");
       if (!result.success) {
@@ -102,23 +108,25 @@ export const editCourse = async (req, res) => {
           .status(500)
           .json({ success: false, message: "Failed to upload thumbnail" });
       }
-      course.courseThumbnail = result.url;
+      updateData.courseThumbnail = result.url;
     }
 
-    // Only update fields that were actually sent
-    if (courseTitle) course.courseTitle = courseTitle;
-    if (category) course.category = category;
-    if (subTitle !== undefined) course.subTitle = subTitle;
-    if (description !== undefined) course.description = description;
-    if (courseLevel) course.courseLevel = courseLevel;
-    if (price !== undefined) course.price = price;
+    // 4. Update Course
+    const updatedCourse = await Course.findByIdAndUpdate(courseId, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
-    await course.save();
+    console.log("Req Body:", req.body);
+    console.log("Updated Course (After Atomic Update):", updatedCourse);
 
-    return res
-      .status(200)
-      .json({ success: true, course, message: "Course updated successfully" });
+    return res.status(200).json({
+      success: true,
+      course: updatedCourse,
+      message: "Course updated successfully",
+    });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

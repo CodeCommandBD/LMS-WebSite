@@ -111,6 +111,7 @@ const CourseTab = () => {
                     control={control}
                     render={({ field }) => (
                       <Select
+                        key={field.value}
                         onValueChange={field.onChange}
                         value={field.value}
                       >
@@ -118,6 +119,38 @@ const CourseTab = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="next js">Next js</SelectItem>
+                          <SelectItem value="react js">React js</SelectItem>
+                          <SelectItem value="node js">Node js</SelectItem>
+                          <SelectItem value="javascript">JavaScript</SelectItem>
+                          <SelectItem value="python">Python</SelectItem>
+                          <SelectItem value="java">Java</SelectItem>
+                          <SelectItem value="c++">C++</SelectItem>
+                          <SelectItem value="c#">C#</SelectItem>
+                          <SelectItem value="c">C</SelectItem>
+                          <SelectItem value="html">HTML</SelectItem>
+                          <SelectItem value="css">CSS</SelectItem>
+                          <SelectItem value="bootstrap">Bootstrap</SelectItem>
+                          <SelectItem value="tailwind">Tailwind</SelectItem>
+                          <SelectItem value="material ui">
+                            Material UI
+                          </SelectItem>
+                          <SelectItem value="ant design">Ant Design</SelectItem>
+                          <SelectItem value="vue js">Vue js</SelectItem>
+                          <SelectItem value="angular">Angular</SelectItem>
+                          <SelectItem value="svelte">Svelte</SelectItem>
+                          <SelectItem value="laravel">Laravel</SelectItem>
+                          <SelectItem value="symfony">Symfony</SelectItem>
+                          <SelectItem value="ruby on rails">
+                            Ruby on Rails
+                          </SelectItem>
+                          <SelectItem value="django">Django</SelectItem>
+                          <SelectItem value="flask">Flask</SelectItem>
+                          <SelectItem value="express">Express</SelectItem>
+                          <SelectItem value="nest js">Nest js</SelectItem>
+                          <SelectItem value="spring">Spring</SelectItem>
+                          <SelectItem value="hibernate">Hibernate</SelectItem>
+                          <SelectItem value="mybatis">MyBatis</SelectItem>
                           <SelectItem value="web-development">
                             Web Development
                           </SelectItem>
@@ -136,6 +169,7 @@ const CourseTab = () => {
                     control={control}
                     render={({ field }) => (
                       <Select
+                        key={field.value}
                         onValueChange={field.onChange}
                         value={field.value}
                       >
