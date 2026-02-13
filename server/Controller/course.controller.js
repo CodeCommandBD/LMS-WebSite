@@ -222,3 +222,67 @@ export const createLecture = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// get course lectures
+export const getCourseLectures = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, course, message: "Course fetched successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// edit lecture
+export const editLecture = async (req, res) => {
+  try {
+    const { courseId, lectureId } = req.params;
+    const { lectureTitle, videoInfo, isPreviewFree } = req.body;
+
+    // 1. Find the lecture
+    const lecture = await Lecture.findById(lectureId);
+    if (!lecture) {
+      return res.status(404).json({
+        success: false,
+        message: "Lecture not found",
+      });
+    }
+
+    // 2. Update lecture fields
+    if (lectureTitle) lecture.lectureTitle = lectureTitle;
+    if (videoInfo?.videoUrl) lecture.videoUrl = videoInfo.videoUrl;
+    if (videoInfo?.publicId) lecture.publicId = videoInfo.publicId;
+    if (isPreviewFree !== undefined) lecture.isPreviewFree = isPreviewFree; // Check explicitly for undefined
+
+    await lecture.save();
+
+    // 3. Ensure lecture is linked to the course
+    // Use findByIdAndUpdate to add to set (unique), preventing duplicates efficiently
+    const course = await Course.findById(courseId);
+    if (course && !course.lectures.includes(lecture._id)) {
+      course.lectures.push(lecture._id);
+      await course.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      lecture,
+      message: "Lecture updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
