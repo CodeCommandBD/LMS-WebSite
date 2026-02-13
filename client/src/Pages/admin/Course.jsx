@@ -132,7 +132,7 @@ const Course = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Link to={`/admin/course/${course._id}`}>
+                    <Link to={`/admin/courses/${course._id}`}>
                       <Button className="mr-2 bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
                         <Pencil />
                       </Button>

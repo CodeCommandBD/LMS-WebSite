@@ -17,6 +17,7 @@ import Course from "./Pages/admin/Course";
 import Dashboard from "./Pages/admin/Dashboard";
 import CreateCourse from "./Pages/admin/CreateCourse";
 import UpdateCourse from "./Pages/admin/UpdateCourse";
+import CreateLecture from "./Pages/admin/CreateLecture";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -75,9 +76,13 @@ const router = createBrowserRouter([
             element: <CreateCourse />,
           },
           {
-            path:"course/:id",
+            path:"courses/:id",
             element: <UpdateCourse />,
-          }
+          },
+          {
+            path:"courses/:id/lectures",
+            element: <CreateLecture />,
+          },
         ],
       }
     ],
