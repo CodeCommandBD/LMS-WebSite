@@ -1,6 +1,5 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import ReactPlayer from "react-player";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -32,11 +31,13 @@ const EditLecture = () => {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm({
     resolver: zodResolver(editLectureSchema),
     defaultValues: {
       lectureTitle: "",
       lectureVideo: undefined,
+      videoUrl: "",
       isFree: false,
     },
   });
@@ -65,6 +66,10 @@ const EditLecture = () => {
       }
     }
   }, [courseData, lectureId, setValue]);
+
+  const watchedVideoUrl = watch("videoUrl");
+  const isYoutubeMode = isYoutube; // Use local variable for clarity if needed, or just use isYoutube state
+  const previewUrl = (isYoutube ? watchedVideoUrl : videoPreview) || "";
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -213,16 +218,32 @@ const EditLecture = () => {
                 }}
               />
             )}
-            {videoPreview && (
+            {previewUrl && (
               <div className="mt-4 w-full h-64 md:h-96">
                 <Label className="mb-2 block">Video Preview</Label>
-                <ReactPlayer
-                  url={videoPreview}
-                  controls={true}
-                  width="100%"
-                  height="100%"
-                  className="rounded-lg border border-gray-200 overflow-hidden"
-                />
+                {isYoutube ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${
+                      previewUrl.split("v=")[1]?.split("&")[0] ||
+                      previewUrl.split("/").pop()
+                    }`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="rounded-lg border border-gray-200"
+                  ></iframe>
+                ) : (
+                  <video
+                    src={previewUrl}
+                    controls
+                    className="w-full h-full rounded-lg border border-gray-200 object-cover"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                )}
               </div>
             )}
           </div>
