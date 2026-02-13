@@ -23,6 +23,7 @@ const EditLecture = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [videoPreview, setVideoPreview] = useState("");
 
   const {
     register,
@@ -52,9 +53,20 @@ const EditLecture = () => {
       if (lecture) {
         setValue("lectureTitle", lecture.lectureTitle);
         setValue("isFree", lecture.isPreviewFree);
+        if (lecture.videoUrl) {
+          setVideoPreview(lecture.videoUrl); // Assuming backend returns videoUrl
+        }
       }
     }
   }, [courseData, lectureId, setValue]);
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const videoUrl = URL.createObjectURL(file);
+      setVideoPreview(videoUrl);
+    }
+  };
 
   const editLectureMutation = useMutation({
     mutationFn: (data) => {
@@ -165,7 +177,27 @@ const EditLecture = () => {
           </div>
           <div className="mt-10 flex flex-col gap-3">
             <Label>Lecture Video</Label>
-            <Input type="file" accept="video/*" {...register("lectureVideo")} />
+            <Input
+              type="file"
+              accept="video/*"
+              {...register("lectureVideo")}
+              onChange={(e) => {
+                handleVideoChange(e);
+                register("lectureVideo").onChange(e); // Ensure react-hook-form also gets the event
+              }}
+            />
+            {videoPreview && (
+              <div className="mt-4">
+                <Label className="mb-2 block">Video Preview</Label>
+                <video
+                  src={videoPreview}
+                  controls
+                  className="w-full h-auto rounded-lg border border-gray-200"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            )}
           </div>
           <div className="mt-10 flex items-center gap-2">
             <Switch
