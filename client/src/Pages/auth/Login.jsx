@@ -26,7 +26,7 @@ const Login = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
-  
+
   const {
     register,
     handleSubmit,
@@ -92,10 +92,14 @@ const Login = () => {
             className="flex flex-col gap-6"
           >
             <div>
-              <Label className="block text-gray-700 font-bold mb-2">
+              <Label
+                htmlFor="email"
+                className="block text-gray-700 font-bold mb-2"
+              >
                 Email
               </Label>
               <Input
+                id="email"
                 type="email"
                 placeholder="Enter your email"
                 {...register("email")}
@@ -107,11 +111,15 @@ const Login = () => {
               )}
             </div>
             <div>
-              <Label className="block text-gray-700 font-bold mb-2">
+              <Label
+                htmlFor="password"
+                className="block text-gray-700 font-bold mb-2"
+              >
                 Password
               </Label>
               <div className="relative">
                 <Input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   {...register("password")}
