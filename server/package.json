@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "npx cross-env NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "npx cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "nodemon --ext js,json --exec \"npx cross-env NODE_OPTIONS=--experimental-vm-modules jest\""
   },
   "keywords": [],
   "author": "",
