@@ -449,7 +449,7 @@ export const enrollCourse = async (req, res) => {
     }
 
     const user = await User.findById(userId);
-    if (user.enrolledCourses.includes(courseId)) {
+    if (user.enrolledCourses.some((id) => id.toString() === courseId)) {
       return res
         .status(400)
         .json({ success: false, message: "Already enrolled in this course" });
@@ -479,7 +479,7 @@ export const toggleWishlist = async (req, res) => {
     const userId = req.user.id;
 
     const user = await User.findById(userId);
-    const isWishlisted = user.wishlist.includes(courseId);
+    const isWishlisted = user.wishlist.some((id) => id.toString() === courseId);
 
     if (isWishlisted) {
       user.wishlist = user.wishlist.filter((id) => id.toString() !== courseId);
@@ -506,8 +506,10 @@ export const checkEnrollmentAndWishlist = async (req, res) => {
     const userId = req.user.id;
 
     const user = await User.findById(userId);
-    const isEnrolled = user.enrolledCourses.includes(courseId);
-    const isWishlisted = user.wishlist.includes(courseId);
+    const isEnrolled = user.enrolledCourses.some(
+      (id) => id.toString() === courseId,
+    );
+    const isWishlisted = user.wishlist.some((id) => id.toString() === courseId);
 
     return res.status(200).json({
       success: true,

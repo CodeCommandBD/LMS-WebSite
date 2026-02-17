@@ -13,8 +13,8 @@ const app = express();
 // CORS configuration for credentials support
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173", // Client URL
-    credentials: true, // Allow cookies
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    credentials: true,
   }),
 );
 

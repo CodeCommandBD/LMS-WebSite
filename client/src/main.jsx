@@ -24,6 +24,7 @@ import UpdateCourse from "./Pages/admin/UpdateCourse";
 import CreateLecture from "./Pages/admin/CreateLecture";
 import EditLecture from "./Pages/admin/EditLecture";
 import PurchaseSuccess from "./Pages/PurchaseSuccess";
+import CourseProgress from "./Pages/CourseProgress";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Create a client for TanStack Query
@@ -61,6 +62,14 @@ const router = createBrowserRouter([
       {
         path: "/purchase-success",
         element: <PurchaseSuccess />,
+      },
+      {
+        path: "/course-progress/:id",
+        element: (
+          <ProtectedRoute>
+            <CourseProgress />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/courseDetails/:id",

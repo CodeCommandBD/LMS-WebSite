@@ -1,7 +1,7 @@
 import Stripe from "stripe";
-import Purchase from "../Models/purchase.model.js";
-import Course from "../Models/course.model.js";
-import User from "../Models/user.model.js";
+import Purchase from "../models/purchase.model.js";
+import Course from "../models/course.model.js";
+import User from "../models/user.model.js";
 
 // Helper to get Stripe instance
 const getStripe = () => {
@@ -18,8 +18,11 @@ export const createCheckoutSession = async (req, res) => {
     const { courseId } = req.body;
     const userId = req.user.id;
 
+    console.log("Creating checkout session:", { courseId, userId });
+
     const course = await Course.findById(courseId);
     if (!course) {
+      console.log("Checkout failed: Course not found", courseId);
       return res
         .status(404)
         .json({ success: false, message: "Course not found" });
@@ -27,7 +30,18 @@ export const createCheckoutSession = async (req, res) => {
 
     // Check if user is already enrolled
     const user = await User.findById(userId);
-    if (user.enrolledCourses.includes(courseId)) {
+    if (!user) {
+      console.log("Checkout failed: User not found", userId);
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (user.enrolledCourses?.some((id) => id.toString() === courseId)) {
+      console.log("Checkout failed: User already enrolled", {
+        userId,
+        courseId,
+      });
       return res
         .status(400)
         .json({ success: false, message: "Already enrolled" });
@@ -35,6 +49,7 @@ export const createCheckoutSession = async (req, res) => {
 
     // Create session
     const stripe = getStripe();
+    console.log("Initializing Stripe checkout...");
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -51,13 +66,15 @@ export const createCheckoutSession = async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.FRONTEND_URL}/purchase-success?courseId=${courseId}`,
-      cancel_url: `${process.env.FRONTEND_URL}/course-detail/${courseId}`,
+      success_url: `${process.env.CLIENT_URL}/purchase-success?courseId=${courseId}`,
+      cancel_url: `${process.env.CLIENT_URL}/course-detail/${courseId}`,
       metadata: {
         courseId: courseId.toString(),
         userId: userId.toString(),
       },
     });
+
+    console.log("Stripe session created successfully:", session.id);
 
     // Create a pending purchase record
     await Purchase.create({
@@ -74,27 +91,34 @@ export const createCheckoutSession = async (req, res) => {
       sessionId: session.id,
     });
   } catch (error) {
-    console.error("Stripe Session Error:", error);
+    console.error("Stripe Session Error Details:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const stripeWebhook = async (req, res) => {
   let event;
+  const stripe = getStripe();
 
   try {
-    const stripe = getStripe();
-    const payloadString = JSON.stringify(req.body);
-    const header = stripe.webhooks.generateTestHeaderString({
-      payload: payloadString,
-      secret: process.env.STRIPE_WEBHOOK_SECRET,
-    });
+    // If we're using express.raw, req.body is a Buffer
+    const payload = req.body;
+    const sig = req.headers["stripe-signature"];
 
-    // In production, we use req.rawBody or similar.
-    // Here we'll handle the event directly for now assuming it's passed through correctly.
-    event = req.body;
+    if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
+      // Production mode with signature verification
+      event = stripe.webhooks.constructEvent(
+        payload,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET,
+      );
+    } else {
+      // Fallback/Testing mode: parse the buffer directly
+      event = JSON.parse(payload.toString());
+      console.log("Webhook received (parsed from Buffer):", event.type);
+    }
   } catch (err) {
-    console.log(`Webhook Error: ${err.message}`);
+    console.error(`Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -112,19 +136,35 @@ export const stripeWebhook = async (req, res) => {
 
       // 2. Enroll user in course
       const user = await User.findById(userId);
-      if (user && !user.enrolledCourses.includes(courseId)) {
-        user.enrolledCourses.push(courseId);
-        await user.save();
+      console.log("Found user for enrollment:", user?._id);
+
+      if (user) {
+        const isAlreadyEnrolled = user.enrolledCourses.some(
+          (id) => id.toString() === courseId,
+        );
+        if (!isAlreadyEnrolled) {
+          user.enrolledCourses.push(courseId);
+          await user.save();
+          console.log("Successfully enrolled user in course:", courseId);
+        } else {
+          console.log("User already enrolled in course:", courseId);
+        }
       }
 
       // 3. Add user to course students
       const course = await Course.findById(courseId);
-      if (course && !course.enrolledStudents.includes(userId)) {
-        course.enrolledStudents.push(userId);
-        await course.save();
+      if (course) {
+        const isAlreadyStudent = course.enrolledStudents.some(
+          (id) => id.toString() === userId,
+        );
+        if (!isAlreadyStudent) {
+          course.enrolledStudents.push(userId);
+          await course.save();
+          console.log("Successfully added user to course student list");
+        }
       }
 
-      console.log("Enrollment fulfilled for user:", userId);
+      console.log("Enrollment fulfillment complete for user:", userId);
     } catch (error) {
       console.error("Webhook Fulfillment Error:", error);
     }
