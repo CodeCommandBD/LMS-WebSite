@@ -356,7 +356,7 @@ export const deleteLecture = async (req, res) => {
   }
 };
 
-// Publish course
+// toggle publish course
 export const publishCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -409,5 +409,27 @@ export const publishCourse = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+}; // get published courses
+export const getPublishedCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ isPublished: true }).populate({
+      path: "creator",
+      select: "name photoUrl",
+    });
+    if (!courses || courses.length === 0) {
+      return res.status(200).json({
+        success: true,
+        courses: [],
+        message: "No published courses found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      courses,
+      message: "Published courses fetched successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

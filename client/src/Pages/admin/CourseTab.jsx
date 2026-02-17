@@ -237,9 +237,22 @@ const CourseTab = () => {
                   Cancel
                 </Button>
               </Link>
-              <Button className="cursor-pointer text-white">
-                Update Course
-              </Button>
+              <Link to="/admin/courses">
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="cursor-pointer text-white"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Course"
+                  )}
+                </Button>
+              </Link>
             </div>
           </form>
         </CardContent>

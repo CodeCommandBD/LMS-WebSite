@@ -12,6 +12,7 @@ import {
   getCourseLectures,
   deleteLecture,
   publishCourse,
+  getPublishedCourses,
 } from "../Controller/course.controller.js";
 import {
   uploadCourseThumbnail,
@@ -46,6 +47,7 @@ router.put(
 );
 router.delete("/:courseId/lectures/:lectureId", authenticate, deleteLecture);
 
+router.get("/published/all", getPublishedCourses); // Adding this for the Courses page
 router.patch("/:courseId/publish", authenticate, publishCourse);
 
 export default router;

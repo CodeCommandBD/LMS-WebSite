@@ -70,3 +70,9 @@ export const togglePublishCourse = async (courseId) => {
   const response = await api.patch(`/courses/${courseId}/publish`);
   return response.data;
 };
+
+// get published courses
+export const getPublishedCourses = async () => {
+  const response = await api.get("/courses/published/all");
+  return response.data.courses;
+};
