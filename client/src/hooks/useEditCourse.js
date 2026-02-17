@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import { editCourseSchema } from "@/schemas/editCourseSchema";
 const useEditCourse = () => {
   const { id: courseId } = useParams(); // Get course ID from URL
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [previewThumbnail, setPreviewThumbnail] = useState("");
 
   // 1. Fetch Course Data
@@ -88,6 +89,7 @@ const useEditCourse = () => {
       // Refresh queries to show updated data
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
+      navigate("/admin/courses");
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to edit course");

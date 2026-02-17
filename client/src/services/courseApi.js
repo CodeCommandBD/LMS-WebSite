@@ -98,3 +98,8 @@ export const createCheckoutSessionService = async (courseId) => {
   const response = await api.post(`/purchase/checkout`, { courseId });
   return response.data;
 };
+
+export const getDashboardStatsService = async () => {
+  const response = await api.get("/purchase/stats");
+  return response.data;
+};

@@ -17,11 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Controller } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import useEditCourse from "@/hooks/useEditCourse";
 
 const CourseTab = () => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -229,30 +230,28 @@ const CourseTab = () => {
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <Link to="/admin/courses">
-                <Button
-                  variant="destructive"
-                  className="cursor-pointer text-white"
-                >
-                  Cancel
-                </Button>
-              </Link>
-              <Link to="/admin/courses">
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  className="cursor-pointer text-white"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update Course"
-                  )}
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="destructive"
+                className="cursor-pointer text-white"
+                onClick={() => navigate("/admin/courses")}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="cursor-pointer text-white"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Course"
+                )}
+              </Button>
             </div>
           </form>
         </CardContent>

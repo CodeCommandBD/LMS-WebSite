@@ -1,44 +1,76 @@
 import React from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Star } from "lucide-react";
 
+/**
+ * CourseCard Component
+ * Redesigned to match a premium LMS look with rounded thumbnails,
+ * floating price badges, and instructor details.
+ */
 const CourseCard = ({ course }) => {
+  // Mock rating since it's not in the DB yet
+  const rating = (Math.random() * (5 - 4) + 4).toFixed(1);
+
   return (
     <div
       key={course._id || course.id}
-      className="bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-100"
+      className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-100"
     >
-      <div className="relative aspect-video overflow-hidden">
-        <img
-          src={course.courseThumbnail || course.image}
-          alt={course.courseTitle || course.title}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-        />
-        <div className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
-          {course.courseLevel || "Beginner"}
+      <Link to={`/courseDetails/${course._id || course.id}`}>
+        {/* Thumbnail Area */}
+        <div className="relative p-3">
+          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gray-100">
+            <img
+              src={
+                course.courseThumbnail ||
+                "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop"
+              }
+              alt={course.courseTitle}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            {/* Price Badge Overlay */}
+            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-blue-600 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-white/50">
+              ৳{course.price || 0}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="p-5 flex flex-col grow">
-        <h2 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
-          {course.courseTitle || course.title}
-        </h2>
-        <div className="text-gray-600 text-sm mb-4 line-clamp-2 grow overflow-hidden">
-          {/* Render description as HTML but keep it clean */}
-          <div
-            className="description-content"
-            dangerouslySetInnerHTML={{ __html: course.description }}
-          />
+
+        {/* Content Area */}
+        <div className="p-5 pt-1 flex flex-col grow">
+          {/* Category and Rating Row */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest bg-purple-50 px-2 py-0.5 rounded">
+              {course.category || "General"}
+            </span>
+            <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <span className="text-[10px] font-bold text-amber-700">
+                {rating}
+              </span>
+            </div>
+          </div>
+
+          <h2 className="text-base font-extrabold text-gray-900 mb-6 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+            {course.courseTitle}
+          </h2>
+
+          {/* Footer with Instructor Info */}
+          <div className="flex items-center justify-between mt-auto">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8 ring-2 ring-gray-50">
+                <AvatarImage src={course.creator?.photoUrl} />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-[10px]">
+                  {course.creator?.name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs font-semibold text-gray-600 truncate max-w-[120px]">
+                {course.creator?.name || "Unknown Instructor"}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50/50">
-          <span className="text-xl font-extrabold text-blue-600">
-            ৳{course.price || 0}
-          </span>
-          <Link to={`/courseDetails/${course._id || course.id}`}>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer font-medium text-sm">
-              View Details
-            </button>
-          </Link>
-        </div>
-      </div>
+      </Link>
     </div>
   );
 };
