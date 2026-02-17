@@ -85,9 +85,14 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center gap-4 ml-4">
-              {
-                user?.role === "student" && (<Link to="/admin" className="text-white font-medium hover:text-white/80 transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10">Admin</Link>)
-              }
+                {["admin", "teacher"].includes(user?.role?.toLowerCase()) && (
+                  <Link
+                    to="/admin"
+                    className="text-white font-medium hover:text-white/80 transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link to="/profile">
                   <Avatar className="ring-2 ring-white/50 hover:ring-white transition-all duration-300">
                     <AvatarImage

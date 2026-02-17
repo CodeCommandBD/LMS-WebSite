@@ -20,7 +20,7 @@ export const registerUser = async (req, res) => {
     if (user) {
       return res.status(400).json({
         success: false,
-        message: "Account already exists with this email",
+        message: `Account already exists with this email as a ${user.role}. One email can only have one role.`,
       });
     }
 
@@ -60,6 +60,14 @@ export const loginUser = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Incorrect email or password" });
+    }
+
+    const { role } = req.body;
+    if (user.role !== role) {
+      return res.status(401).json({
+        success: false,
+        message: `Incorrect role selected. This email is registered as a ${user.role}.`,
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);

@@ -20,6 +20,7 @@ import UpdateCourse from "./Pages/admin/UpdateCourse";
 import CreateLecture from "./Pages/admin/CreateLecture";
 import EditLecture from "./Pages/admin/EditLecture";
 import PurchaseSuccess from "./Pages/PurchaseSuccess";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -67,7 +68,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/admin",
-        element: <AdminDashboard />,
+        element: (
+          <ProtectedRoute allowedRoles={["admin", "teacher"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
         children: [
           {
             path: "courses",

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema } from "@/schemas/signupSchema";
 import { useMutation } from "@tanstack/react-query";
@@ -34,6 +34,7 @@ const Signup = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
   } = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -170,26 +171,34 @@ const Signup = () => {
             {/* Role Field */}
             <div>
               <Label className="block text-gray-700 font-bold mb-2">Role</Label>
-              <RadioGroup defaultValue="student" className="flex gap-3">
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem
-                    className="text-blue-500"
-                    value="student"
-                    id="student"
-                    {...register("role")}
-                  />
-                  <Label htmlFor="student">Student</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem
-                    className="text-blue-500"
-                    value="teacher"
-                    id="teacher"
-                    {...register("role")}
-                  />
-                  <Label htmlFor="teacher">Teacher</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <RadioGroupItem
+                        className="text-blue-500"
+                        value="student"
+                        id="student"
+                      />
+                      <Label htmlFor="student">Student</Label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <RadioGroupItem
+                        className="text-blue-500"
+                        value="teacher"
+                        id="teacher"
+                      />
+                      <Label htmlFor="teacher">Teacher</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.role && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.role.message}

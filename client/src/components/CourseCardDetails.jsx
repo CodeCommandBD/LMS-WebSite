@@ -83,7 +83,8 @@ const CourseCardDetails = () => {
   });
 
   const isCreator =
-    user?._id === course?.creator?._id || user?._id === course?.creator;
+    (user?.role === "admin" || user?.role === "teacher") &&
+    (user?._id === course?.creator?._id || user?._id === course?.creator);
   const isEnrolled = statusData?.isEnrolled;
   const isWishlisted = statusData?.isWishlisted;
 
