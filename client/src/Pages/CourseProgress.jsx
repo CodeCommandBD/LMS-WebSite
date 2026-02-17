@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getCourseById } from "@/services/courseApi";
+import {
+  getCourseById,
+  getUserCourseProgressService,
+  updateLectureProgressService,
+} from "@/services/courseApi";
 import {
   Loader2,
   PlayCircle,
@@ -14,10 +18,13 @@ import {
   Layout,
   MessageSquare,
   FileText,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 
 const CourseProgress = () => {
   const { id } = useParams();
@@ -26,11 +33,29 @@ const CourseProgress = () => {
 
   const {
     data: courseData,
-    isLoading,
-    isError,
+    isLoading: isCourseLoading,
+    isError: isCourseError,
   } = useQuery({
     queryKey: ["courseDetails", id],
     queryFn: () => getCourseById(id),
+  });
+
+  const { data: progressData, isLoading: isProgressLoading } = useQuery({
+    queryKey: ["courseProgress", id],
+    queryFn: () => getUserCourseProgressService(id),
+  });
+
+  const queryClient = useQueryClient();
+
+  const updateProgressMutation = useMutation({
+    mutationFn: (lectureId) => updateLectureProgressService(id, lectureId),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["courseProgress", id], data);
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update progress");
+    },
   });
 
   const course = courseData?.course;
@@ -64,12 +89,37 @@ const CourseProgress = () => {
     }));
   };
 
+  const completedLectures = progressData?.progress?.completedLectures || [];
+
   // Initialize first lecture as current if none selected
   useEffect(() => {
     if (lectures.length > 0 && !currentLecture) {
       setCurrentLecture(lectures[0]);
     }
   }, [lectures, currentLecture]);
+
+  const handleNextLecture = () => {
+    // Optional: Mark current as complete when clicking 'Next' if not already done
+    if (!completedLectures.includes(currentLecture?._id)) {
+      handleToggleComplete(currentLecture?._id);
+    }
+
+    const currentIndex = lectures.findIndex(
+      (l) => l._id === currentLecture?._id,
+    );
+    if (currentIndex < lectures.length - 1) {
+      setCurrentLecture(lectures[currentIndex + 1]);
+      // Scroll to top of video area
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleToggleComplete = (lectureId) => {
+    updateProgressMutation.mutate(lectureId || currentLecture?._id);
+  };
+
+  const isLoading = isCourseLoading || isProgressLoading;
+  const isError = isCourseError;
 
   if (isLoading) {
     return (
@@ -139,7 +189,11 @@ const CourseProgress = () => {
               />
             </div>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-xs font-black h-10 px-6 rounded-xl shadow-lg shadow-blue-900/20">
+          <Button
+            onClick={handleNextLecture}
+            disabled={lectures.indexOf(currentLecture) === lectures.length - 1}
+            className="bg-blue-600 hover:bg-blue-700 text-xs font-black h-10 px-6 rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Complete & Next
           </Button>
         </div>
@@ -151,16 +205,32 @@ const CourseProgress = () => {
           {/* Video Section */}
           <div className="relative aspect-video w-full bg-black shadow-2xl">
             {currentLecture?.videoUrl ? (
-              <iframe
-                src={
-                  currentLecture.videoUrl.includes("youtube.com")
-                    ? currentLecture.videoUrl.replace("watch?v=", "embed/")
-                    : currentLecture.videoUrl
-                }
-                className="w-full h-full"
-                allowFullScreen
-                title={currentLecture.lectureTitle}
-              />
+              currentLecture.videoUrl.includes("youtube.com") ||
+              currentLecture.videoUrl.includes("youtu.be") ? (
+                <iframe
+                  src={
+                    currentLecture.videoUrl.includes("watch?v=")
+                      ? currentLecture.videoUrl.replace("watch?v=", "embed/")
+                      : currentLecture.videoUrl.includes("youtu.be/")
+                        ? currentLecture.videoUrl.replace(
+                            "youtu.be/",
+                            "youtube.com/embed/",
+                          )
+                        : currentLecture.videoUrl
+                  }
+                  className="w-full h-full"
+                  allowFullScreen
+                  title={currentLecture.lectureTitle}
+                />
+              ) : (
+                <video
+                  src={currentLecture.videoUrl}
+                  controls
+                  className="w-full h-full"
+                  controlsList="nodownload"
+                  key={currentLecture.videoUrl} // Force re-render on video change
+                />
+              )
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-slate-900 to-black">
                 <div className="p-8 rounded-full bg-white/5 border border-white/10 mb-6 group cursor-pointer hover:bg-white/10 transition-colors">
@@ -197,13 +267,37 @@ const CourseProgress = () => {
               <h2 className="text-3xl lg:text-5xl font-black tracking-tighter text-white">
                 {currentLecture?.lectureTitle}
               </h2>
-              <div className="flex items-center gap-4 text-sm font-bold text-gray-400">
-                <span className="flex items-center gap-1.5">
-                  <Globe className="h-4 w-4" /> English Audio
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Layout className="h-4 w-4" /> Supporting Docs
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm font-bold text-gray-400">
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="h-4 w-4" /> English Audio
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Layout className="h-4 w-4" /> Supporting Docs
+                  </span>
+                </div>
+                <Button
+                  onClick={() => handleToggleComplete()}
+                  disabled={updateProgressMutation.isPending}
+                  variant={
+                    completedLectures.includes(currentLecture?._id)
+                      ? "secondary"
+                      : "default"
+                  }
+                  className={`rounded-xl px-6 font-black h-12 transition-all ${
+                    completedLectures.includes(currentLecture?._id)
+                      ? "bg-green-500/10 text-green-500 hover:bg-green-500/20 border border-green-500/20"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20"
+                  }`}
+                >
+                  {completedLectures.includes(currentLecture?._id) ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" /> Completed
+                    </>
+                  ) : (
+                    "Mark as Complete"
+                  )}
+                </Button>
               </div>
             </div>
 
@@ -301,8 +395,9 @@ const CourseProgress = () => {
                             (l) => l._id === lecture._id,
                           );
                           const isActive = currentLecture?._id === lecture._id;
-                          const isCompleted =
-                            lectureIndex < lectures.indexOf(currentLecture);
+                          const isCompleted = completedLectures.includes(
+                            lecture._id,
+                          );
 
                           return (
                             <div
@@ -314,10 +409,16 @@ const CourseProgress = () => {
                                   : "hover:bg-white/5 border border-transparent"
                               }`}
                             >
-                              <div className="relative shrink-0 mt-0.5">
+                              <div
+                                className="relative shrink-0 mt-0.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleComplete(lecture._id);
+                                }}
+                              >
                                 {isCompleted ? (
-                                  <div className="w-5 h-5 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center shadow-lg shadow-green-900/10">
-                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                  <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-green-900/40">
+                                    <CheckCircle2 className="h-3 w-3 text-white" />
                                   </div>
                                 ) : isActive ? (
                                   <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-blue-900/40 animate-pulse">

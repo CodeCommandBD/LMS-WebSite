@@ -108,3 +108,21 @@ export const getDashboardStatsService = async () => {
   const response = await api.get("/purchase/stats");
   return response.data;
 };
+
+// Course Progress Services
+export const getUserCourseProgressService = async (courseId) => {
+  const response = await api.get(`/progress/${courseId}`);
+  return response.data;
+};
+
+export const updateLectureProgressService = async (courseId, lectureId) => {
+  const response = await api.post(
+    `/progress/${courseId}/lectures/${lectureId}/view`,
+  );
+  return response.data;
+};
+
+export const resetCourseProgressService = async (courseId) => {
+  const response = await api.post(`/progress/${courseId}/reset`);
+  return response.data;
+};
