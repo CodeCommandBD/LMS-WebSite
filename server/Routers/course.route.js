@@ -13,6 +13,9 @@ import {
   deleteLecture,
   publishCourse,
   getPublishedCourses,
+  enrollCourse,
+  toggleWishlist,
+  checkEnrollmentAndWishlist,
 } from "../Controller/course.controller.js";
 import {
   uploadCourseThumbnail,
@@ -49,5 +52,10 @@ router.delete("/:courseId/lectures/:lectureId", authenticate, deleteLecture);
 
 router.get("/published/all", getPublishedCourses); // Adding this for the Courses page
 router.patch("/:courseId/publish", authenticate, publishCourse);
+
+// Enrollment and Wishlist
+router.post("/:courseId/enroll", authenticate, enrollCourse);
+router.post("/:courseId/wishlist", authenticate, toggleWishlist);
+router.get("/:courseId/status", authenticate, checkEnrollmentAndWishlist);
 
 export default router;

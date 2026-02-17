@@ -1,5 +1,6 @@
-import Course from "../models/course.model.js";
-import Lecture from "../models/lecture.model.js";
+import Course from "../Models/course.model.js";
+import User from "../Models/user.model.js";
+import Lecture from "../Models/lecture.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 // Create a new course with title, category, and the logged-in user as creator
@@ -428,6 +429,90 @@ export const getPublishedCourses = async (req, res) => {
       success: true,
       courses,
       message: "Published courses fetched successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Enroll in a course
+export const enrollCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    const user = await User.findById(userId);
+    if (user.enrolledCourses.includes(courseId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Already enrolled in this course" });
+    }
+
+    // Add course to user's enrolledCourses
+    user.enrolledCourses.push(courseId);
+    await user.save();
+
+    // Add user to course's enrolledStudents
+    course.enrolledStudents.push(userId);
+    await course.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Enrolled successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Toggle Wishlist
+export const toggleWishlist = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    const isWishlisted = user.wishlist.includes(courseId);
+
+    if (isWishlisted) {
+      user.wishlist = user.wishlist.filter((id) => id.toString() !== courseId);
+    } else {
+      user.wishlist.push(courseId);
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      isWishlisted: !isWishlisted,
+      message: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Check Enrollment and Wishlist Status
+export const checkEnrollmentAndWishlist = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    const isEnrolled = user.enrolledCourses.includes(courseId);
+    const isWishlisted = user.wishlist.includes(courseId);
+
+    return res.status(200).json({
+      success: true,
+      isEnrolled,
+      isWishlisted,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

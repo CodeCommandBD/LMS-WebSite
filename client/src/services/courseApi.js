@@ -76,3 +76,19 @@ export const getPublishedCourses = async () => {
   const response = await api.get("/courses/published/all");
   return response.data.courses;
 };
+
+// Enrollment and Wishlist
+export const enrollCourseService = async (courseId) => {
+  const response = await api.post(`/courses/${courseId}/enroll`);
+  return response.data;
+};
+
+export const toggleWishlistService = async (courseId) => {
+  const response = await api.post(`/courses/${courseId}/wishlist`);
+  return response.data;
+};
+
+export const getCourseStatusService = async (courseId) => {
+  const response = await api.get(`/courses/${courseId}/status`);
+  return response.data;
+};
