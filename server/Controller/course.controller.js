@@ -1,5 +1,5 @@
 import Course from "../Models/course.model.js";
-import User from "../Models/user.model.js";
+import User from "../Models/user.model.js"; 
 import Lecture from "../Models/lecture.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
@@ -138,7 +138,9 @@ export const getCourseById = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    const course = await Course.findById(courseId).populate("lectures");
+    const course = await Course.findById(courseId)
+      .populate("lectures")
+      .populate("creator");
 
     if (!course) {
       return res
@@ -414,10 +416,9 @@ export const publishCourse = async (req, res) => {
 }; // get published courses
 export const getPublishedCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true }).populate({
-      path: "creator",
-      select: "name photoUrl",
-    });
+    const courses = await Course.find({ isPublished: true })
+      .populate("lectures")
+      .populate("creator");
     if (!courses || courses.length === 0) {
       return res.status(200).json({
         success: true,

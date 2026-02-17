@@ -255,7 +255,8 @@ const CourseCardDetails = () => {
                   Course Curriculum
                 </h2>
                 <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
-                  12 Sections • 84 Lectures • 22h 15m total length
+                  1 Section • {course.lectures?.length || 0} Lectures •{" "}
+                  {course.lectures?.length * 10 || 0}m total length
                 </span>
               </div>
 
@@ -266,11 +267,11 @@ const CourseCardDetails = () => {
                     <div className="flex items-center gap-3">
                       <ChevronDown className="h-5 w-5 text-gray-400" />
                       <h3 className="font-bold text-gray-900">
-                        Section {course.lectures ? "1" : "0"}: The Foundations
+                        Section 1: Course Content
                       </h3>
                     </div>
                     <span className="text-xs font-semibold text-gray-500 uppercase">
-                      {course.lectures?.length || 0} Lessons • 45m
+                      {course.lectures?.length || 0} Lessons
                     </span>
                   </div>
 
@@ -312,12 +313,16 @@ const CourseCardDetails = () => {
               <h2 className="text-2xl font-black text-gray-900">Instructor</h2>
               <div className="flex flex-col md:flex-row gap-8 items-start bg-blue-50/30 p-8 rounded-3xl border border-blue-100/50">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                    <img
-                      src="https://github.com/shadcn.png"
-                      alt="instructor"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-100 flex items-center justify-center">
+                    {course.creator?.profilePicture ? (
+                      <img
+                        src={course.creator.profilePicture}
+                        alt={course.creator.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className="h-10 w-10 text-gray-300" />
+                    )}
                   </div>
                   <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1.5 rounded-full shadow-lg">
                     <Award className="h-4 w-4 text-white" />
@@ -325,10 +330,11 @@ const CourseCardDetails = () => {
                 </div>
                 <div className="space-y-3 flex-1">
                   <h3 className="text-xl font-black text-gray-900">
-                    {course.creator?.name || "David Sterling"}
+                    {course.creator?.name || "Instructor"}
                   </h3>
                   <p className="text-blue-600 text-sm font-bold">
-                    National Geographic Contributor & Commercial Photographer
+                    {course.creator?.bio ||
+                      "Expert Educator & Industry Professional"}
                   </p>
                   <div className="flex gap-6 text-sm">
                     <div className="flex items-center gap-1.5">
@@ -337,13 +343,14 @@ const CourseCardDetails = () => {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4 text-gray-400" />
-                      <span className="font-bold">215,000 Students</span>
+                      <span className="font-bold">
+                        {course.enrolledStudents?.length || 0} Students
+                      </span>
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed max-w-2xl">
-                    David has spent the last 15 years traveling the globe
-                    capturing stunning landscapes and intimate portraits. His
-                    work has been featured in international galleries...
+                    {course.creator?.description ||
+                      `${course.creator?.name || "The instructor"} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.`}
                   </p>
                   <Button
                     variant="link"
