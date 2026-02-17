@@ -1,12 +1,14 @@
 import React from "react";
 import Navbar from "./components/Navbar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import { useAuthInit } from "./hooks/useAuthInit";
 import { Loader2 } from "lucide-react";
 
 const App = () => {
   const { isLoading } = useAuthInit();
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith("/admin");
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -18,10 +20,12 @@ const App = () => {
   }
 
   return (
-    <div className="">
-      <Navbar />
-      <Outlet />
-      <Footer />
+    <div className="flex flex-col min-h-screen">
+      {!isAdminPath && <Navbar />}
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      {!isAdminPath && <Footer />}
     </div>
   );
 };

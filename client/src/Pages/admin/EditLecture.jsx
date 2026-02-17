@@ -1,6 +1,13 @@
 import { ArrowLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -140,152 +147,244 @@ const EditLecture = () => {
 
   if (isCourseLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin h-10 w-10 text-gray-500" />
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 h-screen bg-gray-50">
-      <div className="flex items-center gap-3 mb-5">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl">
+      {/* Header Section */}
+      <div className="flex items-center gap-5">
+        <Link to={`/admin/courses/${courseId}/lectures`}>
+          <Button
+            variant="ghost"
+            type="button"
+            className="w-12 h-12 rounded-2xl bg-[#1e293b] hover:bg-gray-800 text-gray-400 hover:text-white transition-all shadow-xl flex items-center justify-center cursor-pointer"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
         <div>
-          <Link to={`/admin/courses/${courseId}/lectures`}>
-            <Button
-              variant="outline"
-              type="button"
-              className="cursor-pointer bg-gray-300 hover:bg-gray-400 text-black p-2 rounded-full"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            Edit Lecture
+          </h1>
+          <p className="text-gray-400 font-medium mt-1">
+            Refine your content for a better learning experience
+          </p>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Update Your Lecture</h1>
       </div>
-      <div className="bg-white rounded-xl p-6 max-w-2xl">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <h2 className="text-xl font-bold ">Edit Lecture</h2>
-          <p className="text-gray-500">Make changes to your lecture</p>
 
+      <Card className="bg-[#1e293b] border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <CardHeader className="p-10 border-b border-gray-800/50 flex flex-row items-center justify-between gap-6">
+          <div>
+            <CardTitle className="text-xl font-extrabold text-white">
+              Lecture Settings
+            </CardTitle>
+            <CardDescription className="text-gray-400 font-medium mt-1">
+              Update title, video content, and accessibility.
+            </CardDescription>
+          </div>
           <Button
             disabled={removeLectureMutation.isPending}
             onClick={handleRemoveLecture}
             variant="destructive"
             type="button"
-            className="cursor-pointer text-white mt-4 p-2"
+            className="px-6 py-6 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20 cursor-pointer text-white"
           >
-            {removeLectureMutation.isPending ? "Removing..." : "Remove Lecture"}
+            {removeLectureMutation.isPending ? "Removing..." : "Delete Lecture"}
           </Button>
+        </CardHeader>
+        <CardContent className="p-10">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {/* Left Column: Metadata */}
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <Label className="text-gray-300 font-bold ml-1">
+                    Lecture Title
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Enter lecture title"
+                    className={`bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600 font-bold ${errors.lectureTitle ? "ring-2 ring-red-500/50" : ""}`}
+                    {...register("lectureTitle")}
+                  />
+                  {errors.lectureTitle && (
+                    <p className="text-red-500 text-xs font-bold ml-1">
+                      {errors.lectureTitle.message}
+                    </p>
+                  )}
+                </div>
 
-          <div className="mt-10 flex flex-col gap-3">
-            <Label>Lecture Title</Label>
-            <Input
-              type="text"
-              placeholder="Enter lecture title"
-              {...register("lectureTitle")}
-            />
-            {errors.lectureTitle && (
-              <p className="text-red-500 text-sm">
-                {errors.lectureTitle.message}
-              </p>
-            )}
-          </div>
-          <div className="mt-10 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label>Lecture Video</Label>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="video-source-switch"
-                  checked={isYoutube}
-                  onCheckedChange={setIsYoutube}
-                />
-                <Label htmlFor="video-source-switch">YouTube Link</Label>
-              </div>
-            </div>
-            {isYoutube ? (
-              <Input
-                type="text"
-                placeholder="Enter YouTube URL"
-                {...register("videoUrl")}
-              />
-            ) : (
-              <Input
-                type="file"
-                accept="video/*"
-                {...register("lectureVideo")}
-                onChange={(e) => {
-                  handleVideoChange(e);
-                  register("lectureVideo").onChange(e); // Ensure react-hook-form also gets the event
-                }}
-              />
-            )}
-            {previewUrl && (
-              <div className="mt-4 w-full h-64 md:h-96">
-                <Label className="mb-2 block">Video Preview</Label>
-                {isYoutube ? (
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${
-                      previewUrl.split("v=")[1]?.split("&")[0] ||
-                      previewUrl.split("/").pop()
-                    }`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    className="rounded-lg border border-gray-200"
-                  ></iframe>
-                ) : (
-                  <video
-                    src={previewUrl}
-                    controls
-                    className="w-full h-full rounded-lg border border-gray-200 object-cover"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                <div className="p-6 bg-[#0f172a] rounded-3xl border border-gray-800 flex items-center justify-between shadow-inner">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${isFree ? "bg-green-500/20 text-green-500" : "bg-gray-800 text-gray-500"}`}
+                    >
+                      <ArrowLeft
+                        className={`w-5 h-5 ${isFree ? "rotate-90" : "-rotate-90"}`}
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="free-switch"
+                        className="text-white font-bold cursor-pointer"
+                      >
+                        Preview Mode
+                      </Label>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        Allow free access
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="free-switch"
+                    checked={isFree}
+                    onCheckedChange={(checked) => setValue("isFree", checked)}
+                    className="data-[state=checked]:bg-green-500"
+                  />
+                </div>
+
+                {uploadProgress > 0 && (
+                  <div className="space-y-3 p-6 bg-[#0f172a] rounded-3xl border border-blue-500/20">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-black text-blue-500 uppercase tracking-widest">
+                        Uploading Video
+                      </span>
+                      <span className="text-xs font-black text-white px-2 py-1 bg-blue-600 rounded-lg">
+                        {uploadProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(37,99,235,0.5)]"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-          <div className="mt-10 flex items-center gap-2">
-            <Switch
-              id="free-switch"
-              checked={isFree}
-              onCheckedChange={(checked) => setValue("isFree", checked)}
-            />
-            <Label htmlFor="free-switch">Is this video FREE</Label>
-          </div>
 
-          {uploadProgress > 0 && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-              <p className="text-sm text-gray-500 mt-1 text-center">
-                {uploadProgress}% Uploaded
-              </p>
+              {/* Right Column: Video Content */}
+              <div className="space-y-8">
+                <div className="flex flex-col gap-6 p-6 bg-[#0f172a] rounded-3xl border border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-gray-300 font-bold">
+                      Video Source
+                    </Label>
+                    <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-900 rounded-xl border border-gray-800">
+                      <Switch
+                        id="video-source-switch"
+                        checked={isYoutube}
+                        onCheckedChange={setIsYoutube}
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                      <Label
+                        htmlFor="video-source-switch"
+                        className="text-[10px] font-black uppercase tracking-widest text-gray-400"
+                      >
+                        YouTube
+                      </Label>
+                    </div>
+                  </div>
+
+                  {isYoutube ? (
+                    <Input
+                      type="text"
+                      placeholder="Paste YouTube Link (e.g., https://youtu.be/...)"
+                      className="bg-[#1e293b] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-red-500 transition-all placeholder:text-gray-700 font-bold text-sm"
+                      {...register("videoUrl")}
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        id="lectureVideo"
+                        {...register("lectureVideo")}
+                        onChange={(e) => {
+                          handleVideoChange(e);
+                          register("lectureVideo").onChange(e);
+                        }}
+                      />
+                      <Label
+                        htmlFor="lectureVideo"
+                        className="w-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-800 rounded-2xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer group"
+                      >
+                        <p className="text-gray-500 text-xs font-bold group-hover:text-blue-400 transition-colors uppercase tracking-widest">
+                          Select Video File
+                        </p>
+                      </Label>
+                    </div>
+                  )}
+
+                  {previewUrl && (
+                    <div className="space-y-3 pt-4">
+                      <Label className="text-gray-500 text-[10px] font-black uppercase tracking-widest ml-1">
+                        Video Preview
+                      </Label>
+                      <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-2xl ring-2 ring-gray-800/50">
+                        {isYoutube ? (
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            src={`https://www.youtube.com/embed/${
+                              previewUrl.split("v=")[1]?.split("&")[0] ||
+                              previewUrl.split("/").pop()
+                            }`}
+                            title="YouTube video player"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            className="w-full h-full"
+                          ></iframe>
+                        ) : (
+                          <video
+                            src={previewUrl}
+                            controls
+                            className="w-full h-full object-cover"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
 
-          <div className="mt-10">
-            <Button
-              disabled={editLectureMutation.isPending}
-              type="submit"
-              className="cursor-pointer text-white mt-4 p-2"
-            >
-              {editLectureMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...
-                </>
-              ) : (
-                "Update Lecture"
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
+            <div className="flex items-center justify-end gap-3 pt-10 border-t border-gray-800/50">
+              <Link to={`/admin/courses/${courseId}/lectures`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="px-8 py-6 rounded-2xl font-bold text-gray-400 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"
+                >
+                  Discard
+                </Button>
+              </Link>
+              <Button
+                disabled={editLectureMutation.isPending}
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-6 rounded-2xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20 cursor-pointer"
+              >
+                {editLectureMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Save Lecture Changes"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -102,13 +102,14 @@ const useEditCourse = () => {
 
     // Directly add fields to FormData (Easy to understand)
     formData.append("courseTitle", data.courseTitle);
-    formData.append("subTitle", data.subTitle);
-    formData.append("description", data.description);
+    formData.append("subTitle", data.subTitle || "");
+    formData.append("description", data.description || "");
     formData.append("category", data.category);
     formData.append("courseLevel", data.courseLevel);
-    formData.append("price", data.price);
+    formData.append("price", Number(data.price) || 0);
 
     // Add thumbnail file (if selected)
+    // Check if it's a FileList or an actual file from selectThumbnail
     if (data.courseThumbnail?.[0]) {
       formData.append("courseThumbnail", data.courseThumbnail[0]);
     }
