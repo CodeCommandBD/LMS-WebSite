@@ -92,3 +92,9 @@ export const getCourseStatusService = async (courseId) => {
   const response = await api.get(`/courses/${courseId}/status`);
   return response.data;
 };
+
+// Purchase / Payment
+export const createCheckoutSessionService = async (courseId) => {
+  const response = await api.post(`/purchase/checkout`, { courseId });
+  return response.data;
+};

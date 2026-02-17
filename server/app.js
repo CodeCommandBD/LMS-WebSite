@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import userRouter from "./Routers/user.route.js";
 import courseRouter from "./Routers/course.route.js";
+import purchaseRouter from "./Routers/purchase.route.js";
 dotenv.config();
 
 const app = express();
@@ -16,6 +17,10 @@ app.use(
     credentials: true, // Allow cookies
   }),
 );
+
+// Specific route for Stripe Webhook to handle raw body
+app.post("/api/v1/purchase/webhook", express.raw({ type: "application/json" }));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -26,5 +31,6 @@ app.use("/uploads", express.static("uploads"));
 // routes api
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/courses", courseRouter);
+app.use("/api/v1/purchase", purchaseRouter);
 
 export default app;

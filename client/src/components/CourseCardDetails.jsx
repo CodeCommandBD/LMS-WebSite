@@ -28,6 +28,7 @@ import {
   enrollCourseService,
   toggleWishlistService,
   getCourseStatusService,
+  createCheckoutSessionService,
 } from "@/services/courseApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -48,13 +49,25 @@ const CourseCardDetails = () => {
   });
 
   const enrollMutation = useMutation({
-    mutationFn: () => enrollCourseService(id),
+    mutationFn: async () => {
+      if (course?.price > 0) {
+        const data = await createCheckoutSessionService(id);
+        if (data.url) {
+          window.location.href = data.url; // Redirect to Stripe
+        }
+        return data;
+      } else {
+        return enrollCourseService(id);
+      }
+    },
     onSuccess: (data) => {
-      toast.success(data.message || "Enrolled successfully!");
-      queryClient.invalidateQueries(["courseStatus", id]);
+      if (course?.price === 0) {
+        toast.success(data.message || "Enrolled successfully!");
+        queryClient.invalidateQueries(["courseStatus", id]);
+      }
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Enrollment failed");
+      toast.error(error.response?.data?.message || "Action failed");
     },
   });
 
