@@ -46,6 +46,7 @@ const EditLecture = () => {
       lectureVideo: undefined,
       videoUrl: "",
       isFree: false,
+      sectionName: "Course Content",
     },
   });
 
@@ -63,12 +64,21 @@ const EditLecture = () => {
       if (lecture) {
         setValue("lectureTitle", lecture.lectureTitle);
         setValue("isFree", lecture.isPreviewFree);
-        setValue("videoUrl", lecture.videoUrl);
+
         if (lecture.videoUrl) {
-          setVideoPreview(lecture.videoUrl); // Assuming backend returns videoUrl
-          if (!lecture.publicId) {
-            setIsYoutube(true);
+          setVideoPreview(lecture.videoUrl);
+          const isActuallyYoutube = !lecture.videoUrl.includes("cloudinary");
+          setIsYoutube(isActuallyYoutube);
+
+          if (isActuallyYoutube) {
+            setValue("videoUrl", lecture.videoUrl);
+          } else {
+            setValue("videoUrl", ""); // Clear it so it doesn't get sent back as a YouTube URL
           }
+        }
+
+        if (lecture.sectionName) {
+          setValue("sectionName", lecture.sectionName);
         }
       }
     }
@@ -98,6 +108,9 @@ const EditLecture = () => {
         formData.append("videoUrl", data.videoUrl);
       }
       formData.append("isPreviewFree", data.isFree);
+      if (data.sectionName) {
+        formData.append("sectionName", data.sectionName);
+      }
 
       return editLectureService(
         courseId,
@@ -216,6 +229,22 @@ const EditLecture = () => {
                       {errors.lectureTitle.message}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-gray-300 font-bold ml-1">
+                    Section / Module Name
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Ex. Module 1: Introduction"
+                    className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600 font-bold"
+                    {...register("sectionName")}
+                  />
+                  <p className="text-gray-500 text-[10px] italic ml-1">
+                    Grouping lectures by section makes your curriculum
+                    organized.
+                  </p>
                 </div>
 
                 <div className="p-6 bg-[#0f172a] rounded-3xl border border-gray-800 flex items-center justify-between shadow-inner">

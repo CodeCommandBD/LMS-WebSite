@@ -20,6 +20,10 @@ const lectureSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    sectionName: {
+      type: String,
+      default: "Course Content",
+    },
     createdAt: {
       type: Date,
       default: Date.now,

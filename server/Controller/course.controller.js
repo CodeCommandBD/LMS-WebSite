@@ -1,7 +1,10 @@
 import Course from "../Models/course.model.js";
-import User from "../Models/user.model.js"; 
+import User from "../Models/user.model.js";
 import Lecture from "../Models/lecture.model.js";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
 // Create a new course with title, category, and the logged-in user as creator
 export const createCourse = async (req, res) => {
@@ -208,6 +211,7 @@ export const createLecture = async (req, res) => {
     // 2. Create Lecture
     const lecture = await Lecture.create({
       lectureTitle,
+      sectionName: req.body.sectionName || "Course Content",
       course: courseId,
     });
 
@@ -250,25 +254,27 @@ export const getCourseLectures = async (req, res) => {
 export const editLecture = async (req, res) => {
   try {
     const { courseId, lectureId } = req.params;
-    const { lectureTitle, videoInfo, isPreviewFree } = req.body;
+    const { lectureTitle, videoUrl, isPreviewFree, sectionName } = req.body;
+    const file = req.file;
 
-    // 1. Find the lecture
+    // 1. Check if course and lecture exists
     const lecture = await Lecture.findById(lectureId);
     if (!lecture) {
-      return res.status(404).json({
-        success: false,
-        message: "Lecture not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Lecture not found" });
     }
 
-    // 2. Update lecture fields
-    if (lectureTitle) lecture.lectureTitle = lectureTitle;
-    if (videoInfo?.videoUrl) lecture.videoUrl = videoInfo.videoUrl;
-    if (videoInfo?.publicId) lecture.publicId = videoInfo.publicId;
-    if (isPreviewFree !== undefined) lecture.isPreviewFree = isPreviewFree;
+    // 2. Update Basic Fields
+    if (lectureTitle !== undefined) lecture.lectureTitle = lectureTitle;
+    if (sectionName !== undefined) lecture.sectionName = sectionName;
+    if (isPreviewFree !== undefined) {
+      lecture.isPreviewFree =
+        isPreviewFree === "true" || isPreviewFree === true;
+    }
 
     // Handle video upload or YouTube URL
-    if (req.file) {
+    if (file) {
       // 1. Upload to Cloudinary
       const result = await uploadToCloudinary(req.file.path, "lms/lectures");
       if (!result.success) {
@@ -285,17 +291,14 @@ export const editLecture = async (req, res) => {
       // 3. Update lecture with new video
       lecture.videoUrl = result.url;
       lecture.publicId = result.publicId;
-
-      // 4. Delete local file
-      // fs.unlinkSync(req.file.path); // Assuming fs is imported, or handled by middleware/cleanup
-    } else if (req.body.videoUrl) {
-      // Handle YouTube URL
+    } else if (videoUrl && !videoUrl.includes("res.cloudinary.com")) {
+      // Handle YouTube URL (only if it's not a Cloudinary URL)
       // If switching to YouTube, delete old Cloudinary video
       if (lecture.publicId) {
         await deleteFromCloudinary(lecture.publicId);
       }
-      lecture.videoUrl = req.body.videoUrl;
-      lecture.publicId = null; // Clear publicId as it's not a Cloudinary video
+      lecture.videoUrl = videoUrl;
+      lecture.publicId = null; // Clear publicId for YouTube
     }
 
     await lecture.save();

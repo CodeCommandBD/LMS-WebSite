@@ -33,6 +33,7 @@ const CreateLecture = () => {
     resolver: zodResolver(lectureSchema),
     defaultValues: {
       lectureTitle: "",
+      sectionName: "Course Content",
     },
   });
 
@@ -43,7 +44,8 @@ const CreateLecture = () => {
   });
 
   const createLectureMutation = useMutation({
-    mutationFn: (data) => createLectureService(courseId, data.lectureTitle),
+    mutationFn: (data) =>
+      createLectureService(courseId, data.lectureTitle, data.sectionName),
     onSuccess: () => {
       toast.success("Lecture created successfully");
       queryClient.invalidateQueries({ queryKey: ["course", courseId] }); // Optionally invalidate course query if it fetches lectures
@@ -109,6 +111,20 @@ const CreateLecture = () => {
                     {errors.lectureTitle.message}
                   </p>
                 )}
+              </div>
+              <div className="space-y-3">
+                <Label className="text-gray-300 font-bold ml-1">
+                  Section / Module Name
+                </Label>
+                <Input
+                  {...register("sectionName")}
+                  type="text"
+                  placeholder="Ex. Module 1: Introduction"
+                  className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600 font-bold"
+                />
+                <p className="text-gray-500 text-[10px] italic ml-1">
+                  Lectures with same section name will be grouped together.
+                </p>
               </div>
 
               <div className="flex items-center gap-3 pt-4">

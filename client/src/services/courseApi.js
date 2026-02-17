@@ -27,10 +27,15 @@ export const getCourseById = async (courseId) => {
   return response.data;
 };
 
-// create a lecture
-export const createLectureService = async (courseId, lectureTitle) => {
+// create lecture
+export const createLectureService = async (
+  courseId,
+  lectureTitle,
+  sectionName,
+) => {
   const response = await api.post(`/courses/${courseId}/lectures`, {
     lectureTitle,
+    sectionName,
   });
   return response.data;
 };

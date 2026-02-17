@@ -36,6 +36,34 @@ const CourseProgress = () => {
   const course = courseData?.course;
   const lectures = course?.lectures || [];
 
+  const groupedLectures = lectures.reduce((acc, lecture) => {
+    const section = lecture.sectionName || "Course Content";
+    if (!acc[section]) {
+      acc[section] = [];
+    }
+    acc[section].push(lecture);
+    return acc;
+  }, {});
+
+  const [openSections, setOpenSections] = useState({});
+
+  useEffect(() => {
+    if (Object.keys(groupedLectures).length > 0) {
+      const initialOpen = {};
+      Object.keys(groupedLectures).forEach((section) => {
+        initialOpen[section] = true;
+      });
+      setOpenSections(initialOpen);
+    }
+  }, [course]);
+
+  const toggleSection = (sectionName) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionName]: !prev[sectionName],
+    }));
+  };
+
   // Initialize first lecture as current if none selected
   useEffect(() => {
     if (lectures.length > 0 && !currentLecture) {
@@ -245,67 +273,95 @@ const CourseProgress = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="p-3 space-y-2">
-              {lectures.map((lecture, index) => {
-                const isActive = currentLecture?._id === lecture._id;
-                const isCompleted = index < lectures.indexOf(currentLecture);
-
-                return (
-                  <div
-                    key={lecture._id}
-                    onClick={() => setCurrentLecture(lecture)}
-                    className={`group relative flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 ${
-                      isActive
-                        ? "bg-blue-600/10 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
-                        : "hover:bg-white/5 border border-transparent"
-                    }`}
-                  >
-                    {/* Status Circle */}
-                    <div className="relative shrink-0 mt-1">
-                      {isCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center shadow-lg shadow-green-900/10">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                        </div>
-                      ) : isActive ? (
-                        <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-blue-900/40 animate-pulse">
-                          <PlayCircle className="h-3.5 w-3.5 text-white" />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-gray-500 group-hover:border-white/30 transition-colors">
-                          {index + 1}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Lecture Text */}
-                    <div className="flex-1 min-w-0">
-                      <h4
-                        className={`text-sm font-bold truncate transition-colors ${
-                          isActive
-                            ? "text-blue-400"
-                            : "text-gray-300 group-hover:text-white"
-                        }`}
-                      >
-                        {lecture.lectureTitle}
-                      </h4>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-[10px] font-black text-gray-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> 10m
-                        </span>
-                        {lecture.isPreviewFree && (
-                          <Badge className="bg-indigo-500/10 text-indigo-400 border-0 text-[8px] h-4 px-1.5 font-black uppercase tracking-widest">
-                            Free
-                          </Badge>
-                        )}
+            <div className="p-3 space-y-4">
+              {Object.entries(groupedLectures).map(
+                ([sectionName, sectionLectures], sIndex) => (
+                  <div key={sectionName} className="space-y-2">
+                    <div
+                      onClick={() => toggleSection(sectionName)}
+                      className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-white/5 rounded-xl transition-colors group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ChevronRight
+                          className={`h-4 w-4 text-blue-500 transition-transform duration-300 ${openSections[sectionName] ? "rotate-90" : ""}`}
+                        />
+                        <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-blue-400">
+                          {sectionName}
+                        </h4>
                       </div>
+                      <span className="text-[9px] font-bold text-gray-600 bg-white/5 px-2 py-0.5 rounded-md">
+                        {sectionLectures.length}
+                      </span>
                     </div>
 
-                    {isActive && (
-                      <div className="absolute left-0 top-4 bottom-4 w-1 bg-blue-500 rounded-r-full" />
+                    {openSections[sectionName] && (
+                      <div className="space-y-1 pl-1 animate-in fade-in slide-in-from-top-1 duration-300">
+                        {sectionLectures.map((lecture) => {
+                          const lectureIndex = lectures.findIndex(
+                            (l) => l._id === lecture._id,
+                          );
+                          const isActive = currentLecture?._id === lecture._id;
+                          const isCompleted =
+                            lectureIndex < lectures.indexOf(currentLecture);
+
+                          return (
+                            <div
+                              key={lecture._id}
+                              onClick={() => setCurrentLecture(lecture)}
+                              className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
+                                isActive
+                                  ? "bg-blue-600/10 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]"
+                                  : "hover:bg-white/5 border border-transparent"
+                              }`}
+                            >
+                              <div className="relative shrink-0 mt-0.5">
+                                {isCompleted ? (
+                                  <div className="w-5 h-5 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center shadow-lg shadow-green-900/10">
+                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                  </div>
+                                ) : isActive ? (
+                                  <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-blue-900/40 animate-pulse">
+                                    <PlayCircle className="h-3 w-3 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-black text-gray-500 group-hover:border-white/30 transition-colors">
+                                    {lectureIndex + 1}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className={`text-[13px] font-bold leading-tight line-clamp-2 transition-colors ${
+                                    isActive
+                                      ? "text-blue-400"
+                                      : "text-gray-300 group-hover:text-white"
+                                  }`}
+                                >
+                                  {lecture.lectureTitle}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1.5 font-bold">
+                                  <span className="text-[9px] text-gray-500 flex items-center gap-1 uppercase tracking-tighter">
+                                    <Clock className="h-2.5 w-2.5" /> 10 mins
+                                  </span>
+                                  {lecture.isPreviewFree && (
+                                    <span className="text-[8px] text-blue-400/80 bg-blue-400/5 px-1.5 py-0.5 rounded border border-blue-400/10 uppercase tracking-widest">
+                                      Preview
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="absolute left-[-2px] top-4 bottom-4 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                );
-              })}
+                ),
+              )}
             </div>
           </div>
 

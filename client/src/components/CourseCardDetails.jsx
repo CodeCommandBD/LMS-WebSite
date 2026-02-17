@@ -23,6 +23,12 @@ import {
 import { useCourseDetails } from "@/hooks/useCourseDetails";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import {
   enrollCourseService,
@@ -40,6 +46,9 @@ const CourseCardDetails = () => {
   const queryClient = useQueryClient();
   const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("About");
+  const [isCurriculumOpen, setIsCurriculumOpen] = useState(true);
+  const [selectedPreviewVideo, setSelectedPreviewVideo] = useState(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   const { course, isLoading, isError, error } = useCourseDetails();
   const { data: statusData } = useQuery({
@@ -87,6 +96,42 @@ const CourseCardDetails = () => {
     (user?._id === course?.creator?._id || user?._id === course?.creator);
   const isEnrolled = statusData?.isEnrolled;
   const isWishlisted = statusData?.isWishlisted;
+
+  const handlePreviewClick = (lecture) => {
+    if (lecture.isPreviewFree) {
+      setSelectedPreviewVideo(lecture);
+      setIsPreviewModalOpen(true);
+    }
+  };
+
+  const groupedLectures = course?.lectures?.reduce((acc, lecture) => {
+    const section = lecture.sectionName || "Course Content";
+    if (!acc[section]) {
+      acc[section] = [];
+    }
+    acc[section].push(lecture);
+    return acc;
+  }, {});
+
+  const [openSections, setOpenSections] = useState({});
+
+  const toggleSection = (sectionName) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionName]: !prev[sectionName],
+    }));
+  };
+
+  // Initialize all sections to open by default
+  React.useEffect(() => {
+    if (groupedLectures) {
+      const initialOpen = {};
+      Object.keys(groupedLectures).forEach((section) => {
+        initialOpen[section] = true;
+      });
+      setOpenSections(initialOpen);
+    }
+  }, [course]);
 
   if (isLoading) {
     return (
@@ -182,14 +227,16 @@ const CourseCardDetails = () => {
                       />
                     ))}
                   </div>
-                  <span className="font-bold text-gray-900">4.9</span>
+                  <span className="font-bold text-gray-900">4.5</span>
                   <span className="text-gray-500 text-sm">
-                    (12,430 ratings)
+                    ({course.enrolledStudents?.length * 2 || 0} reviews)
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <Users className="h-4 w-4 text-gray-400" />
-                  <span className="font-semibold">45,000+ Students</span>
+                  <span className="font-semibold">
+                    {course.enrolledStudents?.length || 0} Students
+                  </span>
                 </div>
               </div>
             </div>
@@ -261,50 +308,75 @@ const CourseCardDetails = () => {
               </div>
 
               <div className="space-y-4">
-                {/* Mocking major sections like in the image */}
-                <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-center justify-between p-5 bg-gray-50/50 cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                      <h3 className="font-bold text-gray-900">
-                        Section 1: Course Content
-                      </h3>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">
-                      {course.lectures?.length || 0} Lessons
-                    </span>
-                  </div>
-
-                  <div className="p-2 space-y-1">
-                    {course.lectures?.map((lecture, index) => (
+                {groupedLectures &&
+                  Object.entries(groupedLectures).map(
+                    ([sectionName, lectures], sIndex) => (
                       <div
-                        key={lecture._id}
-                        className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group"
+                        key={sectionName}
+                        className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
                       >
-                        <div className="flex items-center gap-4">
-                          {index === 0 ? (
-                            <PlayCircle className="h-5 w-5 text-blue-500" />
-                          ) : (
-                            <Lock className="h-4 w-4 text-gray-300" />
-                          )}
-                          <span className="text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors">
-                            {index + 1}. {lecture.lectureTitle}
+                        <div
+                          onClick={() => toggleSection(sectionName)}
+                          className="flex items-center justify-between p-5 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <ChevronDown
+                              className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${openSections[sectionName] ? "" : "-rotate-90"}`}
+                            />
+                            <h3 className="font-bold text-gray-900">
+                              {sectionName}
+                            </h3>
+                          </div>
+                          <span className="text-xs font-semibold text-gray-500 uppercase">
+                            {lectures.length} Lessons
                           </span>
                         </div>
-                        <div className="flex items-center gap-4">
-                          {index === 0 && (
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-600">
-                              Preview
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-400 font-medium">
-                            10:15
-                          </span>
-                        </div>
+
+                        {openSections[sectionName] && (
+                          <div className="p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {lectures.map((lecture, index) => (
+                              <div
+                                key={lecture._id}
+                                className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
+                                  lecture.isPreviewFree
+                                    ? "hover:bg-blue-50 cursor-pointer"
+                                    : "hover:bg-gray-50 opacity-80"
+                                }`}
+                                onClick={() => handlePreviewClick(lecture)}
+                              >
+                                <div className="flex items-center gap-4">
+                                  {lecture.isPreviewFree ? (
+                                    <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
+                                  ) : (
+                                    <Lock className="h-4 w-4 text-gray-400" />
+                                  )}
+                                  <span
+                                    className={`text-sm font-bold transition-colors ${
+                                      lecture.isPreviewFree
+                                        ? "text-gray-900 group-hover:text-blue-600"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    {index + 1}. {lecture.lectureTitle}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  {lecture.isPreviewFree && (
+                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
+                                      Preview
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-gray-400 font-medium">
+                                    {lecture.duration || "10:00"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    ),
+                  )}
               </div>
             </div>
 
@@ -487,6 +559,33 @@ const CourseCardDetails = () => {
           </div>
         </div>
       </div>
+      <Dialog open={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-black border-0 overflow-hidden rounded-2xl shadow-2xl">
+          <DialogHeader className="p-4 bg-white/5 backdrop-blur-md absolute top-0 left-0 w-full z-10">
+            <DialogTitle className="text-white text-lg font-bold truncate pr-8">
+              Preview: {selectedPreviewVideo?.lectureTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="aspect-video w-full flex items-center justify-center bg-zinc-900">
+            {selectedPreviewVideo?.videoUrl ? (
+              <video
+                src={selectedPreviewVideo.videoUrl}
+                controls
+                autoPlay
+                className="w-full h-full"
+                controlsList="nodownload"
+              />
+            ) : (
+              <div className="text-gray-400 flex flex-col items-center gap-3">
+                <PlayCircle className="h-16 w-16 opacity-20" />
+                <p className="font-medium">
+                  No video source available for this preview
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

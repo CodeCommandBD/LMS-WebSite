@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Controller } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import useEditCourse from "@/hooks/useEditCourse";
 
 const CourseTab = () => {
