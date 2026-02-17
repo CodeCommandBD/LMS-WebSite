@@ -30,7 +30,7 @@ router.put(
   uploadCourseThumbnail.single("courseThumbnail"),
   editCourse,
 );
-router.get("/:courseId", authenticate, getCourseById);
+router.get("/:courseId", getCourseById);
 router.delete("/:courseId", authenticate, deleteCourse);
 router.post(
   "/:courseId/lectures",
