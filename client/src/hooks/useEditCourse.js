@@ -4,7 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { editCourse, getCourseById } from "@/services/courseApi";
+import {
+  editCourse,
+  getCourseById,
+  togglePublishCourse,
+} from "@/services/courseApi";
 import { editCourseSchema } from "@/schemas/editCourseSchema";
 
 const useEditCourse = () => {
@@ -79,14 +83,14 @@ const useEditCourse = () => {
   // 4. Update Course Mutation
   const editCourseMutation = useMutation({
     mutationFn: ({ courseId, formData }) => editCourse(courseId, formData),
-    onSuccess: () => {
-      toast.success("Course edited successfully");
+    onSuccess: (data) => {
+      toast.success(data.message || "Course edited successfully");
       // Refresh queries to show updated data
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to edit course");
+      toast.error(error.response?.data?.message || "Failed to edit course");
     },
   });
 
@@ -110,6 +114,21 @@ const useEditCourse = () => {
     editCourseMutation.mutate({ courseId, formData });
   };
 
+  // Toggle Publish Course Mutation
+  const togglePublishCourseMutaion = useMutation({
+    mutationFn: () => togglePublishCourse(courseId),
+    onSuccess: (data) => {
+      toast.success(data.message || "Course status updated");
+      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["instructorCourses"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update course status",
+      );
+    },
+  });
+
   return {
     register,
     handleSubmit,
@@ -121,6 +140,8 @@ const useEditCourse = () => {
     isLoading,
     isError,
     isPending: editCourseMutation.isPending,
+    togglePublishCourseMutaion,
+    course,
   };
 };
 

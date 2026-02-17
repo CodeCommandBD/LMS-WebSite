@@ -64,3 +64,9 @@ export const deleteLectureService = async (courseId, lectureId) => {
   );
   return response.data;
 };
+
+// toggle publish course
+export const togglePublishCourse = async (courseId) => {
+  const response = await api.patch(`/courses/${courseId}/publish`);
+  return response.data;
+};

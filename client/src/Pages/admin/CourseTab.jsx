@@ -32,6 +32,8 @@ const CourseTab = () => {
     isLoading,
     isError,
     isPending,
+    togglePublishCourseMutaion,
+    course,
   } = useEditCourse();
 
   if (isLoading || isPending) {
@@ -65,7 +67,12 @@ const CourseTab = () => {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button className="cursor-pointer">Unpublish</Button>
+            <Button
+              onClick={() => togglePublishCourseMutaion.mutate()}
+              className="cursor-pointer"
+            >
+              {course?.isPublished ? "Unpublish" : "Publish"}
+            </Button>
             <Button variant="destructive" className="text-white cursor-pointer">
               Remove Course
             </Button>
