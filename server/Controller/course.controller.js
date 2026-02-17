@@ -361,6 +361,7 @@ export const publishCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
 
+    // 1. Find the course
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({
@@ -369,10 +370,34 @@ export const publishCourse = async (req, res) => {
       });
     }
 
+    // 2. Ownership Check: Only the creator can publish/unpublish
+    if (course.creator.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only the creator can publish this course",
+      });
+    }
+
+    // 3. Validation: Prevent publishing if no lectures exist
+    if (
+      !course.isPublished &&
+      (!course.lectures || course.lectures.length === 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Course must have at least one lecture before publishing",
+      });
+    }
+
+    // 4. Toggle publish status and sync 'status' field
     course.isPublished = !course.isPublished;
+    course.status = course.isPublished ? "Published" : "Draft";
+
     await course.save();
 
-    const message = course.isPublished ? "Course published successfully" : "Course unpublished successfully";
+    const message = course.isPublished
+      ? "Course published successfully"
+      : "Course unpublished successfully";
 
     return res.status(200).json({
       success: true,
