@@ -317,6 +317,7 @@ export const editLecture = async (req, res) => {
   }
 };
 
+// delete lecture
 export const deleteLecture = async (req, res) => {
   try {
     const { courseId, lectureId } = req.params;
@@ -346,6 +347,37 @@ export const deleteLecture = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Lecture deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Publish course
+export const publishCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    course.isPublished = !course.isPublished;
+    await course.save();
+
+    const message = course.isPublished ? "Course published successfully" : "Course unpublished successfully";
+
+    return res.status(200).json({
+      success: true,
+      course,
+      message,
     });
   } catch (error) {
     return res.status(500).json({
