@@ -7,6 +7,7 @@ import userRouter from "./Routers/user.route.js";
 import courseRouter from "./Routers/course.route.js";
 import purchaseRouter from "./Routers/purchase.route.js";
 import courseProgressRouter from "./Routers/courseProgress.route.js";
+import quizRouter from "./Routers/quiz.route.js";
 dotenv.config();
 
 const app = express();
@@ -34,5 +35,6 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/courses", courseRouter);
 app.use("/api/v1/purchase", purchaseRouter);
 app.use("/api/v1/progress", courseProgressRouter);
+app.use("/api/v1/quiz", quizRouter);
 
 export default app;

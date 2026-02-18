@@ -9,6 +9,9 @@ const App = () => {
   const { isLoading } = useAuthInit();
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
+  const isCourseProgressPath = location.pathname.startsWith("/course-progress");
+
+  const hideNavbarFooter = isAdminPath || isCourseProgressPath;
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -21,11 +24,11 @@ const App = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminPath && <Navbar />}
+      {!hideNavbarFooter && <Navbar />}
       <main className="flex-1">
         <Outlet />
       </main>
-      {!isAdminPath && <Footer />}
+      {!hideNavbarFooter && <Footer />}
     </div>
   );
 };

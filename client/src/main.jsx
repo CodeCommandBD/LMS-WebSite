@@ -26,6 +26,7 @@ import EditLecture from "./Pages/admin/EditLecture";
 import PurchaseSuccess from "./Pages/PurchaseSuccess";
 import CourseProgress from "./Pages/CourseProgress";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminQuizManager from "./Pages/admin/AdminQuizManager";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -114,6 +115,10 @@ const router = createBrowserRouter([
           {
             path: "courses/:id/lectures/:lectureId",
             element: <EditLecture />,
+          },
+          {
+            path: "courses/:id/quizzes",
+            element: <AdminQuizManager />,
           },
         ],
       },

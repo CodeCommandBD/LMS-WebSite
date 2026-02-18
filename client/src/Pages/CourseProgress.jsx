@@ -25,11 +25,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
+import { getCourseQuizzesWithStatusService } from "@/services/quizApi";
+import QuizPlayer from "@/components/QuizPlayer";
 
 const CourseProgress = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentLecture, setCurrentLecture] = useState(null);
+  const [openSections, setOpenSections] = useState({});
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [activeQuiz, setActiveQuiz] = useState(null);
 
   const {
     data: courseData,
@@ -43,6 +48,11 @@ const CourseProgress = () => {
   const { data: progressData, isLoading: isProgressLoading } = useQuery({
     queryKey: ["courseProgress", id],
     queryFn: () => getUserCourseProgressService(id),
+  });
+
+  const { data: quizzesData } = useQuery({
+    queryKey: ["courseQuizzes", id],
+    queryFn: () => getCourseQuizzesWithStatusService(id),
   });
 
   const queryClient = useQueryClient();
@@ -70,8 +80,6 @@ const CourseProgress = () => {
     return acc;
   }, {});
 
-  const [openSections, setOpenSections] = useState({});
-
   useEffect(() => {
     if (Object.keys(groupedLectures).length > 0) {
       const initialOpen = {};
@@ -90,6 +98,68 @@ const CourseProgress = () => {
   };
 
   const completedLectures = progressData?.progress?.completedLectures || [];
+
+  // Gating Logic
+  const getSectionStatus = (sectionName) => {
+    const sectionIndex = Object.keys(groupedLectures).indexOf(sectionName);
+    if (sectionIndex === 0) return "unlocked";
+
+    const prevSectionName = Object.keys(groupedLectures)[sectionIndex - 1];
+    const prevSectionLectures = groupedLectures[prevSectionName];
+
+    // 1. All previous lectures must be completed
+    const allPrevLecturesDone = prevSectionLectures.every((l) =>
+      completedLectures.includes(l._id),
+    );
+
+    // 2. Previous section quiz must be passed (if it exists)
+    const prevQuiz = quizzesData?.quizzes?.find(
+      (q) => q.sectionName === prevSectionName,
+    );
+
+    if (!allPrevLecturesDone) return "locked";
+
+    // If a quiz exists for the previous section, it must be passed
+    if (prevQuiz && !prevQuiz.latestAttempt?.isPassed) {
+      return "locked";
+    }
+
+    return "unlocked";
+  };
+
+  const handleNextMilestone = () => {
+    const currentSectionName = currentLecture?.sectionName || "Course Content";
+
+    if (!quizzesData?.quizzes) {
+      return toast.error("Quiz data is still loading. Please wait a moment.");
+    }
+
+    const sectionQuiz = quizzesData.quizzes.find(
+      (q) =>
+        q.sectionName?.trim().toLowerCase() ===
+        currentSectionName.trim().toLowerCase(),
+    );
+
+    if (sectionQuiz) {
+      setActiveQuiz(sectionQuiz);
+      setShowQuiz(true);
+    } else {
+      toast(
+        `No quiz found for "${currentSectionName}". Complete all lectures in this section to proceed.`,
+        {
+          icon: "ℹ️",
+        },
+      );
+    }
+  };
+
+  const handleQuizComplete = (isPassed) => {
+    setShowQuiz(false);
+    if (isPassed) {
+      queryClient.invalidateQueries(["courseQuizzes", id]);
+      toast.success("Section Unlocked!");
+    }
+  };
 
   // Initialize first lecture as current if none selected
   useEffect(() => {
@@ -398,25 +468,36 @@ const CourseProgress = () => {
                           const isCompleted = completedLectures.includes(
                             lecture._id,
                           );
+                          const sectionStatus = getSectionStatus(sectionName);
+                          const isLocked = sectionStatus === "locked";
 
                           return (
                             <div
                               key={lecture._id}
-                              onClick={() => setCurrentLecture(lecture)}
+                              onClick={() =>
+                                !isLocked && setCurrentLecture(lecture)
+                              }
                               className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
                                 isActive
                                   ? "bg-blue-600/10 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]"
-                                  : "hover:bg-white/5 border border-transparent"
+                                  : isLocked
+                                    ? "opacity-50 grayscale cursor-not-allowed"
+                                    : "hover:bg-white/5 border border-transparent"
                               }`}
                             >
                               <div
                                 className="relative shrink-0 mt-0.5"
                                 onClick={(e) => {
+                                  if (isLocked) return;
                                   e.stopPropagation();
                                   handleToggleComplete(lecture._id);
                                 }}
                               >
-                                {isCompleted ? (
+                                {isLocked ? (
+                                  <div className="w-5 h-5 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center">
+                                    <Lock className="h-2.5 w-2.5 text-gray-600" />
+                                  </div>
+                                ) : isCompleted ? (
                                   <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-green-900/40">
                                     <CheckCircle2 className="h-3 w-3 text-white" />
                                   </div>
@@ -467,12 +548,22 @@ const CourseProgress = () => {
           </div>
 
           <div className="p-6 bg-blue-600/5 border-t border-white/5">
-            <Button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-black h-12 rounded-xl tracking-widest uppercase">
+            <Button
+              onClick={handleNextMilestone}
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-black h-12 rounded-xl tracking-widest uppercase"
+            >
               Next Milestone <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </aside>
       </main>
+
+      {/* QUIZ PLAYER OVERLAY */}
+      {showQuiz && activeQuiz && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-6 bg-[#0f172a]/95 backdrop-blur-xl animate-in fade-in duration-300">
+          <QuizPlayer quiz={activeQuiz} onComplete={handleQuizComplete} />
+        </div>
+      )}
 
       {/* Global CSS for scrollbar */}
       <style
