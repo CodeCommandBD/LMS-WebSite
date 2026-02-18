@@ -176,16 +176,22 @@ const CourseCardDetails = () => {
       {/* 1. BREADCRUMBS */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
         <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-          <span className="hover:text-blue-600 cursor-pointer transition-colors">
+          <span
+            onClick={() => navigate("/")}
+            className="hover:text-blue-600 cursor-pointer transition-colors"
+          >
             Home
           </span>
           <ChevronRight className="h-4 w-4" />
-          <span className="hover:text-blue-600 cursor-pointer transition-colors">
+          <span
+            onClick={() => navigate("/courses")}
+            className="hover:text-blue-600 cursor-pointer transition-colors"
+          >
             Courses
           </span>
           <ChevronRight className="h-4 w-4" />
           <span className="text-gray-900 font-semibold truncate">
-            {course.category || "General"}
+            {course.courseTitle}
           </span>
         </div>
       </div>
@@ -440,23 +446,42 @@ const CourseCardDetails = () => {
         <div className="lg:col-span-4 lg:relative">
           <div className="lg:sticky lg:top-32 space-y-6">
             <div className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 p-8 space-y-8 transition-transform hover:-translate-y-1">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl font-black text-gray-900 tracking-tight">
-                    ৳{course.price}
-                  </span>
-                  <span className="text-lg text-gray-400 line-through font-medium">
-                    ৳{course.price + 500}
-                  </span>
-                  <Badge className="bg-green-100 text-green-700 border-0 font-bold px-2 py-0.5">
-                    40% OFF
-                  </Badge>
+              {/* Price section - only show for non-enrolled users */}
+              {!isEnrolled && !isCreator && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl font-black text-gray-900 tracking-tight">
+                      ৳{course.price}
+                    </span>
+                    {course.discount > 0 && (
+                      <>
+                        <span className="text-lg text-gray-400 line-through font-medium">
+                          ৳
+                          {Math.round(
+                            course.price / (1 - course.discount / 100),
+                          )}
+                        </span>
+                        <Badge className="bg-green-100 text-green-700 border-0 font-bold px-2 py-0.5">
+                          {course.discount}% OFF
+                        </Badge>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-red-500 font-bold text-xs">
-                  <Clock className="h-3 w-3 animate-pulse" />
-                  <span>18 hours left at this price!</span>
+              )}
+
+              {/* Enrolled user greeting */}
+              {isEnrolled && (
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-2">
+                  <div className="flex items-center gap-2 text-green-700 font-black text-sm">
+                    <CheckCircle2 className="h-5 w-5" />
+                    You're enrolled in this course
+                  </div>
+                  <p className="text-green-600 text-xs font-medium">
+                    Continue where you left off
+                  </p>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-3">
                 <Button
@@ -479,12 +504,14 @@ const CourseCardDetails = () => {
                   {isCreator
                     ? "Manage Course"
                     : isEnrolled
-                      ? "Go to Course"
+                      ? "Continue Learning"
                       : "Enroll Now"}
                 </Button>
-                <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-2">
-                  30-day money-back guarantee
-                </p>
+                {!isEnrolled && !isCreator && (
+                  <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-2">
+                    30-day money-back guarantee
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-100">
@@ -513,49 +540,53 @@ const CourseCardDetails = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
-                  <Share2 className="h-4 w-4" /> Share
-                </button>
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      navigate("/login");
-                      return;
-                    }
-                    wishlistMutation.mutate();
-                  }}
-                  disabled={wishlistMutation.isPending}
-                  className={`flex items-center gap-2 text-xs font-black transition-colors uppercase tracking-widest ${
-                    isWishlisted
-                      ? "text-red-500"
-                      : "text-gray-500 hover:text-red-500"
-                  }`}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
-                  />
-                  {isWishlisted ? "Saved" : "Save"}
-                </button>
-                <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
-                  <Gift className="h-4 w-4" /> Gift
-                </button>
-              </div>
+              {!isEnrolled && (
+                <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
+                    <Share2 className="h-4 w-4" /> Share
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!user) {
+                        navigate("/login");
+                        return;
+                      }
+                      wishlistMutation.mutate();
+                    }}
+                    disabled={wishlistMutation.isPending}
+                    className={`flex items-center gap-2 text-xs font-black transition-colors uppercase tracking-widest ${
+                      isWishlisted
+                        ? "text-red-500"
+                        : "text-gray-500 hover:text-red-500"
+                    }`}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
+                    />
+                    {isWishlisted ? "Saved" : "Save"}
+                  </button>
+                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
+                    <Gift className="h-4 w-4" /> Gift
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="flex bg-gray-100/50 rounded-2xl p-2 border border-gray-200">
-              <input
-                type="text"
-                placeholder="Enter Coupon Code"
-                className="bg-transparent border-0 flex-1 px-4 text-sm font-bold placeholder:text-gray-400 focus:ring-0"
-              />
-              <Button
-                variant="ghost"
-                className="text-blue-600 font-black text-xs hover:bg-white rounded-xl shadow-sm transition-all"
-              >
-                Apply
-              </Button>
-            </div>
+            {!isEnrolled && !isCreator && (
+              <div className="flex bg-gray-100/50 rounded-2xl p-2 border border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Enter Coupon Code"
+                  className="bg-transparent border-0 flex-1 px-4 text-sm font-bold placeholder:text-gray-400 focus:ring-0"
+                />
+                <Button
+                  variant="ghost"
+                  className="text-blue-600 font-black text-xs hover:bg-white rounded-xl shadow-sm transition-all"
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
