@@ -569,9 +569,11 @@ const CourseCardDetails = () => {
           <div className="aspect-video w-full flex items-center justify-center bg-zinc-900">
             {selectedPreviewVideo?.videoUrl ? (
               <video
+                key={selectedPreviewVideo._id || selectedPreviewVideo.videoUrl}
                 src={selectedPreviewVideo.videoUrl}
                 controls
                 autoPlay
+                playsInline
                 className="w-full h-full"
                 controlsList="nodownload"
               />

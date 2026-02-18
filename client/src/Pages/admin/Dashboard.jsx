@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardStatsService } from "@/services/courseApi";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -26,9 +24,26 @@ import {
   ArrowUpRight,
   MoreHorizontal,
   GraduationCap,
+  UserPlus,
+  CheckCircle,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Helper to format time ago
+const formatTimeAgo = (dateStr) => {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+};
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -53,55 +68,23 @@ const Dashboard = () => {
     );
   }
 
-  const { totalRevenue, totalSales, courseStats } = data?.stats || {
-    totalRevenue: 0,
-    totalSales: 0,
-    courseStats: [],
-  };
+  const {
+    totalRevenue = 0,
+    totalSales = 0,
+    courseStats = [],
+    totalStudents = 0,
+    activeCourses = 0,
+    completionRate = 0,
+    engagementData = [],
+    recentActivity = [],
+    categoryEnrollment = [],
+  } = data?.stats || {};
 
-  // Mock data for the engagement chart
-  const engagementData = [
-    { name: "Nov 01", value: 30 },
-    { name: "Nov 05", value: 45 },
-    { name: "Nov 10", value: 40 },
-    { name: "Nov 15", value: 65 },
-    { name: "Nov 20", value: 55 },
-    { name: "Nov 25", value: 80 },
-    { name: "Nov 30", value: 95 },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      type: "registration",
-      user: "John Doe",
-      action: "enrolled in Python 101",
-      time: "2 mins ago",
-      iconColor: "bg-blue-500/20 text-blue-500",
-    },
-    {
-      id: 2,
-      type: "completion",
-      user: "Sarah Smith",
-      action: "finished UX Design Basics",
-      time: "1 hour ago",
-      iconColor: "bg-green-500/20 text-green-500",
-    },
-    {
-      id: 3,
-      type: "approval",
-      user: "System",
-      action: 'New course "Advanced AI" needs review',
-      time: "3 hours ago",
-      iconColor: "bg-yellow-500/20 text-yellow-500",
-    },
-  ];
-
-  const departments = [
-    { name: "Computer Science", value: 856, color: "bg-blue-500" },
-    { name: "Business Administration", value: 643, color: "bg-purple-500" },
-    { name: "Graphic Design", value: 432, color: "bg-cyan-500" },
-  ];
+  // Find the max value in category enrollment for the progress bar
+  const maxCategoryValue = Math.max(
+    ...categoryEnrollment.map((c) => c.value),
+    1,
+  );
 
   return (
     <div className="space-y-8 text-white">
@@ -151,36 +134,36 @@ const Dashboard = () => {
         {[
           {
             label: "Total Students",
-            value: "12,450",
-            change: "+5.2%",
-            growth: "from last month",
+            value: totalStudents.toLocaleString(),
+            change: `${totalStudents}`,
+            growth: "registered students",
             icon: GraduationCap,
             color: "text-blue-500",
             bgColor: "bg-blue-500/10",
           },
           {
             label: "Active Courses",
-            value: totalSales + 40,
-            change: "+2.4%",
-            growth: "new this week",
+            value: activeCourses,
+            change: `${activeCourses}`,
+            growth: "published courses",
             icon: BookOpen,
             color: "text-purple-500",
             bgColor: "bg-purple-500/10",
           },
           {
             label: "Total Revenue",
-            value: `৳${(totalRevenue / 1000).toFixed(0)}k`,
-            change: "+12%",
-            growth: "growth rate",
+            value: `৳${totalRevenue > 0 ? (totalRevenue / 1000).toFixed(0) + "k" : "0"}`,
+            change: `${totalSales} sales`,
+            growth: "total enrollments",
             icon: DollarSign,
             color: "text-emerald-500",
             bgColor: "bg-emerald-500/10",
           },
           {
             label: "Completion Rate",
-            value: "78%",
-            change: "+3%",
-            growth: "vs industry avg",
+            value: `${completionRate}%`,
+            change: `${completionRate}%`,
+            growth: "course completions",
             icon: TrendingUp,
             color: "text-amber-500",
             bgColor: "bg-amber-500/10",
@@ -228,16 +211,15 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-10 relative">
             <div>
               <CardTitle className="text-2xl font-black mb-1 text-white tracking-tight">
-                Course Engagement
+                Enrollment Trend
               </CardTitle>
               <p className="text-gray-300 text-xs font-bold italic opacity-70">
-                Average daily active students over the last 30 days
+                Daily enrollments over the last 30 days
               </p>
             </div>
-            <select className="bg-[#0f172a] border border-gray-800 rounded-xl px-4 py-2 text-xs font-black focus:ring-1 focus:ring-blue-500 outline-none text-white appearance-none cursor-pointer">
-              <option>Last 30 Days</option>
-              <option>Last 7 Days</option>
-            </select>
+            <div className="bg-[#0f172a] border border-gray-800 rounded-xl px-4 py-2 text-xs font-black text-white">
+              Last 30 Days
+            </div>
           </div>
 
           <div className="h-[350px] w-full mt-4">
@@ -263,6 +245,7 @@ const Dashboard = () => {
                   tickLine={false}
                   axisLine={false}
                   dy={10}
+                  interval={4}
                 />
                 <YAxis
                   stroke="#94a3b8"
@@ -270,7 +253,7 @@ const Dashboard = () => {
                   fontWeight="bold"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(val) => `${val}%`}
+                  allowDecimals={false}
                 />
                 <Tooltip
                   contentStyle={{
@@ -297,6 +280,7 @@ const Dashboard = () => {
                   strokeWidth={4}
                   fillOpacity={1}
                   fill="url(#colorValue)"
+                  name="Enrollments"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -314,38 +298,44 @@ const Dashboard = () => {
 
           <div className="space-y-8 relative">
             {/* Timeline Line */}
-            <div className="absolute left-[19px] top-2 bottom-6 w-0.5 bg-gray-800"></div>
+            {recentActivity.length > 0 && (
+              <div className="absolute left-[19px] top-2 bottom-6 w-0.5 bg-gray-800"></div>
+            )}
 
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="relative flex gap-4">
-                <div
-                  className={`z-10 w-10 h-10 rounded-full flex items-center justify-center border-4 border-[#1e293b] ${activity.iconColor} shadow-lg shadow-black/20`}
-                >
-                  {activity.type === "registration" && (
-                    <Users className="w-4 h-4" />
-                  )}
-                  {activity.type === "completion" && (
-                    <TrendingUp className="w-4 h-4" />
-                  )}
-                  {activity.type === "approval" && (
-                    <FileText className="w-4 h-4" />
-                  )}
+            {recentActivity.length === 0 ? (
+              <p className="text-gray-400 text-sm italic text-center py-8">
+                No recent activity yet
+              </p>
+            ) : (
+              recentActivity.map((activity, index) => (
+                <div key={index} className="relative flex gap-4">
+                  <div
+                    className={`z-10 w-10 h-10 rounded-full flex items-center justify-center border-4 border-[#1e293b] shadow-lg shadow-black/20 ${
+                      activity.type === "enrollment"
+                        ? "bg-blue-500/20 text-blue-500"
+                        : "bg-green-500/20 text-green-500"
+                    }`}
+                  >
+                    {activity.type === "enrollment" ? (
+                      <UserPlus className="w-4 h-4" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-black text-white mb-0.5">
+                      {activity.userName}
+                    </p>
+                    <p className="text-xs text-gray-200 font-bold line-clamp-2 italic opacity-80">
+                      {activity.action}
+                    </p>
+                    <p className="text-[10px] text-blue-400 font-black mt-2 uppercase tracking-widest">
+                      {formatTimeAgo(activity.time)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-black text-white mb-0.5">
-                    {activity.user === "System"
-                      ? "System Notification"
-                      : activity.user}
-                  </p>
-                  <p className="text-xs text-gray-200 font-bold line-clamp-2 italic opacity-80">
-                    {activity.action}
-                  </p>
-                  <p className="text-[10px] text-blue-400 font-black mt-2 uppercase tracking-widest">
-                    {activity.time}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <button className="w-full mt-10 py-4 bg-[#0f172a] hover:bg-gray-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-gray-800 shadow-xl">
@@ -354,15 +344,15 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Bottom Row - Enrollment Details */}
+      {/* Bottom Row - Enrollment by Category */}
       <Card className="bg-[#1e293b] border border-gray-800/50 rounded-[2.5rem] p-10 shadow-2xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
           <div>
             <CardTitle className="text-2xl font-black mb-2 text-white uppercase tracking-tighter">
-              Enrollment by Department
+              Enrollment by Category
             </CardTitle>
             <p className="text-gray-300 text-sm font-bold italic opacity-70">
-              Distribution of active students across major faculties
+              Distribution of enrolled students across course categories
             </p>
           </div>
           <button className="text-blue-400 text-xs font-black uppercase tracking-widest hover:text-blue-300 transition-colors">
@@ -371,24 +361,32 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-10">
-          {departments.map((dept, i) => (
-            <div key={i} className="space-y-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-white uppercase tracking-wider">
-                  {dept.name}
-                </span>
-                <span className="font-black tabular-nums text-white text-base">
-                  {dept.value}
-                </span>
+          {categoryEnrollment.length === 0 ? (
+            <p className="text-gray-400 text-sm italic text-center py-8">
+              No enrollment data yet
+            </p>
+          ) : (
+            categoryEnrollment.map((cat, i) => (
+              <div key={i} className="space-y-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-white uppercase tracking-wider">
+                    {cat.name}
+                  </span>
+                  <span className="font-black tabular-nums text-white text-base">
+                    {cat.value}
+                  </span>
+                </div>
+                <div className="h-3 w-full bg-[#0f172a] rounded-full overflow-hidden border border-gray-800/50 p-[2px]">
+                  <div
+                    className={`h-full ${cat.color} rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(59,130,246,0.3)]`}
+                    style={{
+                      width: `${Math.max((cat.value / maxCategoryValue) * 100, 2)}%`,
+                    }}
+                  ></div>
+                </div>
               </div>
-              <div className="h-3 w-full bg-[#0f172a] rounded-full overflow-hidden border border-gray-800/50 p-[2px]">
-                <div
-                  className={`h-full ${dept.color} rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(59,130,246,0.3)]`}
-                  style={{ width: `${(dept.value / 1000) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Card>
     </div>

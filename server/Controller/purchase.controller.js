@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import Purchase from "../models/purchase.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
+import CourseProgress from "../models/courseProgress.model.js";
 
 // Helper to get Stripe instance
 const getStripe = () => {
@@ -178,17 +179,20 @@ export const getDashboardStats = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    let query = {};
+    let courseQuery = {};
+    let purchaseQuery = {};
     if (userRole === "teacher") {
       // Teachers only see their own courses
-      const courses = await Course.find({ creator: userId });
-      const courseIds = courses.map((course) => course._id);
-      query = { courseId: { $in: courseIds } };
+      const teacherCourses = await Course.find({ creator: userId });
+      const courseIds = teacherCourses.map((course) => course._id);
+      purchaseQuery = { courseId: { $in: courseIds } };
+      courseQuery = { creator: userId };
     }
     // Admins see everything (empty query)
 
+    // --- Existing: Revenue & Sales ---
     const purchases = await Purchase.find({
-      ...query,
+      ...purchaseQuery,
       status: "completed",
     }).populate("courseId");
 
@@ -198,21 +202,145 @@ export const getDashboardStats = async (req, res) => {
     // Aggregate stats by course
     const courseStatsMap = {};
     purchases.forEach((purchase) => {
-      const courseId = purchase.courseId?._id?.toString();
+      const cId = purchase.courseId?._id?.toString();
       const courseTitle = purchase.courseId?.courseTitle || "Unknown Course";
-
-      if (!courseStatsMap[courseId]) {
-        courseStatsMap[courseId] = {
-          name: courseTitle,
-          revenue: 0,
-          sales: 0,
-        };
+      if (!courseStatsMap[cId]) {
+        courseStatsMap[cId] = { name: courseTitle, revenue: 0, sales: 0 };
       }
-      courseStatsMap[courseId].revenue += purchase.amount;
-      courseStatsMap[courseId].sales += 1;
+      courseStatsMap[cId].revenue += purchase.amount;
+      courseStatsMap[cId].sales += 1;
+    });
+    const courseStats = Object.values(courseStatsMap);
+
+    // --- NEW: Total Students ---
+    const totalStudents = await User.countDocuments({ role: "student" });
+
+    // --- NEW: Active (Published) Courses ---
+    const activeCourses = await Course.countDocuments({
+      ...courseQuery,
+      isPublished: true,
     });
 
-    const courseStats = Object.values(courseStatsMap);
+    // --- NEW: Completion Rate ---
+    const allCourses = await Course.find(courseQuery).select("_id");
+    const allCourseIds = allCourses.map((c) => c._id);
+    const totalProgressEntries = await CourseProgress.countDocuments({
+      courseId: { $in: allCourseIds },
+    });
+    const completedProgressEntries = await CourseProgress.countDocuments({
+      courseId: { $in: allCourseIds },
+      isCompleted: true,
+    });
+    const completionRate =
+      totalProgressEntries > 0
+        ? Math.round((completedProgressEntries / totalProgressEntries) * 100)
+        : 0;
+
+    // --- NEW: Engagement Data (enrollment trend last 30 days) ---
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentPurchases = await Purchase.find({
+      ...purchaseQuery,
+      status: "completed",
+      createdAt: { $gte: thirtyDaysAgo },
+    }).select("createdAt");
+
+    // Group by date
+    const engagementMap = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (29 - i));
+      const key = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+      });
+      engagementMap[key] = 0;
+    }
+    recentPurchases.forEach((p) => {
+      const key = new Date(p.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+      });
+      if (engagementMap[key] !== undefined) {
+        engagementMap[key]++;
+      }
+    });
+    const engagementData = Object.entries(engagementMap).map(
+      ([name, value]) => ({
+        name,
+        value,
+      }),
+    );
+
+    // --- NEW: Recent Activity (last 5 enrollments) ---
+    const recentEnrollments = await Purchase.find({
+      ...purchaseQuery,
+      status: "completed",
+    })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("userId", "name profilePicture")
+      .populate("courseId", "courseTitle");
+
+    const recentCompletions = await CourseProgress.find({
+      courseId: { $in: allCourseIds },
+      isCompleted: true,
+    })
+      .sort({ updatedAt: -1 })
+      .limit(5)
+      .populate("userId", "name profilePicture")
+      .populate("courseId", "courseTitle");
+
+    // Merge and sort by time, take top 5
+    const activityItems = [
+      ...recentEnrollments.map((e) => ({
+        type: "enrollment",
+        userName: e.userId?.name || "Unknown",
+        userAvatar: e.userId?.profilePicture || "",
+        action: `enrolled in ${e.courseId?.courseTitle || "a course"}`,
+        time: e.createdAt,
+      })),
+      ...recentCompletions.map((c) => ({
+        type: "completion",
+        userName: c.userId?.name || "Unknown",
+        userAvatar: c.userId?.profilePicture || "",
+        action: `completed ${c.courseId?.courseTitle || "a course"}`,
+        time: c.updatedAt,
+      })),
+    ];
+    activityItems.sort((a, b) => new Date(b.time) - new Date(a.time));
+    const recentActivity = activityItems.slice(0, 5);
+
+    // --- NEW: Category Enrollment ---
+    const allCoursesWithCategory = await Course.find(courseQuery).select(
+      "category enrolledStudents",
+    );
+    const categoryMap = {};
+    allCoursesWithCategory.forEach((course) => {
+      const cat = course.category || "Uncategorized";
+      if (!categoryMap[cat]) {
+        categoryMap[cat] = 0;
+      }
+      categoryMap[cat] += course.enrolledStudents?.length || 0;
+    });
+    const categoryColors = [
+      "bg-blue-500",
+      "bg-purple-500",
+      "bg-cyan-500",
+      "bg-emerald-500",
+      "bg-amber-500",
+      "bg-rose-500",
+      "bg-indigo-500",
+      "bg-teal-500",
+    ];
+    const categoryEnrollment = Object.entries(categoryMap)
+      .map(([name, value], i) => ({
+        name,
+        value,
+        color: categoryColors[i % categoryColors.length],
+      }))
+      .sort((a, b) => b.value - a.value);
 
     return res.status(200).json({
       success: true,
@@ -220,6 +348,12 @@ export const getDashboardStats = async (req, res) => {
         totalRevenue,
         totalSales,
         courseStats,
+        totalStudents,
+        activeCourses,
+        completionRate,
+        engagementData,
+        recentActivity,
+        categoryEnrollment,
       },
     });
   } catch (error) {
