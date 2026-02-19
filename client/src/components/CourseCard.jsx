@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getCourseReviewsService } from "@/services/courseApi";
 
 /**
  * CourseCard Component
@@ -9,8 +11,15 @@ import { Star } from "lucide-react";
  * floating price badges, and instructor details.
  */
 const CourseCard = ({ course }) => {
-  // Mock rating since it's not in the DB yet
-  const rating = (Math.random() * (5 - 4) + 4).toFixed(1);
+  const { data: reviewsData } = useQuery({
+    queryKey: ["courseReviews", course._id || course.id],
+    queryFn: () => getCourseReviewsService(course._id || course.id),
+    enabled: !!(course._id || course.id),
+    staleTime: 5 * 60 * 1000, // cache for 5 min to avoid refetching on every card
+  });
+
+  const rating = reviewsData?.averageRating || 0;
+  const totalReviews = reviewsData?.totalReviews || 0;
 
   return (
     <div

@@ -1,4 +1,6 @@
 import User from "../models/user.model.js";
+import Course from "../Models/course.model.js";
+import Review from "../models/review.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
@@ -236,6 +238,65 @@ export const updateProfile = async (req, res) => {
             : `${process.env.BACKEND_URL || "http://localhost:4000"}/${updatedUser.profilePicture}`
           : null,
       },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Public: get instructor profile
+export const getInstructorProfile = async (req, res) => {
+  try {
+    const { instructorId } = req.params;
+
+    const instructor = await User.findById(instructorId).select(
+      "-password -enrolledCourses -wishlist",
+    );
+    if (!instructor || !["teacher", "admin"].includes(instructor.role)) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Instructor not found" });
+    }
+
+    // Get all published courses by this instructor
+    const courses = await Course.find({
+      creator: instructorId,
+      isPublished: true,
+    })
+      .populate("lectures", "lectureTitle")
+      .select(
+        "courseTitle courseThumbnail category price enrolledStudents lectures",
+      );
+
+    // Total students across all courses
+    const totalStudents = courses.reduce(
+      (sum, c) => sum + (c.enrolledStudents?.length || 0),
+      0,
+    );
+
+    // Average rating across all courses
+    const courseIds = courses.map((c) => c._id);
+    const reviews = await Review.find({ courseId: { $in: courseIds } });
+    const totalRatings = reviews.reduce((sum, r) => sum + r.rating, 0);
+    const averageRating =
+      reviews.length > 0
+        ? parseFloat((totalRatings / reviews.length).toFixed(1))
+        : 0;
+
+    return res.status(200).json({
+      success: true,
+      instructor: {
+        _id: instructor._id,
+        name: instructor.name,
+        bio: instructor.bio,
+        description: instructor.description,
+        profilePicture: instructor.profilePicture,
+        totalCourses: courses.length,
+        totalStudents,
+        averageRating,
+        totalReviews: reviews.length,
+      },
+      courses,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

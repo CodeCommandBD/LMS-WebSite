@@ -5,6 +5,7 @@ import {
   logoutUser,
   getCurrentUser,
   updateProfile,
+  getInstructorProfile,
 } from "../Controller/user.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { uploadProfilePicture } from "../middleware/upload.middleware.js";
@@ -22,6 +23,9 @@ router.get("/test-cookies", (req, res) => {
     user: req.user,
   });
 });
+// Public: get instructor profile
+router.get("/instructor/:instructorId", getInstructorProfile);
+
 router.put(
   "/update-profile",
   authenticate,

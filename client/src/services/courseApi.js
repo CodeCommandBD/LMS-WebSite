@@ -126,3 +126,25 @@ export const resetCourseProgressService = async (courseId) => {
   const response = await api.post(`/progress/${courseId}/reset`);
   return response.data;
 };
+
+// Review Services
+export const getCourseReviewsService = async (courseId) => {
+  const response = await api.get(`/reviews/${courseId}`);
+  return response.data;
+};
+
+export const submitReviewService = async (courseId, reviewData) => {
+  const response = await api.post(`/reviews/${courseId}`, reviewData);
+  return response.data;
+};
+
+export const deleteReviewService = async (courseId) => {
+  const response = await api.delete(`/reviews/${courseId}`);
+  return response.data;
+};
+
+// Instructor Profile
+export const getInstructorProfileService = async (instructorId) => {
+  const response = await api.get(`/users/instructor/${instructorId}`);
+  return response.data;
+};

@@ -27,6 +27,7 @@ import PurchaseSuccess from "./Pages/PurchaseSuccess";
 import CourseProgress from "./Pages/CourseProgress";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminQuizManager from "./Pages/admin/AdminQuizManager";
+import InstructorProfile from "./Pages/InstructorProfile";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -79,6 +80,10 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <Profile />,
+      },
+      {
+        path: "/instructor/:id",
+        element: <InstructorProfile />,
       },
       {
         path: "/admin",

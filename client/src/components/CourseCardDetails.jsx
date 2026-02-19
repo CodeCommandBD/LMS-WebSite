@@ -19,6 +19,8 @@ import {
   FileText,
   Smartphone,
   Tv,
+  Trash2,
+  Send,
 } from "lucide-react";
 import { useCourseDetails } from "@/hooks/useCourseDetails";
 import { Badge } from "@/components/ui/badge";
@@ -35,10 +37,31 @@ import {
   toggleWishlistService,
   getCourseStatusService,
   createCheckoutSessionService,
+  getCourseReviewsService,
+  submitReviewService,
+  deleteReviewService,
 } from "@/services/courseApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+
+// Helper: render star icons for a given rating
+const StarRating = ({ rating, size = "h-4 w-4" }) => {
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`${size} ${
+            i <= Math.round(rating)
+              ? "text-yellow-500 fill-current"
+              : "text-gray-300"
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
 
 const CourseCardDetails = () => {
   const { id } = useParams();
@@ -49,12 +72,53 @@ const CourseCardDetails = () => {
   const [isCurriculumOpen, setIsCurriculumOpen] = useState(true);
   const [selectedPreviewVideo, setSelectedPreviewVideo] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
 
   const { course, isLoading, isError, error } = useCourseDetails();
   const { data: statusData } = useQuery({
     queryKey: ["courseStatus", id],
     queryFn: () => getCourseStatusService(id),
     enabled: !!user && !!id,
+  });
+
+  // Fetch reviews
+  const { data: reviewsData } = useQuery({
+    queryKey: ["courseReviews", id],
+    queryFn: () => getCourseReviewsService(id),
+    enabled: !!id,
+  });
+
+  const averageRating = reviewsData?.averageRating || 0;
+  const totalReviews = reviewsData?.totalReviews || 0;
+  const reviews = reviewsData?.reviews || [];
+  const distribution = reviewsData?.distribution || {};
+
+  // Submit review mutation
+  const reviewMutation = useMutation({
+    mutationFn: (data) => submitReviewService(id, data),
+    onSuccess: () => {
+      toast.success("Review submitted!");
+      setReviewRating(0);
+      setReviewComment("");
+      queryClient.invalidateQueries(["courseReviews", id]);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to submit review");
+    },
+  });
+
+  // Delete review mutation
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => deleteReviewService(id),
+    onSuccess: () => {
+      toast.success("Review deleted");
+      queryClient.invalidateQueries(["courseReviews", id]);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to delete");
+    },
   });
 
   const enrollMutation = useMutation({
@@ -225,17 +289,12 @@ const CourseCardDetails = () => {
 
               <div className="flex flex-wrap items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="flex text-yellow-500">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${i === 5 ? "text-gray-300" : "fill-current"}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="font-bold text-gray-900">4.5</span>
+                  <StarRating rating={averageRating} />
+                  <span className="font-bold text-gray-900">
+                    {averageRating}
+                  </span>
                   <span className="text-gray-500 text-sm">
-                    ({course.enrolledStudents?.length * 2 || 0} reviews)
+                    ({totalReviews} {totalReviews === 1 ? "review" : "reviews"})
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -417,7 +476,11 @@ const CourseCardDetails = () => {
                   <div className="flex gap-6 text-sm">
                     <div className="flex items-center gap-1.5">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="font-bold">4.9 Instructor Rating</span>
+                      <span className="font-bold">
+                        {averageRating > 0
+                          ? `${averageRating} Rating`
+                          : "No ratings yet"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4 text-gray-400" />
@@ -433,10 +496,183 @@ const CourseCardDetails = () => {
                   <Button
                     variant="link"
                     className="text-blue-600 font-black p-0 h-auto hover:text-blue-800 transition-colors"
+                    onClick={() =>
+                      navigate(`/instructor/${course.creator?._id}`)
+                    }
                   >
                     View Full Profile <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
+              </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="pt-10 space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-gray-900">Reviews</h2>
+                <span className="text-sm font-bold text-gray-500">
+                  {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
+                </span>
+              </div>
+
+              {/* Rating Summary */}
+              {totalReviews > 0 && (
+                <div className="flex flex-col md:flex-row gap-8 items-start bg-yellow-50/30 p-8 rounded-3xl border border-yellow-100/50">
+                  <div className="text-center space-y-2">
+                    <div className="text-5xl font-black text-gray-900">
+                      {averageRating}
+                    </div>
+                    <StarRating rating={averageRating} size="h-5 w-5" />
+                    <p className="text-sm text-gray-500 font-medium">
+                      {totalReviews} ratings
+                    </p>
+                  </div>
+                  <div className="flex-1 space-y-2 w-full">
+                    {[5, 4, 3, 2, 1].map((star) => (
+                      <div key={star} className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-600 w-3">
+                          {star}
+                        </span>
+                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+                        <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-yellow-500 rounded-full transition-all"
+                            style={{
+                              width: `${totalReviews > 0 ? ((distribution[star] || 0) / totalReviews) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-400 font-medium w-8 text-right">
+                          {distribution[star] || 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Review Form (only for enrolled students) */}
+              {isEnrolled && (
+                <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 space-y-4">
+                  <h3 className="font-bold text-gray-900">Write a Review</h3>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onMouseEnter={() => setReviewHover(star)}
+                        onMouseLeave={() => setReviewHover(0)}
+                        onClick={() => setReviewRating(star)}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`h-7 w-7 cursor-pointer transition-colors ${
+                            star <= (reviewHover || reviewRating)
+                              ? "text-yellow-500 fill-current"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {reviewRating > 0 && (
+                      <span className="ml-2 text-sm font-bold text-gray-600">
+                        {reviewRating}/5
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience with this course..."
+                    className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
+                    rows={3}
+                  />
+                  <Button
+                    onClick={() => {
+                      if (reviewRating === 0) {
+                        toast.error("Please select a rating");
+                        return;
+                      }
+                      reviewMutation.mutate({
+                        rating: reviewRating,
+                        comment: reviewComment,
+                      });
+                    }}
+                    disabled={reviewMutation.isPending || reviewRating === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {reviewMutation.isPending
+                      ? "Submitting..."
+                      : "Submit Review"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Review List */}
+              <div className="space-y-4">
+                {reviews.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400">
+                    <Star className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p className="font-medium">No reviews yet</p>
+                    <p className="text-sm">
+                      Be the first to review this course!
+                    </p>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
+                    <div
+                      key={review._id}
+                      className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-3 transition-all hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-white shadow">
+                            {review.userId?.profilePicture ? (
+                              <img
+                                src={review.userId.profilePicture}
+                                alt={review.userId.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Users className="h-5 w-5 text-gray-300" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 text-sm">
+                              {review.userId?.name || "Anonymous"}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <StarRating
+                                rating={review.rating}
+                                size="h-3.5 w-3.5"
+                              />
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  review.createdAt,
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {user?.id === review.userId?._id && (
+                          <button
+                            onClick={() => deleteReviewMutation.mutate()}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Delete your review"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      {review.comment && (
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {review.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

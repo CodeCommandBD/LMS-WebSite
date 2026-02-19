@@ -388,14 +388,14 @@ const CourseProgress = () => {
                 <div className="flex gap-4 pt-4">
                   <Button
                     variant="outline"
-                    className="border-white/10 hover:bg-white/5 text-xs font-black px-6 h-12 rounded-xl"
+                    className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
                   >
                     <MessageSquare className="h-4 w-4 mr-2 text-blue-400" /> Q&A
                     Session
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-white/10 hover:bg-white/5 text-xs font-black px-6 h-12 rounded-xl"
+                    className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
                   >
                     Download Notes
                   </Button>
