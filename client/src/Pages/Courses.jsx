@@ -1,5 +1,6 @@
 import React from "react";
 import CourseCard from "@/components/CourseCard";
+import CourseSkeleton from "@/components/CourseSkeleton";
 import { usePublishedCourses } from "@/hooks/usePublishedCourses";
 import { Loader2 } from "lucide-react";
 
@@ -8,8 +9,14 @@ const Courses = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+      <div className="bg-gray-100 pt-20">
+        <div className="min-h-screen max-w-7xl mx-auto py-10 px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <CourseSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

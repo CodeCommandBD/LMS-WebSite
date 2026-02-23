@@ -29,13 +29,19 @@ const CourseCard = ({ course }) => {
       <Link to={`/courseDetails/${course._id || course.id}`}>
         {/* Thumbnail Area */}
         <div className="relative p-3">
-          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gray-100">
+          <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-gray-100">
             <img
               src={
-                course.courseThumbnail ||
-                "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop"
+                course.courseThumbnail?.includes("res.cloudinary.com")
+                  ? course.courseThumbnail.replace(
+                      "/upload/",
+                      "/upload/f_auto,q_auto,w_600/",
+                    )
+                  : course.courseThumbnail ||
+                    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop"
               }
               alt={course.courseTitle}
+              loading="lazy"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
             {/* Price Badge Overlay */}
