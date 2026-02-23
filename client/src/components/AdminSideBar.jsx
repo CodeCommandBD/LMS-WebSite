@@ -7,6 +7,7 @@ import {
   HelpCircle,
   LogOut,
   Home,
+  LayoutGrid,
 } from "lucide-react";
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -35,11 +36,13 @@ const AdminSideBar = () => {
     { icon: Home, label: "Go to Home", path: "/" },
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
     { icon: BookOpen, label: "Courses", path: "/admin/courses" },
+    { icon: HelpCircle, label: "Quizzes", path: "/admin/quizzes" },
     { icon: Users, label: "Users", path: "/admin/users" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
   ];
 
   const supportItems = [
+    { icon: LayoutGrid, label: "Categories", path: "/admin/categories" },
     { icon: Settings, label: "Settings", path: "/admin/settings" },
     { icon: HelpCircle, label: "Help Center", path: "/admin/help" },
   ];

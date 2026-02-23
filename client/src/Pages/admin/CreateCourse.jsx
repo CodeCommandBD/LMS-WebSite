@@ -20,10 +20,11 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { courseSchema } from "@/schemas/createCourseSchema";
 import { createCourse } from "@/services/courseApi";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { getCategories } from "@/services/categoryApi";
 
 const CreateCourse = () => {
   const navigate = useNavigate();
@@ -54,6 +55,11 @@ const CreateCourse = () => {
     onError: (error) => {
       toast.error(error.message);
     },
+  });
+
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
   });
 
   const onSubmit = (data) => {
@@ -109,47 +115,30 @@ const CreateCourse = () => {
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="bg-[#0f172a] border-none rounded-2xl h-14 text-white px-6 focus:ring-2 focus:ring-blue-500 font-bold text-lg">
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue
+                        placeholder={
+                          isCategoriesLoading
+                            ? "Loading Categories..."
+                            : "Select a category"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-gray-800 text-white rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
-                      {[
-                        "next js",
-                        "react js",
-                        "node js",
-                        "javascript",
-                        "python",
-                        "java",
-                        "c++",
-                        "c#",
-                        "c",
-                        "html",
-                        "css",
-                        "bootstrap",
-                        "tailwind",
-                        "material ui",
-                        "ant design",
-                        "vue js",
-                        "angular",
-                        "svelte",
-                        "laravel",
-                        "symfony",
-                        "ruby on rails",
-                        "django",
-                        "flask",
-                        "express",
-                        "nest js",
-                        "spring",
-                        "hibernate",
-                        "mybatis",
-                      ].map((cat) => (
+                      {categories.map((cat) => (
                         <SelectItem
-                          key={cat}
-                          value={cat}
+                          key={cat._id}
+                          value={cat.name}
                           className="capitalize py-3 cursor-pointer"
                         >
-                          {cat}
+                          {cat.name}
                         </SelectItem>
                       ))}
+                      {categories.length === 0 && !isCategoriesLoading && (
+                        <div className="p-4 text-center text-xs text-gray-500">
+                          No categories found. Create one in the Categories
+                          page.
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 )}

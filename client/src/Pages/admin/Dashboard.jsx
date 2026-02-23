@@ -28,6 +28,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Helper to format time ago
@@ -46,6 +47,7 @@ const formatTimeAgo = (dateStr) => {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboardStats"],
@@ -123,7 +125,10 @@ const Dashboard = () => {
           <FileText className="w-4 h-4" />
           Report
         </button>
-        <button className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/20">
+        <button
+          onClick={() => navigate("/admin/createCourse")}
+          className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
+        >
           <Plus className="w-4 h-4" />
           Create Course
         </button>

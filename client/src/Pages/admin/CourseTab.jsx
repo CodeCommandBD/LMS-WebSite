@@ -19,7 +19,9 @@ import {
 import { Controller } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import useEditCourse from "@/hooks/useEditCourse";
+import { getCategories } from "@/services/categoryApi";
 
 const CourseTab = () => {
   const navigate = useNavigate();
@@ -36,6 +38,11 @@ const CourseTab = () => {
     togglePublishCourseMutaion,
     course,
   } = useEditCourse();
+
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
 
   if (isLoading || isPending) {
     return (
@@ -159,51 +166,31 @@ const CourseTab = () => {
                           value={field.value}
                         >
                           <SelectTrigger className="bg-[#0f172a] border-none rounded-2xl h-14 text-white px-6 focus:ring-2 focus:ring-blue-500">
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue
+                              placeholder={
+                                isCategoriesLoading
+                                  ? "Loading Categories..."
+                                  : "Select category"
+                              }
+                            />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1e293b] border-gray-800 text-white rounded-2xl shadow-2xl">
-                            <SelectItem value="next js">Next js</SelectItem>
-                            <SelectItem value="react js">React js</SelectItem>
-                            <SelectItem value="node js">Node js</SelectItem>
-                            <SelectItem value="javascript">
-                              JavaScript
-                            </SelectItem>
-                            <SelectItem value="python">Python</SelectItem>
-                            <SelectItem value="java">Java</SelectItem>
-                            <SelectItem value="c++">C++</SelectItem>
-                            <SelectItem value="c#">C#</SelectItem>
-                            <SelectItem value="c">C</SelectItem>
-                            <SelectItem value="html">HTML</SelectItem>
-                            <SelectItem value="css">CSS</SelectItem>
-                            <SelectItem value="bootstrap">Bootstrap</SelectItem>
-                            <SelectItem value="tailwind">Tailwind</SelectItem>
-                            <SelectItem value="material ui">
-                              Material UI
-                            </SelectItem>
-                            <SelectItem value="ant design">
-                              Ant Design
-                            </SelectItem>
-                            <SelectItem value="vue js">Vue js</SelectItem>
-                            <SelectItem value="angular">Angular</SelectItem>
-                            <SelectItem value="svelte">Svelte</SelectItem>
-                            <SelectItem value="laravel">Laravel</SelectItem>
-                            <SelectItem value="symfony">Symfony</SelectItem>
-                            <SelectItem value="ruby on rails">
-                              Ruby on Rails
-                            </SelectItem>
-                            <SelectItem value="django">Django</SelectItem>
-                            <SelectItem value="flask">Flask</SelectItem>
-                            <SelectItem value="express">Express</SelectItem>
-                            <SelectItem value="nest js">Nest js</SelectItem>
-                            <SelectItem value="spring">Spring</SelectItem>
-                            <SelectItem value="hibernate">Hibernate</SelectItem>
-                            <SelectItem value="mybatis">MyBatis</SelectItem>
-                            <SelectItem value="web-development">
-                              Web Development
-                            </SelectItem>
-                            <SelectItem value="mobile-development">
-                              Mobile Development
-                            </SelectItem>
+                          <SelectContent className="bg-[#1e293b] border-gray-800 text-white rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                            {categories.map((cat) => (
+                              <SelectItem
+                                key={cat._id}
+                                value={cat.name}
+                                className="capitalize py-3 cursor-pointer"
+                              >
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                            {categories.length === 0 &&
+                              !isCategoriesLoading && (
+                                <div className="p-4 text-center text-xs text-gray-500">
+                                  No categories found. Create one in the
+                                  Categories page.
+                                </div>
+                              )}
                           </SelectContent>
                         </Select>
                       )}

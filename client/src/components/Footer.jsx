@@ -1,10 +1,10 @@
 import React from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { GraduationCap, Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
-    <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-t border-white/20">
+    <div className="bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-t border-white/20">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-6 py-12">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -51,6 +51,22 @@ const Footer = () => {
                 className="text-white/80 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
               >
                 → Contact
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/terms"
+                className="text-white/80 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
+              >
+                → Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/privacy"
+                className="text-white/80 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
+              >
+                → Privacy Policy
               </Link>
             </li>
           </ul>

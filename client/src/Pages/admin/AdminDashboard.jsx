@@ -1,6 +1,6 @@
 import AdminSideBar from "@/components/AdminSideBar";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet } from "react-router-dom";
 
 const AdminDashboard = () => {
   return (

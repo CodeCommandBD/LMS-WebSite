@@ -16,7 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, Plus, Trash, Loader2, GraduationCap } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Trash,
+  Loader2,
+  GraduationCap,
+  BookOpen,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
