@@ -319,8 +319,10 @@ const CourseCardDetails = () => {
             </div>
 
             <div className="space-y-4">
-              <Badge className="bg-blue-600 hover:bg-blue-600 text-white rounded-md px-3 py-1 font-bold uppercase tracking-wider text-[10px]">
-                BEST SELLER
+              <Badge
+                className={`${isEnrolled ? "bg-green-600 hover:bg-green-600" : "bg-blue-600 hover:bg-blue-600"} text-white rounded-md px-3 py-1 font-bold uppercase tracking-wider text-[10px]`}
+              >
+                {isEnrolled ? "ENROLLED" : "BEST SELLER"}
               </Badge>
               <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
                 {course.courseTitle}
@@ -853,14 +855,29 @@ const CourseCardDetails = () => {
 
               {/* Enrolled user greeting */}
               {isEnrolled && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-2">
-                  <div className="flex items-center gap-2 text-green-700 font-black text-sm">
-                    <CheckCircle2 className="h-5 w-5" />
-                    You're enrolled in this course
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-green-700 font-black text-sm">
+                      <CheckCircle2 className="h-5 w-5" />
+                      You're enrolled in this course
+                    </div>
+                    <p className="text-green-600 text-[10px] font-bold uppercase tracking-wider">
+                      {Math.round(
+                        (completedLectures.length /
+                          (course.lectures?.length || 1)) *
+                          100,
+                      )}
+                      % Completed
+                    </p>
                   </div>
-                  <p className="text-green-600 text-xs font-medium">
-                    Continue where you left off
-                  </p>
+                  <div className="w-full h-2 bg-green-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 transition-all duration-700"
+                      style={{
+                        width: `${(completedLectures.length / (course.lectures?.length || 1)) * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
