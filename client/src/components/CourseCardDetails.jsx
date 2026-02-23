@@ -186,6 +186,35 @@ const CourseCardDetails = () => {
     return acc;
   }, {});
 
+  const completedLectures = statusData?.progress?.completedLectures || [];
+  const quizzes = quizzesData?.quizzes || [];
+
+  const getSectionStatus = (sectionName) => {
+    if (isCreator) return "unlocked";
+    if (!isEnrolled) return "locked";
+
+    const sectionNames = Object.keys(groupedLectures);
+    const currentIndex = sectionNames.indexOf(sectionName);
+
+    if (currentIndex === 0) return "unlocked";
+
+    // Regular section locking: must complete ALL lectures and pass ALL quizzes of the PREVIOUS section
+    const previousSectionName = sectionNames[currentIndex - 1];
+    const prevSectionLectures = groupedLectures[previousSectionName];
+    const prevSectionQuizzes = quizzes.filter(
+      (q) => q.sectionName === previousSectionName,
+    );
+
+    const allLecturesDone = prevSectionLectures.every((l) =>
+      completedLectures.includes(l._id),
+    );
+    const allQuizzesPassed = prevSectionQuizzes.every(
+      (q) => q.latestAttempt?.isPassed,
+    );
+
+    return allLecturesDone && allQuizzesPassed ? "unlocked" : "locked";
+  };
+
   const [openSections, setOpenSections] = useState({});
 
   const toggleSection = (sectionName) => {
@@ -409,57 +438,150 @@ const CourseCardDetails = () => {
 
                         {openSections[sectionName] && (
                           <div className="p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                            {lectures.map((lecture, index) => (
-                              <div
-                                key={lecture._id}
-                                className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
-                                  lecture.isPreviewFree
-                                    ? "hover:bg-blue-50 cursor-pointer"
-                                    : isEnrolled || isCreator
+                            {lectures.map((lecture, index) => {
+                              const isCompleted = completedLectures.includes(
+                                lecture._id,
+                              );
+                              const sectionStatus =
+                                getSectionStatus(sectionName);
+                              const isLocked =
+                                !lecture.isPreviewFree &&
+                                !isCreator &&
+                                sectionStatus === "locked";
+
+                              return (
+                                <div
+                                  key={lecture._id}
+                                  className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
+                                    lecture.isPreviewFree ||
+                                    (!isLocked && (isEnrolled || isCreator))
                                       ? "hover:bg-blue-50 cursor-pointer"
-                                      : "hover:bg-gray-50 opacity-80"
-                                }`}
-                                onClick={() =>
-                                  (lecture.isPreviewFree ||
-                                    isEnrolled ||
-                                    isCreator) &&
-                                  handlePreviewClick(lecture)
-                                }
-                              >
-                                <div className="flex items-center gap-4">
-                                  {lecture.isPreviewFree ||
-                                  isEnrolled ||
-                                  isCreator ? (
-                                    <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                                  ) : (
-                                    <Lock className="h-4 w-4 text-gray-400" />
-                                  )}
-                                  <span
-                                    className={`text-sm font-bold transition-colors ${
-                                      lecture.isPreviewFree
-                                        ? "text-gray-900 group-hover:text-blue-600"
-                                        : "text-gray-500"
-                                    }`}
-                                  >
-                                    {index + 1}. {lecture.lectureTitle}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  {(lecture.isPreviewFree ||
-                                    isEnrolled ||
-                                    isCreator) && (
-                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
-                                      {isEnrolled || isCreator
-                                        ? "Play"
-                                        : "Preview"}
+                                      : "opacity-80 cursor-not-allowed"
+                                  }`}
+                                  onClick={() => {
+                                    if (isLocked) {
+                                      toast.error(
+                                        "Please complete previous sections to unlock.",
+                                        { icon: "🔒" },
+                                      );
+                                      return;
+                                    }
+                                    if (
+                                      lecture.isPreviewFree ||
+                                      isEnrolled ||
+                                      isCreator
+                                    ) {
+                                      handlePreviewClick(lecture);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    {isLocked ? (
+                                      <Lock className="h-4 w-4 text-gray-400" />
+                                    ) : isCompleted ? (
+                                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                      <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
+                                    )}
+                                    <span
+                                      className={`text-sm font-bold transition-colors ${
+                                        lecture.isPreviewFree || !isLocked
+                                          ? "text-gray-900 group-hover:text-blue-600"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      {index + 1}. {lecture.lectureTitle}
                                     </span>
-                                  )}
-                                  <span className="text-xs text-gray-400 font-medium">
-                                    {lecture.duration || "10:00"}
-                                  </span>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    {isCompleted && (
+                                      <span className="text-[9px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-0.5 rounded">
+                                        Completed
+                                      </span>
+                                    )}
+                                    {(lecture.isPreviewFree ||
+                                      isEnrolled ||
+                                      isCreator) &&
+                                      !isLocked && (
+                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
+                                          {isEnrolled || isCreator
+                                            ? "Play"
+                                            : "Preview"}
+                                        </span>
+                                      )}
+                                    <span className="text-xs text-gray-400 font-medium">
+                                      {lecture.duration || "10:00"}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
+
+                            {/* Quizzes in Curriculum View */}
+                            {quizzes
+                              .filter((q) => q.sectionName === sectionName)
+                              .map((quiz) => {
+                                const isPassed = quiz.latestAttempt?.isPassed;
+                                const sectionStatus =
+                                  getSectionStatus(sectionName);
+                                const isLocked =
+                                  !isCreator && sectionStatus === "locked";
+
+                                return (
+                                  <div
+                                    key={quiz._id}
+                                    className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
+                                      !isLocked && (isEnrolled || isCreator)
+                                        ? "hover:bg-indigo-50 cursor-pointer"
+                                        : "opacity-80 cursor-not-allowed"
+                                    }`}
+                                    onClick={() => {
+                                      if (isLocked) {
+                                        toast.error(
+                                          "Complete previous lessons to unlock this quiz.",
+                                          { icon: "🔒" },
+                                        );
+                                        return;
+                                      }
+                                      if (isEnrolled || isCreator) {
+                                        navigate(`/course-progress/${id}`);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-4">
+                                      {isLocked ? (
+                                        <Lock className="h-4 w-4 text-gray-400" />
+                                      ) : isPassed ? (
+                                        <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                                      ) : (
+                                        <FileText className="h-5 w-5 text-indigo-400" />
+                                      )}
+                                      <span
+                                        className={`text-sm font-bold transition-colors ${
+                                          !isLocked
+                                            ? "text-gray-900 group-hover:text-indigo-600"
+                                            : "text-gray-400"
+                                        }`}
+                                      >
+                                        Quiz: {quiz.title}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                      {isPassed ? (
+                                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">
+                                          Passed
+                                        </span>
+                                      ) : (
+                                        !isLocked && (
+                                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-600">
+                                            Start
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                           </div>
                         )}
                       </div>
