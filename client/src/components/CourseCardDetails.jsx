@@ -41,6 +41,7 @@ import {
   submitReviewService,
   deleteReviewService,
 } from "@/services/courseApi";
+import { getCourseQuizzesWithStatusService } from "@/services/quizApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
@@ -89,6 +90,13 @@ const CourseCardDetails = () => {
     queryKey: ["courseReviews", id],
     queryFn: () => getCourseReviewsService(id),
     enabled: !!id,
+  });
+
+  // Fetch quizzes with attempt status
+  const { data: quizzesData } = useQuery({
+    queryKey: ["courseQuizzes", id],
+    queryFn: () => getCourseQuizzesWithStatusService(id),
+    enabled: !!id && !!isEnrolled,
   });
 
   const averageRating = reviewsData?.averageRating || 0;
@@ -407,12 +415,21 @@ const CourseCardDetails = () => {
                                 className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
                                   lecture.isPreviewFree
                                     ? "hover:bg-blue-50 cursor-pointer"
-                                    : "hover:bg-gray-50 opacity-80"
+                                    : isEnrolled || isCreator
+                                      ? "hover:bg-blue-50 cursor-pointer"
+                                      : "hover:bg-gray-50 opacity-80"
                                 }`}
-                                onClick={() => handlePreviewClick(lecture)}
+                                onClick={() =>
+                                  (lecture.isPreviewFree ||
+                                    isEnrolled ||
+                                    isCreator) &&
+                                  handlePreviewClick(lecture)
+                                }
                               >
                                 <div className="flex items-center gap-4">
-                                  {lecture.isPreviewFree ? (
+                                  {lecture.isPreviewFree ||
+                                  isEnrolled ||
+                                  isCreator ? (
                                     <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
                                   ) : (
                                     <Lock className="h-4 w-4 text-gray-400" />
@@ -428,9 +445,13 @@ const CourseCardDetails = () => {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                  {lecture.isPreviewFree && (
+                                  {(lecture.isPreviewFree ||
+                                    isEnrolled ||
+                                    isCreator) && (
                                     <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
-                                      Preview
+                                      {isEnrolled || isCreator
+                                        ? "Play"
+                                        : "Preview"}
                                     </span>
                                   )}
                                   <span className="text-xs text-gray-400 font-medium">
