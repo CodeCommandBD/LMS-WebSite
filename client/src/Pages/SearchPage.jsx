@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import api from "@/lib/api";
 import CourseCard from "@/components/CourseCard";
 import {
   Filter,
@@ -13,7 +14,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { getCategories } from "@/services/categoryApi";
 import CourseSkeleton from "@/components/CourseSkeleton";
 
@@ -32,7 +32,7 @@ const SearchPage = () => {
   const [sort, setSort] = useState(searchParams.get("sort") || "newest");
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: [
       "searchCourses",
       query,
@@ -50,9 +50,7 @@ const SearchPage = () => {
       params.append("page", page);
       params.append("limit", "12");
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/v1/courses/published?${params.toString()}`,
-      );
+      const response = await api.get(`/courses/published?${params.toString()}`);
       return response.data;
     },
     keepPreviousData: true,
@@ -271,6 +269,13 @@ const SearchPage = () => {
               {[...Array(6)].map((_, i) => (
                 <CourseSkeleton key={i} />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-red-50 p-6 rounded-2xl border border-red-100 text-center">
+              <p className="text-red-600 font-bold mb-2">Search Error</p>
+              <p className="text-red-500 text-sm">
+                {error?.message || "Something went wrong while searching"}
+              </p>
             </div>
           ) : data?.courses?.length > 0 ? (
             <>
