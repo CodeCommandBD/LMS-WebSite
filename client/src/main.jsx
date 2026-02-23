@@ -1,3 +1,4 @@
+import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
@@ -10,24 +11,53 @@ import { Provider } from "react-redux";
 import { store } from "./store/store.js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
-import Home from "./Pages/Home";
-import Courses from "./Pages/Courses";
-import Login from "./Pages/auth/Login";
-import Signup from "./Pages/auth/Signup";
-import CourseCardDetails from "./components/CourseCardDetails";
-import Profile from "./Pages/Profile";
-import AdminDashboard from "./Pages/admin/AdminDashboard";
-import Course from "./Pages/admin/Course";
-import Dashboard from "./Pages/admin/Dashboard";
-import CreateCourse from "./Pages/admin/CreateCourse";
-import UpdateCourse from "./Pages/admin/UpdateCourse";
-import CreateLecture from "./Pages/admin/CreateLecture";
-import EditLecture from "./Pages/admin/EditLecture";
-import PurchaseSuccess from "./Pages/PurchaseSuccess";
-import CourseProgress from "./Pages/CourseProgress";
+import ErrorBoundary from "./components/ErrorBoundary";
+import GlobalErrorPage from "./components/GlobalErrorPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminQuizManager from "./Pages/admin/AdminQuizManager";
-import InstructorProfile from "./Pages/InstructorProfile";
+import { Loader2 } from "lucide-react";
+
+// Lazy Load Pages
+const Home = lazy(() => import("./Pages/Home"));
+const Courses = lazy(() => import("./Pages/Courses"));
+const Login = lazy(() => import("./Pages/auth/Login"));
+const Signup = lazy(() => import("./Pages/auth/Signup"));
+const Profile = lazy(() => import("./Pages/Profile"));
+const AdminDashboard = lazy(() => import("./Pages/admin/AdminDashboard"));
+const AdminHome = lazy(() => import("./Pages/admin/Dashboard"));
+const AdminCourses = lazy(() => import("./Pages/admin/Course"));
+const CreateCourse = lazy(() => import("./Pages/admin/CreateCourse"));
+const EditCourse = lazy(() => import("./Pages/admin/UpdateCourse"));
+const Lectures = lazy(() => import("./Pages/admin/CreateLecture"));
+const EditLecture = lazy(() => import("./Pages/admin/EditLecture"));
+const AdminQuizManager = lazy(() => import("./Pages/admin/AdminQuizManager"));
+const CourseCardDetails = lazy(() => import("./components/CourseCardDetails"));
+const CourseProgress = lazy(() => import("./Pages/CourseProgress"));
+const PurchaseSuccess = lazy(() => import("./Pages/PurchaseSuccess"));
+const InstructorProfile = lazy(() => import("./Pages/InstructorProfile"));
+const NotFound = lazy(() => import("./Pages/NotFound"));
+const ForgotPassword = lazy(() => import("./Pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./Pages/auth/ResetPassword"));
+const SearchPage = lazy(() => import("./Pages/SearchPage"));
+const MyEnrolledCourses = lazy(() => import("./Pages/MyEnrolledCourses"));
+const Wishlist = lazy(() => import("./Pages/Wishlist"));
+const About = lazy(() => import("./Pages/About"));
+const Contact = lazy(() => import("./Pages/Contact"));
+const Terms = lazy(() => import("./Pages/Terms"));
+const Privacy = lazy(() => import("./Pages/Privacy"));
+const Certificate = lazy(() => import("./Pages/student/Certificate"));
+const AdminUsers = lazy(() => import("./Pages/admin/AdminUsers"));
+const AdminAnalytics = lazy(() => import("./Pages/admin/AdminAnalytics"));
+const AdminSettings = lazy(() => import("./Pages/admin/AdminSettings"));
+const AdminHelpCenter = lazy(() => import("./Pages/admin/AdminHelpCenter"));
+const AdminQuizHome = lazy(() => import("./Pages/admin/AdminQuizHome"));
+const AdminCategories = lazy(() => import("./Pages/admin/AdminCategories"));
+
+// Loading Fallback Component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+  </div>
+);
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -35,6 +65,7 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes stale time
     },
   },
 });
@@ -44,6 +75,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+    errorElement: <GlobalErrorPage />,
     children: [
       {
         path: "/",
@@ -54,8 +86,20 @@ const router = createBrowserRouter([
         element: <Courses />,
       },
       {
+        path: "/search",
+        element: <SearchPage />,
+      },
+      {
         path: "/login",
         element: <Login />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/reset-password/:token",
+        element: <ResetPassword />,
       },
       {
         path: "/signup",
@@ -63,7 +107,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/purchase-success",
-        element: <PurchaseSuccess />,
+        element: (
+          <ProtectedRoute>
+            <PurchaseSuccess />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/course-progress/:id",
@@ -86,13 +134,54 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "/about",
+        element: <About />,
+      },
+      {
+        path: "/contact",
+        element: <Contact />,
+      },
+      {
+        path: "/terms",
+        element: <Terms />,
+      },
+      {
+        path: "/privacy",
+        element: <Privacy />,
+      },
+      {
+        path: "/my-learning",
+        element: (
+          <ProtectedRoute>
+            <MyEnrolledCourses />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/wishlist",
+        element: (
+          <ProtectedRoute>
+            <Wishlist />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/certificate/:id",
+        element: (
+          <ProtectedRoute>
+            <Certificate />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/instructor/:id",
         element: <InstructorProfile />,
       },
+      // Admin Routes
       {
         path: "/admin",
         element: (
-          <ProtectedRoute allowedRoles={["admin", "teacher"]}>
+          <ProtectedRoute roles={["admin", "teacher"]}>
             <AdminDashboard />
           </ProtectedRoute>
         ),
@@ -102,12 +191,12 @@ const router = createBrowserRouter([
             element: <Navigate to="dashboard" replace />,
           },
           {
-            path: "courses",
-            element: <Course />,
+            path: "dashboard",
+            element: <AdminHome />,
           },
           {
-            path: "dashboard",
-            element: <Dashboard />,
+            path: "courses",
+            element: <AdminCourses />,
           },
           {
             path: "createCourse",
@@ -115,11 +204,11 @@ const router = createBrowserRouter([
           },
           {
             path: "courses/:id",
-            element: <UpdateCourse />,
+            element: <EditCourse />,
           },
           {
             path: "courses/:id/lectures",
-            element: <CreateLecture />,
+            element: <Lectures />,
           },
           {
             path: "courses/:id/lectures/:lectureId",
@@ -129,7 +218,36 @@ const router = createBrowserRouter([
             path: "courses/:id/quizzes",
             element: <AdminQuizManager />,
           },
+          {
+            path: "quizzes",
+            element: <AdminQuizHome />,
+          },
+          {
+            path: "users",
+            element: <AdminUsers />,
+          },
+          {
+            path: "analytics",
+            element: <AdminAnalytics />,
+          },
+          {
+            path: "settings",
+            element: <AdminSettings />,
+          },
+          {
+            path: "help",
+            element: <AdminHelpCenter />,
+          },
+          {
+            path: "categories",
+            element: <AdminCategories />,
+          },
         ],
+      },
+      // 404 Route
+      {
+        path: "*",
+        element: <NotFound />,
       },
     ],
   },
@@ -137,9 +255,13 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <QueryClientProvider client={queryClient}>
-      <Toaster position="top-right" />
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Toaster position="top-right" />
+        <Suspense fallback={<PageLoader />}>
+          <RouterProvider router={router} />
+        </Suspense>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </Provider>,
 );
