@@ -20,6 +20,7 @@ const QuizPlayer = ({ quiz, onComplete }) => {
   const [answers, setAnswers] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
   const [result, setResult] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const submitMutation = useMutation({
     mutationFn: (data) => submitQuizAttemptService(quiz._id, data),
@@ -55,8 +56,14 @@ const QuizPlayer = ({ quiz, onComplete }) => {
   };
 
   const handleNext = () => {
+    if (!showFeedback) {
+      setShowFeedback(true);
+      return;
+    }
+
     if (currentQuestionIndex < quiz.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setShowFeedback(false);
     } else {
       handleSubmit();
     }
@@ -178,39 +185,78 @@ const QuizPlayer = ({ quiz, onComplete }) => {
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            {currentQuestion.options.map((option, index) => (
-              <div
-                key={index}
-                onClick={() => handleOptionSelect(index)}
-                className={`group flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all border-2 ${
-                  selectedOption === index
-                    ? "bg-blue-600/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
-                    : "bg-[#0f172a] border-transparent hover:border-gray-800/80 hover:bg-gray-800/10"
-                }`}
-              >
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = selectedOption === index;
+              const isCorrect = currentQuestion.correctOptionIndex === index;
+
+              let borderClass = "border-transparent";
+              let bgClass = "bg-[#0f172a]";
+              let iconColor = "text-blue-500";
+
+              if (showFeedback) {
+                if (isCorrect) {
+                  borderClass =
+                    "border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.1)]";
+                  bgClass = "bg-green-500/10";
+                  iconColor = "text-green-500";
+                } else if (isSelected) {
+                  borderClass =
+                    "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)]";
+                  bgClass = "bg-red-500/10";
+                  iconColor = "text-red-500";
+                }
+              } else if (isSelected) {
+                borderClass =
+                  "border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]";
+                bgClass = "bg-blue-600/10";
+              }
+
+              return (
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black transition-all ${
-                    selectedOption === index
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-400 group-hover:bg-gray-700"
-                  }`}
+                  key={index}
+                  onClick={() => !showFeedback && handleOptionSelect(index)}
+                  className={`group flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all border-2 ${borderClass} ${bgClass} ${showFeedback ? "cursor-default" : "hover:border-gray-800/80 hover:bg-gray-800/10"}`}
                 >
-                  {String.fromCharCode(65 + index)}
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black transition-all ${
+                      isSelected
+                        ? showFeedback
+                          ? isCorrect
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                          : "bg-blue-600 text-white"
+                        : showFeedback && isCorrect
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-800 text-gray-400 group-hover:bg-gray-700"
+                    }`}
+                  >
+                    {String.fromCharCode(65 + index)}
+                  </div>
+                  <span
+                    className={`font-bold transition-colors ${
+                      isSelected || (showFeedback && isCorrect)
+                        ? "text-white"
+                        : "text-gray-400 group-hover:text-gray-300"
+                    }`}
+                  >
+                    {option}
+                  </span>
+                  {(isSelected || (showFeedback && isCorrect)) && (
+                    <div className="ml-auto">
+                      {showFeedback ? (
+                        isCorrect ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        )
+                      ) : (
+                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                      )}
+                    </div>
+                  )}
                 </div>
-                <span
-                  className={`font-bold transition-colors ${
-                    selectedOption === index
-                      ? "text-white"
-                      : "text-gray-400 group-hover:text-gray-300"
-                  }`}
-                >
-                  {option}
-                </span>
-                {selectedOption === index && (
-                  <CheckCircle2 className="w-5 h-5 text-blue-500 ml-auto" />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="pt-6 flex gap-4">
@@ -227,13 +273,19 @@ const QuizPlayer = ({ quiz, onComplete }) => {
               disabled={
                 selectedOption === undefined || submitMutation.isPending
               }
-              className="flex-1 h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg shadow-xl shadow-blue-900/30 transition-all active:scale-[0.98]"
+              className={`flex-1 h-14 rounded-2xl text-white font-black text-lg shadow-xl transition-all active:scale-[0.98] ${
+                showFeedback
+                  ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-900/30"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-900/30"
+              }`}
             >
-              {currentQuestionIndex === quiz.questions.length - 1
-                ? submitMutation.isPending
-                  ? "Submitting..."
-                  : "Verify Identity & Submit"
-                : "Confirm Answer"}
+              {showFeedback
+                ? currentQuestionIndex === quiz.questions.length - 1
+                  ? submitMutation.isPending
+                    ? "Submitting..."
+                    : "Complete Quiz"
+                  : "Next Challenge"
+                : "Check Answer"}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
