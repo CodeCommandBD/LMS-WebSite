@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
+import crypto from "crypto";
 
 export const registerUser = async (req, res) => {
   try {
@@ -247,6 +248,52 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// Get user's enrolled courses
+export const getEnrolledCourses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: "enrolledCourses",
+      populate: { path: "creator", select: "name profilePicture" },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      courses: user.enrolledCourses,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get user's wishlist
+export const getWishlistCourses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: "wishlist",
+      populate: { path: "creator", select: "name profilePicture" },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      courses: user.wishlist,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Public: get instructor profile
 export const getInstructorProfile = async (req, res) => {
   try {
@@ -300,6 +347,77 @@ export const getInstructorProfile = async (req, res) => {
         totalReviews: reviews.length,
       },
       courses,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Password Reset — Request Link
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with that email",
+      });
+    }
+
+    // Generate random token
+    const token = crypto.randomBytes(20).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Set token and expiry (1 hour)
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 3600000;
+    await user.save();
+
+    // In production, send email here. For now, log to console.
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    console.log("\n🔑 PASSWORD RESET LINK (Log for Dev):\n", resetUrl, "\n");
+
+    return res.json({
+      success: true,
+      message: "Reset link sent to email (check server logs for link)",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Password Reset — Finalize
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Password reset token is invalid or has expired",
+      });
+    }
+
+    // Update password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully. You can now login.",
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
