@@ -78,7 +78,7 @@ export const togglePublishCourse = async (courseId) => {
 
 // get published courses
 export const getPublishedCourses = async () => {
-  const response = await api.get("/courses/published/all");
+  const response = await api.get("/courses/published");
   return response.data.courses;
 };
 
@@ -146,5 +146,25 @@ export const deleteReviewService = async (courseId) => {
 // Instructor Profile
 export const getInstructorProfileService = async (instructorId) => {
   const response = await api.get(`/users/instructor/${instructorId}`);
+  return response.data;
+};
+
+// Section Operations
+export const renameSectionService = async (
+  courseId,
+  oldSectionName,
+  newSectionName,
+) => {
+  const response = await api.patch(`/courses/${courseId}/sections/rename`, {
+    oldSectionName,
+    newSectionName,
+  });
+  return response.data;
+};
+
+export const deleteSectionService = async (courseId, sectionName) => {
+  const response = await api.delete(`/courses/${courseId}/sections/delete`, {
+    data: { sectionName },
+  });
   return response.data;
 };
