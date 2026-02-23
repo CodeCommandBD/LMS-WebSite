@@ -16,13 +16,6 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.get("/me", authenticate, getCurrentUser);
-router.get("/test-cookies", (req, res) => {
-  res.json({
-    cookies: req.cookies,
-    headers: req.headers,
-    user: req.user,
-  });
-});
 // Public: get instructor profile
 router.get("/instructor/:instructorId", getInstructorProfile);
 

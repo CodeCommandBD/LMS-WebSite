@@ -110,7 +110,6 @@ export const loginUser = async (req, res) => {
               : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
             : null,
         },
-        token,
       });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -153,7 +152,11 @@ export const logoutUser = async (req, res) => {
   try {
     return res
       .status(200)
-      .clearCookie("token", { maxAge: 0 })
+      .clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      })
       .json({ success: true, message: "Logout successful" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

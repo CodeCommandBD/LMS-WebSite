@@ -8,15 +8,24 @@ import {
   getCourseQuizzesWithStatus,
   submitQuizAttempt,
 } from "../Controller/quiz.controller.js";
+import { authorize } from "../middleware/authorize.middleware.js";
 
 const router = express.Router();
 
-// Mixed / Shared
-router.get("/course/:courseId", authenticate, getCourseQuizzes);
-
 // Admin Routes
-router.post("/create", authenticate, createQuiz);
-router.put("/edit/:quizId", authenticate, editQuiz);
+router.get(
+  "/course/:courseId",
+  authenticate,
+  authorize("admin", "teacher"),
+  getCourseQuizzes,
+);
+router.post("/create", authenticate, authorize("admin", "teacher"), createQuiz);
+router.put(
+  "/edit/:quizId",
+  authenticate,
+  authorize("admin", "teacher"),
+  editQuiz,
+);
 
 // Student Routes
 router.get(

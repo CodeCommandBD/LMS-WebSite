@@ -21,23 +21,31 @@ import {
   uploadCourseThumbnail,
   uploadMedia,
 } from "../middleware/upload.middleware.js";
+import { authorize } from "../middleware/authorize.middleware.js";
 
 const router = express.Router();
 
-router.post("/", authenticate, createCourse);
+router.post("/", authenticate, authorize("admin", "teacher"), createCourse);
 router.get("/public-courses", getPublicCourses);
-router.get("/", authenticate, getCreatorCourses);
+router.get("/", authenticate, authorize("admin", "teacher"), getCreatorCourses);
 router.put(
   "/:courseId",
   authenticate,
+  authorize("admin", "teacher"),
   uploadCourseThumbnail.single("courseThumbnail"),
   editCourse,
 );
 router.get("/:courseId", getCourseById);
-router.delete("/:courseId", authenticate, deleteCourse);
+router.delete(
+  "/:courseId",
+  authenticate,
+  authorize("admin", "teacher"),
+  deleteCourse,
+);
 router.post(
   "/:courseId/lectures",
   authenticate,
+  authorize("admin", "teacher"),
   uploadMedia.single("video"),
   createLecture,
 );
@@ -45,13 +53,24 @@ router.get("/:courseId/lectures", authenticate, getCourseLectures);
 router.put(
   "/:courseId/lectures/:lectureId",
   authenticate,
+  authorize("admin", "teacher"),
   uploadMedia.single("video"),
   editLecture,
 );
-router.delete("/:courseId/lectures/:lectureId", authenticate, deleteLecture);
+router.delete(
+  "/:courseId/lectures/:lectureId",
+  authenticate,
+  authorize("admin", "teacher"),
+  deleteLecture,
+);
 
 router.get("/published/all", getPublishedCourses); // Adding this for the Courses page
-router.patch("/:courseId/publish", authenticate, publishCourse);
+router.patch(
+  "/:courseId/publish",
+  authenticate,
+  authorize("admin", "teacher"),
+  publishCourse,
+);
 
 // Enrollment and Wishlist
 router.post("/:courseId/enroll", authenticate, enrollCourse);
