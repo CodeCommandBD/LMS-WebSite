@@ -50,11 +50,6 @@ const Signup = () => {
   const signupMutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (data) => {
-      // Update Redux state with user data if available
-      if (data.user) {
-        dispatch(setUser(data.user));
-      }
-
       // Always show success message
       if (data.success) {
         toast.success("Account created successfully! Redirecting to login...");
