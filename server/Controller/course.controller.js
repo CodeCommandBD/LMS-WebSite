@@ -2,6 +2,8 @@ import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import Lecture from "../models/lecture.model.js";
 import Quiz from "../models/quiz.model.js";
+import CourseProgress from "../models/courseProgress.model.js";
+import fs from "fs";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -521,6 +523,10 @@ export const enrollCourse = async (req, res) => {
     // Add course to user's enrolledCourses
     user.enrolledCourses.push(courseId);
     await user.save();
+    fs.appendFileSync(
+      "debug.log",
+      `\n[${new Date().toISOString()}] Free Enroll: user ${userId}, course ${courseId} - SUCCESS`,
+    );
 
     // Add user to course's enrolledStudents
     course.enrolledStudents.push(userId);
@@ -574,10 +580,16 @@ export const checkEnrollmentAndWishlist = async (req, res) => {
     );
     const isWishlisted = user.wishlist.some((id) => id.toString() === courseId);
 
+    const progress = await CourseProgress.findOne({
+      userId,
+      courseId,
+    });
+
     return res.status(200).json({
       success: true,
       isEnrolled,
       isWishlisted,
+      progress,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
