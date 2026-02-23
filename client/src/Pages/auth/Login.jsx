@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import React, { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/schemas/loginSchema";
@@ -18,6 +18,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   // Redirect if already authenticated
@@ -52,7 +54,7 @@ const Login = () => {
       // Show success message and navigate
       if (data.success) {
         toast.success("Login successful! Welcome back.");
-        setTimeout(() => navigate("/"), 1500);
+        setTimeout(() => navigate(from), 1500);
       }
     },
     onError: (error) => {

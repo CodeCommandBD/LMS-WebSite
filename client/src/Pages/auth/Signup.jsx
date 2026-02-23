@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema } from "@/schemas/signupSchema";
@@ -17,6 +17,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -58,7 +59,10 @@ const Signup = () => {
       if (data.success) {
         toast.success("Account created successfully! Redirecting to login...");
         reset();
-        setTimeout(() => navigate("/login"), 1500);
+        setTimeout(
+          () => navigate("/login", { state: { from: location.state?.from } }),
+          1500,
+        );
       }
     },
     onError: (error) => {

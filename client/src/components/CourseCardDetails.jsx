@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Loader2,
   Star,
@@ -66,6 +66,7 @@ const StarRating = ({ rating, size = "h-4 w-4" }) => {
 const CourseCardDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("About");
@@ -270,6 +271,7 @@ const CourseCardDetails = () => {
               <img
                 src={course.courseThumbnail}
                 alt={course.courseTitle}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -725,7 +727,7 @@ const CourseCardDetails = () => {
                   disabled={enrollMutation.isPending}
                   onClick={() => {
                     if (!user) {
-                      navigate("/login");
+                      navigate("/login", { state: { from: location } });
                       return;
                     }
                     if (isCreator) {
@@ -784,7 +786,7 @@ const CourseCardDetails = () => {
                   <button
                     onClick={() => {
                       if (!user) {
-                        navigate("/login");
+                        navigate("/login", { state: { from: location } });
                         return;
                       }
                       wishlistMutation.mutate();
