@@ -835,22 +835,51 @@ const CourseCardDetails = () => {
               Preview: {selectedPreviewVideo?.lectureTitle}
             </DialogTitle>
           </DialogHeader>
-          <div className="aspect-video w-full flex items-center justify-center bg-zinc-900">
+          <div className="aspect-video w-full flex items-center justify-center bg-zinc-900 pt-14">
             {selectedPreviewVideo?.videoUrl ? (
-              <video
-                key={selectedPreviewVideo._id || selectedPreviewVideo.videoUrl}
-                src={selectedPreviewVideo.videoUrl}
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full"
-                controlsList="nodownload"
-              />
+              (() => {
+                const url = selectedPreviewVideo.videoUrl;
+                const isYoutube =
+                  url.includes("youtube.com") || url.includes("youtu.be");
+
+                if (isYoutube) {
+                  // Extract YouTube video ID
+                  const videoId =
+                    url.split("v=")[1]?.split("&")[0] ||
+                    url.split("youtu.be/")[1]?.split("?")[0] ||
+                    url.split("/embed/")[1]?.split("?")[0];
+
+                  return (
+                    <iframe
+                      key={videoId}
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                      title={selectedPreviewVideo.lectureTitle}
+                    />
+                  );
+                }
+
+                return (
+                  <video
+                    key={selectedPreviewVideo._id || url}
+                    src={url}
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full"
+                    controlsList="nodownload"
+                    onError={(e) => console.error("Preview Video Error:", e)}
+                  />
+                );
+              })()
             ) : (
               <div className="text-gray-400 flex flex-col items-center gap-3">
                 <PlayCircle className="h-16 w-16 opacity-20" />
-                <p className="font-medium">
-                  No video source available for this preview
+                <p className="font-medium text-sm">
+                  No video uploaded for this lecture yet
                 </p>
               </div>
             )}
