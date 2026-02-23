@@ -1,6 +1,7 @@
-import Course from "../Models/course.model.js";
-import User from "../Models/user.model.js";
-import Lecture from "../Models/lecture.model.js";
+import Course from "../models/course.model.js";
+import User from "../models/user.model.js";
+import Lecture from "../models/lecture.model.js";
+import Quiz from "../models/quiz.model.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -122,9 +123,6 @@ export const editCourse = async (req, res) => {
       runValidators: true,
     });
 
-    console.log("Req Body:", req.body);
-    console.log("Updated Course (After Atomic Update):", updatedCourse);
-
     return res.status(200).json({
       success: true,
       course: updatedCourse,
@@ -143,7 +141,7 @@ export const getCourseById = async (req, res) => {
 
     const course = await Course.findById(courseId)
       .populate("lectures")
-      .populate("creator");
+      .populate("creator", "name profilePicture");
 
     if (!course) {
       return res
@@ -416,25 +414,86 @@ export const publishCourse = async (req, res) => {
       message: error.message,
     });
   }
-}; // get published courses
+}; // get published courses with search, filters, and pagination
 export const getPublishedCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true })
-      .populate("lectures")
-      .populate("creator");
-    if (!courses || courses.length === 0) {
-      return res.status(200).json({
-        success: true,
-        courses: [],
-        message: "No published courses found",
-      });
+    const {
+      search = "",
+      categories = [],
+      levels = [],
+      minPrice,
+      maxPrice,
+      sort = "newest",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // 1. Build Query
+    const query = { isPublished: true };
+
+    // Text Search (Title, Subtitle, Category)
+    if (search) {
+      const escapedSearch = search
+        .trim()
+        .replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const searchRegex = new RegExp(escapedSearch, "i");
+      query.$or = [
+        { courseTitle: searchRegex },
+        { subTitle: searchRegex },
+        { category: searchRegex },
+      ];
     }
+
+    // Category Filter
+    if (categories.length > 0) {
+      query.category = {
+        $in: Array.isArray(categories) ? categories : [categories],
+      };
+    }
+
+    // Level Filter
+    if (levels.length > 0) {
+      query.courseLevel = { $in: Array.isArray(levels) ? levels : [levels] };
+    }
+
+    // Price Filter
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      query.price = {};
+      if (minPrice !== undefined) query.price.$gte = Number(minPrice);
+      if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
+    }
+
+    // 2. Build Sort Options
+    let sortOptions = { createdAt: -1 }; // default newest
+    if (sort === "price-low") sortOptions = { price: 1 };
+    if (sort === "price-high") sortOptions = { price: -1 };
+    if (sort === "oldest") sortOptions = { createdAt: 1 };
+
+    // 3. Pagination Logic
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // 4. Execute Query
+
+    const [courses, totalCourses] = await Promise.all([
+      Course.find(query)
+        .populate("lectures", "lectureTitle")
+        .populate("creator", "name profilePicture")
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(Number(limit)),
+      Course.countDocuments(query),
+    ]);
+
     return res.status(200).json({
       success: true,
       courses,
+      totalCourses,
+      totalPages: Math.ceil(totalCourses / Number(limit)),
+      currentPage: Number(page),
       message: "Published courses fetched successfully",
     });
   } catch (error) {
+    console.error("Search API Error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -519,6 +578,83 @@ export const checkEnrollmentAndWishlist = async (req, res) => {
       success: true,
       isEnrolled,
       isWishlisted,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+// Rename a section (updates all lectures and quizzes in that section)
+export const renameSection = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { oldSectionName, newSectionName } = req.body;
+
+    if (!oldSectionName || !newSectionName) {
+      return res.status(400).json({
+        success: false,
+        message: "Both old and new section names are required",
+      });
+    }
+
+    // Update Lectures
+    await Lecture.updateMany(
+      { course: courseId, sectionName: oldSectionName },
+      { $set: { sectionName: newSectionName } },
+    );
+
+    // Update Quizzes
+    await Quiz.updateMany(
+      { courseId, sectionName: oldSectionName },
+      { $set: { sectionName: newSectionName } },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Section renamed from "${oldSectionName}" to "${newSectionName}"`,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Delete a section (removes all lectures and quizzes in that section)
+export const deleteSection = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { sectionName } = req.body;
+
+    if (!sectionName) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Section name is required" });
+    }
+
+    // 1. Get all lectures to delete videos from Cloudinary
+    const lecturesToDelete = await Lecture.find({
+      course: courseId,
+      sectionName,
+    });
+    for (const lecture of lecturesToDelete) {
+      if (lecture.publicId) {
+        await deleteFromCloudinary(lecture.publicId);
+      }
+    }
+
+    // 2. Remove lectures from Course document
+    const lectureIds = lecturesToDelete.map((l) => l._id);
+    await Course.findByIdAndUpdate(courseId, {
+      $pull: { lectures: { $in: lectureIds } },
+    });
+
+    // 3. Delete Lectures
+    await Lecture.deleteMany({ course: courseId, sectionName });
+
+    // 4. Delete Quizzes
+    await Quiz.deleteMany({ courseId, sectionName });
+
+    return res.status(200).json({
+      success: true,
+      message: `Section "${sectionName}" and its content deleted successfully`,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
