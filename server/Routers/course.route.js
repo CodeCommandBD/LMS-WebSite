@@ -16,6 +16,8 @@ import {
   enrollCourse,
   toggleWishlist,
   checkEnrollmentAndWishlist,
+  renameSection,
+  deleteSection,
 } from "../Controller/course.controller.js";
 import {
   uploadCourseThumbnail,
@@ -35,6 +37,7 @@ router.put(
   uploadCourseThumbnail.single("courseThumbnail"),
   editCourse,
 );
+router.get("/published", getPublishedCourses);
 router.get("/:courseId", getCourseById);
 router.delete(
   "/:courseId",
@@ -64,7 +67,7 @@ router.delete(
   deleteLecture,
 );
 
-router.get("/published/all", getPublishedCourses); // Adding this for the Courses page
+// router.get("/published/all", getPublishedCourses); // Moved up
 router.patch(
   "/:courseId/publish",
   authenticate,
@@ -76,5 +79,19 @@ router.patch(
 router.post("/:courseId/enroll", authenticate, enrollCourse);
 router.post("/:courseId/wishlist", authenticate, toggleWishlist);
 router.get("/:courseId/status", authenticate, checkEnrollmentAndWishlist);
+
+// Section Operations
+router.patch(
+  "/:courseId/sections/rename",
+  authenticate,
+  authorize("admin", "teacher"),
+  renameSection,
+);
+router.delete(
+  "/:courseId/sections/delete",
+  authenticate,
+  authorize("admin", "teacher"),
+  deleteSection,
+);
 
 export default router;
