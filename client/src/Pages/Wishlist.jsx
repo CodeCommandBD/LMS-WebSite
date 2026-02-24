@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import CourseCard from "@/components/CourseCard";
+import api from "../lib/api";
 import CourseSkeleton from "@/components/CourseSkeleton";
 import { Heart, Search, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,7 @@ const Wishlist = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: async () => {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/v1/users/wishlist`,
-        { withCredentials: true },
-      );
+      const response = await api.get("/users/wishlist");
       return response.data;
     },
   });
