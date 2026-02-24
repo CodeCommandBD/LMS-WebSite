@@ -1,20 +1,17 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import CourseCard from "@/components/CourseCard";
-import api from "../lib/api";
 import CourseSkeleton from "@/components/CourseSkeleton";
 import { Heart, Search, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
+import { getWishlist } from "@/services/authApi";
+
 const Wishlist = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["wishlist"],
-    queryFn: async () => {
-      const response = await api.get("/users/wishlist");
-      return response.data;
-    },
+    queryFn: getWishlist,
   });
 
   return (
