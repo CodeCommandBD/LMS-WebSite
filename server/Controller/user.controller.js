@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
-import Course from "../Models/course.model.js";
+import Course from "../models/course.model.js";
 import Review from "../models/review.model.js";
+import CourseProgress from "../models/courseProgress.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
@@ -262,9 +263,13 @@ export const getEnrolledCourses = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
+    // Fetch progress for all enrolled courses
+    const progress = await CourseProgress.find({ userId: req.user.id });
+
     return res.status(200).json({
       success: true,
       courses: user.enrolledCourses,
+      progress,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -418,6 +423,21 @@ export const resetPassword = async (req, res) => {
     return res.json({
       success: true,
       message: "Password has been reset successfully. You can now login.",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Get all users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select("-password")
+      .sort({ createdAt: -1 });
+    return res.status(200).json({
+      success: true,
+      users,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
