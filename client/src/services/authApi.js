@@ -22,10 +22,10 @@ export const getCurrentUser = async () => {
 
 export const updateProfile = async (userData) => {
   const headers = {};
-  
+
   // Check if userData is FormData
   const isFormData = userData instanceof FormData;
-  
+
   if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
@@ -33,5 +33,10 @@ export const updateProfile = async (userData) => {
   const response = await api.put("/users/update-profile", userData, {
     headers,
   });
+  return response.data;
+};
+
+export const getAllUsersService = async () => {
+  const response = await api.get("/users");
   return response.data;
 };
