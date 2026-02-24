@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import api from "@/lib/api";
 import CourseCard from "@/components/CourseCard";
 import {
@@ -14,10 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCategories } from "@/services/categoryApi";
-import CourseSkeleton from "@/components/CourseSkeleton";
-
-const LEVELS = ["Beginner", "Intermediate", "Advanced"];
+import { searchCoursesService } from "@/services/courseApi";
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,18 +37,14 @@ const SearchPage = () => {
       sort,
       page,
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (query) params.append("search", query);
-      selectedCategories.forEach((c) => params.append("categories", c));
-      selectedLevels.forEach((l) => params.append("levels", l));
-      params.append("sort", sort);
-      params.append("page", page);
-      params.append("limit", "12");
-
-      const response = await api.get(`/courses/published?${params.toString()}`);
-      return response.data;
-    },
+    queryFn: () =>
+      searchCoursesService({
+        query,
+        categories: selectedCategories,
+        levels: selectedLevels,
+        sort,
+        page,
+      }),
     keepPreviousData: true,
   });
 
