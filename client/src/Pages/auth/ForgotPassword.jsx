@@ -1,31 +1,31 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-hot-toast";
+
+import { forgotPassword } from "@/services/authApi";
+import { useMutation } from "@tanstack/react-query";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/v1/users/forgot-password`,
-        { email },
-      );
-      if (response.data.success) {
+  const mutation = useMutation({
+    mutationFn: forgotPassword,
+    onSuccess: (data) => {
+      if (data.success) {
         setIsSent(true);
         toast.success("Reset link sent!");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Something went wrong");
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(email);
   };
 
   return (
@@ -71,10 +71,10 @@ const ForgotPassword = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={mutation.isPending}
                   className="w-full h-14 bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black rounded-2xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 group"
                 >
-                  {isLoading ? (
+                  {mutation.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Sending Link...
