@@ -4,6 +4,7 @@ import {
   stripeWebhook,
   getDashboardStats,
 } from "../Controller/purchase.controller.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";
 
 const router = express.Router();
