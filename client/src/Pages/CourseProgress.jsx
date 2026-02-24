@@ -80,6 +80,16 @@ const CourseProgress = () => {
     return acc;
   }, {});
 
+  const quizzes = quizzesData?.quizzes || [];
+  const groupedQuizzes = quizzes.reduce((acc, quiz) => {
+    const section = quiz.sectionName || "Course Content";
+    if (!acc[section]) {
+      acc[section] = [];
+    }
+    acc[section].push(quiz);
+    return acc;
+  }, {});
+
   useEffect(() => {
     if (Object.keys(groupedLectures).length > 0) {
       const initialOpen = {};
@@ -134,15 +144,23 @@ const CourseProgress = () => {
       return toast.error("Quiz data is still loading. Please wait a moment.");
     }
 
-    const sectionQuiz = quizzesData.quizzes.find(
+    const sectionQuizzes = quizzesData.quizzes.filter(
       (q) =>
         q.sectionName?.trim().toLowerCase() ===
         currentSectionName.trim().toLowerCase(),
     );
 
-    if (sectionQuiz) {
-      setActiveQuiz(sectionQuiz);
-      setShowQuiz(true);
+    if (sectionQuizzes.length > 0) {
+      // Find the first unpassed quiz in this section
+      const nextQuiz = sectionQuizzes.find((q) => !q.latestAttempt?.isPassed);
+      if (nextQuiz) {
+        setActiveQuiz(nextQuiz);
+        setShowQuiz(true);
+      } else {
+        toast.success(
+          `You have passed all quizzes for "${currentSectionName}"!`,
+        );
+      }
     } else {
       toast(
         `No quiz found for "${currentSectionName}". Complete all lectures in this section to proceed.`,
@@ -536,6 +554,68 @@ const CourseProgress = () => {
                               {isActive && (
                                 <div className="absolute left-[-2px] top-4 bottom-4 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                               )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Quizzes Section */}
+                        {groupedQuizzes[sectionName]?.map((quiz) => {
+                          const isCompleted = quiz.latestAttempt?.isPassed;
+                          const sectionStatus = getSectionStatus(sectionName);
+                          const isLocked = sectionStatus === "locked";
+
+                          return (
+                            <div
+                              key={quiz._id}
+                              onClick={() => {
+                                if (!isLocked) {
+                                  setActiveQuiz(quiz);
+                                  setShowQuiz(true);
+                                }
+                              }}
+                              className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
+                                isLocked
+                                  ? "opacity-50 grayscale cursor-not-allowed"
+                                  : "hover:bg-blue-600/5 border border-transparent"
+                              }`}
+                            >
+                              <div className="relative shrink-0 mt-0.5">
+                                {isLocked ? (
+                                  <div className="w-5 h-5 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center">
+                                    <Lock className="h-2.5 w-2.5 text-gray-600" />
+                                  </div>
+                                ) : isCompleted ? (
+                                  <div className="w-5 h-5 rounded-full bg-indigo-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-indigo-900/40">
+                                    <CheckCircle2 className="h-3 w-3 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                                    <FileText className="h-3 w-3 text-indigo-400" />
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className={`text-[13px] font-bold leading-tight line-clamp-2 transition-colors ${
+                                    isCompleted
+                                      ? "text-indigo-300"
+                                      : "text-gray-300 group-hover:text-indigo-400"
+                                  }`}
+                                >
+                                  {quiz.title}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1.5 font-bold">
+                                  <span className="text-[8px] text-indigo-400 uppercase tracking-widest bg-indigo-400/10 px-1.5 py-0.5 rounded border border-indigo-400/20">
+                                    Quiz
+                                  </span>
+                                  {isCompleted && (
+                                    <span className="text-[8px] text-green-400 uppercase tracking-widest bg-green-400/10 px-1.5 py-0.5 rounded border border-green-400/20">
+                                      Passed
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           );
                         })}

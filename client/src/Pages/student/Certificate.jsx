@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import api from "@/lib/api";
 import {
   Award,
   Download,
@@ -21,10 +22,7 @@ const Certificate = () => {
   const { data: courseData, isLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
-      const resp = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/v1/courses/${courseId}`,
-        { withCredentials: true },
-      );
+      const resp = await api.get(`/courses/${courseId}`);
       return resp.data;
     },
   });
@@ -32,10 +30,7 @@ const Certificate = () => {
   const { data: userData } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      const resp = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/v1/users/profile`,
-        { withCredentials: true },
-      );
+      const resp = await api.get("/users/me"); // Using /me instead of /profile for consistency
       return resp.data;
     },
   });

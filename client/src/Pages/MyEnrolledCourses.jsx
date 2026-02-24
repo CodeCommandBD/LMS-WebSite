@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import CourseCard from "@/components/CourseCard";
+import api from "../lib/api";
 import CourseSkeleton from "@/components/CourseSkeleton";
 import {
   GraduationCap,
@@ -17,10 +18,7 @@ const MyEnrolledCourses = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["enrolledCourses"],
     queryFn: async () => {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/v1/users/enrolled-courses`,
-        { withCredentials: true },
-      );
+      const response = await api.get("/users/enrolled-courses");
       return response.data;
     },
   });
