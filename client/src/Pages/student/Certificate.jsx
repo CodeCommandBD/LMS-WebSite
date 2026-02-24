@@ -1,7 +1,6 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import api from "@/lib/api";
 import {
   Award,
@@ -16,23 +15,21 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { getCourseById } from "@/services/courseApi";
+import { getCurrentUser } from "@/services/authApi";
+
 const Certificate = () => {
   const { id: courseId } = useParams();
 
   const { data: courseData, isLoading } = useQuery({
     queryKey: ["course", courseId],
-    queryFn: async () => {
-      const resp = await api.get(`/courses/${courseId}`);
-      return resp.data;
-    },
+    queryFn: () => getCourseById(courseId),
+    enabled: !!courseId,
   });
 
   const { data: userData } = useQuery({
     queryKey: ["profile"],
-    queryFn: async () => {
-      const resp = await api.get("/users/me"); // Using /me instead of /profile for consistency
-      return resp.data;
-    },
+    queryFn: getCurrentUser,
   });
 
   if (isLoading)
