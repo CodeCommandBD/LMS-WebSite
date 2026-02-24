@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import CourseTab from "./CourseTab";
 
 import { useParams } from "react-router-dom";

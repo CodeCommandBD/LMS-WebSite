@@ -21,6 +21,7 @@ import {
   editLectureService,
   getCourseById,
 } from "@/services/courseApi";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import toast from "react-hot-toast";
 
 const EditLecture = () => {
@@ -32,6 +33,7 @@ const EditLecture = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoPreview, setVideoPreview] = useState("");
   const [isYoutube, setIsYoutube] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const {
     register,
@@ -153,9 +155,7 @@ const EditLecture = () => {
   };
 
   const handleRemoveLecture = () => {
-    if (window.confirm("Are you sure you want to remove this lecture?")) {
-      removeLectureMutation.mutate();
-    }
+    setConfirmOpen(true);
   };
 
   if (isCourseLoading) {
@@ -231,20 +231,50 @@ const EditLecture = () => {
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Label className="text-gray-300 font-bold ml-1">
                     Section / Module Name
                   </Label>
-                  <Input
-                    type="text"
-                    placeholder="Ex. Module 1: Introduction"
-                    className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600 font-bold"
-                    {...register("sectionName")}
-                  />
-                  <p className="text-gray-500 text-[10px] italic ml-1">
-                    Grouping lectures by section makes your curriculum
-                    organized.
-                  </p>
+                  <div className="space-y-3">
+                    <Input
+                      type="text"
+                      placeholder="Ex. Module 1: Introduction"
+                      className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600 font-bold"
+                      {...register("sectionName")}
+                    />
+
+                    {/* Existing Sections Suggestions */}
+                    {courseData?.course?.lectures?.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                          Select Existing Module:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from(
+                            new Set(
+                              courseData.course.lectures.map(
+                                (l) => l.sectionName || "Course Content",
+                              ),
+                            ),
+                          ).map((section) => (
+                            <button
+                              key={section}
+                              type="button"
+                              onClick={() => setValue("sectionName", section)}
+                              className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold hover:bg-blue-500/20 transition-all cursor-pointer"
+                            >
+                              {section}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-gray-500 text-[10px] italic ml-1">
+                      Grouping lectures by section makes your curriculum
+                      organized.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="p-6 bg-[#0f172a] rounded-3xl border border-gray-800 flex items-center justify-between shadow-inner">
@@ -414,6 +444,18 @@ const EditLecture = () => {
           </form>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          removeLectureMutation.mutate();
+          setConfirmOpen(false);
+        }}
+        title="Delete Lecture?"
+        description="This lecture will be permanently removed and cannot be recovered."
+        isLoading={removeLectureMutation.isPending}
+      />
     </div>
   );
 };
