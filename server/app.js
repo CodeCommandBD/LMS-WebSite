@@ -71,6 +71,9 @@ app.use((req, res, next) => {
 });
 
 // 4. Input Sanitization
+// Specific route for Stripe Webhook to handle raw body (MUST BE BEFORE express.json())
+app.post("/api/v1/purchase/webhook", express.raw({ type: "application/json" }));
+
 app.use(express.json({ limit: "1mb" })); // Protection against large payloads
 app.use(mongoSanitize()); // Protection against NoSQL Injection
 app.use(xssClean()); // Protection against XSS attacks
@@ -97,9 +100,6 @@ app.use(
     credentials: true,
   }),
 );
-
-// Specific route for Stripe Webhook to handle raw body
-app.post("/api/v1/purchase/webhook", express.raw({ type: "application/json" }));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(bodyParser.json()); // Replaced by express.json() above for security
