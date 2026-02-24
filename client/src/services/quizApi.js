@@ -37,3 +37,9 @@ export const submitQuizAttemptService = async (quizId, answers) => {
   const response = await api.post(`/quiz/submit/${quizId}`, { answers });
   return response.data;
 };
+
+// 7. Delete quiz
+export const deleteQuizService = async (quizId) => {
+  const response = await api.delete(`/quiz/delete/${quizId}`);
+  return response.data;
+};
