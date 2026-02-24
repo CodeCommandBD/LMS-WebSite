@@ -1,8 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import CourseCard from "@/components/CourseCard";
-import api from "../lib/api";
 import CourseSkeleton from "@/components/CourseSkeleton";
 import {
   GraduationCap,
@@ -14,13 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
+import { getEnrolledCourses } from "@/services/authApi";
+
 const MyEnrolledCourses = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["enrolledCourses"],
-    queryFn: async () => {
-      const response = await api.get("/users/enrolled-courses");
-      return response.data;
-    },
+    queryFn: getEnrolledCourses,
   });
 
   const completedCoursesCount =
