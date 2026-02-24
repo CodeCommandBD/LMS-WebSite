@@ -1,5 +1,5 @@
-import Quiz from "../Models/quiz.model.js";
-import QuizAttempt from "../Models/quizAttempt.model.js";
+import Quiz from "../models/quiz.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
 
 // --- ADMIN CONTROLLERS ---
 
