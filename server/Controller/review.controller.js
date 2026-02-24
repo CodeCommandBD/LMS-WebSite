@@ -1,5 +1,5 @@
 import Review from "../models/review.model.js";
-import Course from "../Models/course.model.js";
+import Course from "../models/course.model.js";
 
 // Create or update a review (one per user per course)
 export const createOrUpdateReview = async (req, res) => {
