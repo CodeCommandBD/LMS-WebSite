@@ -10,16 +10,14 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useMutation } from "@tanstack/react-query";
-import { logoutUser } from "@/services/authApi";
-import { clearUser } from "@/store/slices/authSlice";
-import toast from "react-hot-toast";
+import { toggleSidebar } from "@/store/slices/uiSlice";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 const AdminSideBar = () => {
   const { user } = useSelector((state) => state.auth);
+  const { isSidebarOpen } = useSelector((state) => state.ui);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -48,25 +46,41 @@ const AdminSideBar = () => {
   ];
 
   return (
-    <div className="w-[80px] md:w-[280px] bg-[#0f172a] text-gray-400 flex flex-col sticky left-0 top-0 h-screen transition-all duration-300 z-50">
+    <div
+      className={`${isSidebarOpen ? "w-[280px]" : "w-[80px]"} bg-[#0f172a] text-gray-400 flex flex-col sticky left-0 top-0 h-screen transition-all duration-300 z-50 border-r border-gray-800/50`}
+    >
       {/* Logo Section */}
-      <div className="p-6 mb-4">
+      <div className="p-6 mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-xl">
+          <div className="bg-blue-600 p-2 rounded-xl shrink-0">
             <BookOpen className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-white font-bold text-xl hidden md:block">
-            EduAdmin
-          </h1>
+          {isSidebarOpen && (
+            <h1 className="text-white font-bold text-xl truncate animate-in fade-in slide-in-from-left-2 duration-300">
+              EduAdmin
+            </h1>
+          )}
         </div>
+        <button
+          onClick={() => dispatch(toggleSidebar())}
+          className="hidden md:flex p-1.5 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-white transition-colors"
+        >
+          {isSidebarOpen ? (
+            <ChevronLeft className="w-5 h-5" />
+          ) : (
+            <ChevronRight className="w-5 h-5" />
+          )}
+        </button>
       </div>
 
       <div className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
         {/* Main Menu */}
         <div>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-4 hidden md:block">
-            Main Menu
-          </p>
+          {isSidebarOpen && (
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-4 animate-in fade-in duration-300">
+              Main Menu
+            </p>
+          )}
           <div className="space-y-1">
             {menuItems.map((item) => (
               <NavLink
@@ -81,9 +95,11 @@ const AdminSideBar = () => {
                 }
               >
                 <item.icon className="w-5 h-5" />
-                <span className="font-medium hidden md:block text-sm">
-                  {item.label}
-                </span>
+                {isSidebarOpen && (
+                  <span className="font-medium text-sm animate-in fade-in slide-in-from-left-2 duration-300">
+                    {item.label}
+                  </span>
+                )}
               </NavLink>
             ))}
           </div>
@@ -91,9 +107,11 @@ const AdminSideBar = () => {
 
         {/* Support Section */}
         <div>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-4 hidden md:block">
-            Support
-          </p>
+          {isSidebarOpen && (
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-4 animate-in fade-in duration-300">
+              Support
+            </p>
+          )}
           <div className="space-y-1">
             {supportItems.map((item) => (
               <NavLink
@@ -108,9 +126,11 @@ const AdminSideBar = () => {
                 }
               >
                 <item.icon className="w-5 h-5" />
-                <span className="font-medium hidden md:block text-sm">
-                  {item.label}
-                </span>
+                {isSidebarOpen && (
+                  <span className="font-medium text-sm animate-in fade-in slide-in-from-left-2 duration-300">
+                    {item.label}
+                  </span>
+                )}
               </NavLink>
             ))}
           </div>
@@ -127,21 +147,25 @@ const AdminSideBar = () => {
                 {user?.name?.charAt(0) || "A"}
               </AvatarFallback>
             </Avatar>
-            <div className="hidden md:block flex-1 min-w-0">
-              <p className="text-sm font-bold text-white truncate">
-                {user?.name || "Alex Morgan"}
-              </p>
-              <p className="text-[10px] text-gray-500 truncate uppercase">
-                {user?.role || "Admin"}
-              </p>
-            </div>
-            <button
-              onClick={() => logoutMutation.mutate()}
-              className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors hidden md:block"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            {isSidebarOpen && (
+              <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                <p className="text-sm font-bold text-white truncate">
+                  {user?.name || "Alex Morgan"}
+                </p>
+                <p className="text-[10px] text-gray-500 truncate uppercase">
+                  {user?.role || "Admin"}
+                </p>
+              </div>
+            )}
+            {isSidebarOpen && (
+              <button
+                onClick={() => logoutMutation.mutate()}
+                className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors animate-in fade-in duration-300"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
