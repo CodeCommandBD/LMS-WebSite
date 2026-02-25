@@ -3,6 +3,7 @@ import Purchase from "../models/purchase.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
+import fs from "fs";
 
 // Helper to get Stripe instance
 const getStripe = () => {
@@ -18,8 +19,6 @@ export const createCheckoutSession = async (req, res) => {
   try {
     const { courseId } = req.body;
     const userId = req.user.id;
-
-    console.log("Creating checkout session:", { courseId, userId });
 
     const course = await Course.findById(courseId);
     if (!course) {
@@ -50,7 +49,7 @@ export const createCheckoutSession = async (req, res) => {
 
     // Create session
     const stripe = getStripe();
-    console.log("Initializing Stripe checkout...");
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -113,10 +112,21 @@ export const stripeWebhook = async (req, res) => {
         sig,
         process.env.STRIPE_WEBHOOK_SECRET,
       );
+    } else if (process.env.NODE_ENV === "production") {
+      // Missing signature or secret in production is a critical security failure
+      console.error(
+        "FATAL: Stripe Webhook received in production without valid signature/secret.",
+      );
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid Signature" });
     } else {
-      // Fallback/Testing mode: parse the buffer directly
+      // Fallback/Testing mode: parse the buffer directly (only outside production)
       event = JSON.parse(payload.toString());
-      console.log("Webhook received (parsed from Buffer):", event.type);
+      console.log(
+        "Webhook received (parsed from Buffer) [NON-PROD]:",
+        event.type,
+      );
     }
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
@@ -127,13 +137,22 @@ export const stripeWebhook = async (req, res) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const { courseId, userId } = session.metadata;
+    fs.appendFileSync(
+      "debug.log",
+      `\n[${new Date().toISOString()}] Webhook session: ${session.id}, course: ${courseId}, user: ${userId}`,
+    );
 
     try {
+      console.log("Processing fulfillment for session:", session.id);
+      console.log("Metadata:", { courseId, userId });
+
       // 1. Update purchase status
-      await Purchase.findOneAndUpdate(
+      const updatedPurchase = await Purchase.findOneAndUpdate(
         { paymentId: session.id },
         { status: "completed" },
+        { new: true },
       );
+      console.log("Purchase status updated:", updatedPurchase?.status);
 
       // 2. Enroll user in course
       const user = await User.findById(userId);
