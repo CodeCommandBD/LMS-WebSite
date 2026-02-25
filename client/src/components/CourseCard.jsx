@@ -5,12 +5,22 @@ import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getCourseReviewsService } from "@/services/courseApi";
 
+import { useSelector } from "react-redux";
+
 /**
  * CourseCard Component
  * Redesigned to match a premium LMS look with rounded thumbnails,
  * floating price badges, and instructor details.
  */
-const CourseCard = ({ course }) => {
+const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
+  const { user } = useSelector((state) => state.auth);
+
+  // Check enrollment from prop or Redux state
+  const isEnrolled =
+    isEnrolledProp ||
+    (user?.enrolledCourses &&
+      (user.enrolledCourses.includes(course._id) ||
+        user.enrolledCourses.some((c) => (c._id || c) === course._id)));
   const { data: reviewsData } = useQuery({
     queryKey: ["courseReviews", course._id || course.id],
     queryFn: () => getCourseReviewsService(course._id || course.id),
@@ -44,9 +54,11 @@ const CourseCard = ({ course }) => {
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            {/* Price Badge Overlay */}
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-blue-600 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-white/50">
-              ৳{course.price || 0}
+            {/* Price or Enrolled Badge Overlay */}
+            <div
+              className={`absolute top-3 right-3 backdrop-blur-md text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-white/50 ${isEnrolled ? "bg-green-600/90 text-white" : "bg-white/90 text-blue-600"}`}
+            >
+              {isEnrolled ? "ENROLLED" : `৳${course.price || 0}`}
             </div>
           </div>
         </div>
