@@ -111,6 +111,7 @@ export const loginUser = async (req, res) => {
               ? user.profilePicture
               : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
             : null,
+          enrolledCourses: user.enrolledCourses || [],
         },
       });
   } catch (error) {
@@ -143,6 +144,7 @@ export const getCurrentUser = async (req, res) => {
             ? user.profilePicture
             : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
           : null,
+        enrolledCourses: user.enrolledCourses || [],
       },
     });
   } catch (error) {
