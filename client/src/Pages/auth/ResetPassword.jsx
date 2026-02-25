@@ -7,8 +7,10 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-hot-toast";
+
+import { resetPassword } from "@/services/authApi";
+import { useMutation } from "@tanstack/react-query";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -18,10 +20,22 @@ const ResetPassword = () => {
     password: "",
     confirmPassword: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const mutation = useMutation({
+    mutationFn: resetPassword,
+    onSuccess: (data) => {
+      if (data.success) {
+        setIsSuccess(true);
+        toast.success("Password reset successful!");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Token is invalid or has expired");
+    },
+  });
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       return toast.error("Passwords do not match");
@@ -30,23 +44,7 @@ const ResetPassword = () => {
       return toast.error("Password must be at least 6 characters");
     }
 
-    setIsLoading(true);
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/v1/users/reset-password/${token}`,
-        { password: formData.password },
-      );
-      if (response.data.success) {
-        setIsSuccess(true);
-        toast.success("Password reset successful!");
-      }
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Token is invalid or has expired",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    mutation.mutate({ token, password: formData.password });
   };
 
   return (
@@ -122,10 +120,10 @@ const ResetPassword = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={mutation.isPending}
                   className="w-full h-14 bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black rounded-2xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 group"
                 >
-                  {isLoading ? (
+                  {mutation.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Resetting Password...
