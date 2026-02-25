@@ -8,12 +8,18 @@ import {
   LogOut,
   Home,
   LayoutGrid,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import React from "react";
 import { toggleSidebar } from "@/store/slices/uiSlice";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate, NavLink } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { logoutUser } from "@/services/authApi";
+import { clearUser } from "@/store/slices/authSlice";
+import toast from "react-hot-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const AdminSideBar = () => {
   const { user } = useSelector((state) => state.auth);
