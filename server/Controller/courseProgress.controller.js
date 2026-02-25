@@ -1,11 +1,21 @@
-import CourseProgress from "../Models/courseProgress.model.js";
-import Course from "../Models/course.model.js";
+import CourseProgress from "../models/courseProgress.model.js";
+import Course from "../models/course.model.js";
+import User from "../models/user.model.js";
 
 // 1. Get User Course Progress
 export const getUserCourseProgress = async (req, res) => {
   try {
     const { courseId } = req.params;
     const userId = req.user.id;
+
+    // Enrollment check
+    const user = await User.findById(userId);
+    if (!user.enrolledCourses.includes(courseId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not enrolled in this course.",
+      });
+    }
 
     // Find progress entry
     let progress = await CourseProgress.findOne({ userId, courseId });
@@ -35,6 +45,15 @@ export const updateLectureProgress = async (req, res) => {
   try {
     const { courseId, lectureId } = req.params;
     const userId = req.user.id;
+
+    // Enrollment check
+    const user = await User.findById(userId);
+    if (!user.enrolledCourses.includes(courseId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized. You are not enrolled in this course.",
+      });
+    }
 
     // Find or Create Progress
     let progress = await CourseProgress.findOne({ userId, courseId });
@@ -82,6 +101,15 @@ export const resetCourseProgress = async (req, res) => {
   try {
     const { courseId } = req.params;
     const userId = req.user.id;
+
+    // Enrollment check
+    const user = await User.findById(userId);
+    if (!user.enrolledCourses.includes(courseId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized. You are not enrolled in this course.",
+      });
+    }
 
     const progress = await CourseProgress.findOne({ userId, courseId });
     if (progress) {
