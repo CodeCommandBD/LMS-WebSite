@@ -42,8 +42,10 @@ import {
   deleteReviewService,
 } from "@/services/courseApi";
 import { getCourseQuizzesWithStatusService } from "@/services/quizApi";
+import { getEnrolledCourses, getCurrentUser } from "@/services/authApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "@/store/slices/authSlice";
 import toast from "react-hot-toast";
 
 // Helper: render star icons for a given rating
@@ -69,6 +71,7 @@ const CourseCardDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("About");
   const [isCurriculumOpen, setIsCurriculumOpen] = useState(true);
@@ -84,6 +87,12 @@ const CourseCardDetails = () => {
     queryFn: () => getCourseStatusService(id),
     enabled: !!user && !!id,
   });
+
+  const isCreator =
+    (user?.role === "admin" || user?.role === "teacher") &&
+    (user?._id === course?.creator?._id || user?._id === course?.creator);
+  const isEnrolled = statusData?.isEnrolled;
+  const isWishlisted = statusData?.isWishlisted;
 
   // Fetch reviews
   const { data: reviewsData } = useQuery({
@@ -142,10 +151,20 @@ const CourseCardDetails = () => {
         return enrollCourseService(id);
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (course?.price === 0) {
         toast.success(data.message || "Enrolled successfully!");
         queryClient.invalidateQueries(["courseStatus", id]);
+
+        // Refresh user data in Redux to update enrollment badges globally
+        try {
+          const userData = await getCurrentUser();
+          if (userData.success) {
+            dispatch(setUser(userData.user));
+          }
+        } catch (err) {
+          console.error("Failed to refresh user data after enrollment", err);
+        }
       }
     },
     onError: (error) => {
@@ -163,12 +182,6 @@ const CourseCardDetails = () => {
       toast.error(error.response?.data?.message || "Action failed");
     },
   });
-
-  const isCreator =
-    (user?.role === "admin" || user?.role === "teacher") &&
-    (user?._id === course?.creator?._id || user?._id === course?.creator);
-  const isEnrolled = statusData?.isEnrolled;
-  const isWishlisted = statusData?.isWishlisted;
 
   const handlePreviewClick = (lecture) => {
     if (lecture.isPreviewFree) {
