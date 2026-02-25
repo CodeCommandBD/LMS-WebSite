@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import CourseCard from "@/components/CourseCard";
+import CourseSkeleton from "@/components/CourseSkeleton";
 import {
   Filter,
   SlidersHorizontal,
@@ -14,6 +15,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { searchCoursesService } from "@/services/courseApi";
+import { getCategories } from "@/services/categoryApi";
+
+const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
