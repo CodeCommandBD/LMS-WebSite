@@ -82,6 +82,27 @@ export const getPublishedCourses = async () => {
   return response.data.courses;
 };
 
+// search and filter courses
+export const searchCoursesService = async ({
+  query,
+  categories,
+  levels,
+  sort,
+  page,
+  limit = 12,
+}) => {
+  const params = new URLSearchParams();
+  if (query) params.append("search", query);
+  if (categories) categories.forEach((c) => params.append("categories", c));
+  if (levels) levels.forEach((l) => params.append("levels", l));
+  if (sort) params.append("sort", sort);
+  if (page) params.append("page", page);
+  params.append("limit", limit.toString());
+
+  const response = await api.get(`/courses/published?${params.toString()}`);
+  return response.data;
+};
+
 // Enrollment and Wishlist
 export const enrollCourseService = async (courseId) => {
   const response = await api.post(`/courses/${courseId}/enroll`);
