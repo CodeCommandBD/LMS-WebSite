@@ -15,6 +15,11 @@ import quizRouter from "./Routers/quiz.route.js";
 import reviewRouter from "./Routers/review.route.js";
 import categoryRouter from "./Routers/category.route.js";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const app = express();
@@ -121,9 +126,10 @@ app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/categories", categoryRouter);
 
 // Static files & Catch-all route (MUST be at the end)
-app.use(express.static(path.join(_dirname, "client", "dist")));
-app.get(/.*/, (_, res) => {
-  res.sendFile(path.resolve(_dirname, "client", "dist", "index.html"));
+app.use(express.static(path.join(__dirname, "../build")));
+
+app.get("(.*)", (req, res) => {
+  res.sendFile(path.join(__dirname, "../build/index.html"));
 });
 
 export default app;

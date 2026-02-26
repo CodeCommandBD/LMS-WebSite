@@ -5,8 +5,8 @@
   "main": "server/index.js",
   "type": "module",
   "scripts": {
+    "build": "npm install && npm install --prefix client && npm run build --prefix client && mkdir -p build && cp -r client/dist/* build/",
     "start": "node server/index.js",
-    "build": "npm install && npm install --prefix client && npm run build --prefix client",
     "dev": "npm run build && nodemon server/index.js",
     "test": "npx cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "nodemon --ext js,json --exec \"npx cross-env NODE_OPTIONS=--experimental-vm-modules jest\""
