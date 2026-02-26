@@ -77,7 +77,7 @@ const MyEnrolledCourses = () => {
       ) : data?.courses?.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {data.courses.map((course) => (
-            <CourseCard key={course._id} course={course} />
+            <CourseCard key={course._id} course={course} isEnrolled={true} />
           ))}
         </div>
       ) : (

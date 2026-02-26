@@ -10,6 +10,7 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileInfo } from "@/components/ProfileInfo";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
@@ -82,13 +83,16 @@ const Profile = () => {
             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
             <div className="absolute -bottom-16 left-8 translate-y-2">
               <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl backdrop-blur-sm bg-opacity-80">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-xl">
-                  <img
+                <Avatar className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl">
+                  <AvatarImage
                     src={user.photoUrl || "https://github.com/shadcn.png"}
                     alt={user.name}
                     className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-500"
                   />
-                </div>
+                  <AvatarFallback className="text-3xl font-black bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
               </div>
             </div>
           </div>
