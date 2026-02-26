@@ -10,6 +10,18 @@ export const loginUser = async (userData) => {
   return response.data;
 };
 
+export const forgotPassword = async (email) => {
+  const response = await api.post("/users/forgot-password", { email });
+  return response.data;
+};
+
+export const resetPassword = async ({ token, password }) => {
+  const response = await api.post(`/users/reset-password/${token}`, {
+    password,
+  });
+  return response.data;
+};
+
 export const logoutUser = async () => {
   const response = await api.post("/users/logout");
   return response.data;
@@ -38,5 +50,15 @@ export const updateProfile = async (userData) => {
 
 export const getAllUsersService = async () => {
   const response = await api.get("/users");
+  return response.data;
+};
+
+export const getEnrolledCourses = async () => {
+  const response = await api.get("/users/enrolled-courses");
+  return response.data;
+};
+
+export const getWishlist = async () => {
+  const response = await api.get("/users/wishlist");
   return response.data;
 };
