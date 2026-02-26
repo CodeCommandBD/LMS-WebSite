@@ -14,9 +14,13 @@ import courseProgressRouter from "./Routers/courseProgress.route.js";
 import quizRouter from "./Routers/quiz.route.js";
 import reviewRouter from "./Routers/review.route.js";
 import categoryRouter from "./Routers/category.route.js";
+import path from "path";
 dotenv.config();
 
 const app = express();
+
+// path
+const _dirname = path.resolve();
 
 // 1. HTTP Security Headers
 app.use(helmet());
@@ -48,7 +52,6 @@ const authLimiter = rateLimit({
 app.use("/api/", limiter);
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/register", authLimiter);
-
 // 3. Express 5 compatibility shim (Required for express-mongo-sanitize & xss-clean)
 app.use((req, res, next) => {
   if (req.query) {
@@ -116,5 +119,11 @@ app.use("/api/v1/progress", courseProgressRouter);
 app.use("/api/v1/quiz", quizRouter);
 app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/categories", categoryRouter);
+
+// Static files & Catch-all route (MUST be at the end)
+app.use(express.static(path.join(_dirname, "client", "dist")));
+app.get(/.*/, (_, res) => {
+  res.sendFile(path.resolve(_dirname, "client", "dist", "index.html"));
+});
 
 export default app;
