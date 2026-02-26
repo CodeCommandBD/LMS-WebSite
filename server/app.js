@@ -100,7 +100,11 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g., mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      // Allow localhost, configured CLIENT_URL, and any Vercel domain
+      if (
+        allowedOrigins.includes(origin) ||
+        /^https?:\/\/.*\.vercel\.app$/.test(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked: ${origin} is not allowed`));
@@ -126,10 +130,12 @@ app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/categories", categoryRouter);
 
 // Static files & Catch-all route (MUST be at the end)
-app.use(express.static(path.join(__dirname, "../build")));
+// In local dev: serves from client/dist after running the build
+// In Vercel: static files are served by Vercel CDN, this code is not used
+app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 
-app.get("(.*)", (req, res) => {
-  res.sendFile(path.join(__dirname, "../build/index.html"));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
 
 export default app;
