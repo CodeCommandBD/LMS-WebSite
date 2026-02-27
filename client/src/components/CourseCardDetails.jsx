@@ -383,458 +383,468 @@ const CourseCardDetails = () => {
             </div>
           </div>
 
-          {/* About this course */}
-          <div className="space-y-8 animate-fadeIn">
-            <div className="bg-gray-50/50 p-8 rounded-3xl border border-gray-100/50">
-              <h2 className="text-2xl font-black text-gray-900 mb-8">
-                About this course
-              </h2>
-              <div
-                className="prose prose-blue max-w-none text-gray-600 leading-relaxed description-content mb-10"
-                dangerouslySetInnerHTML={{ __html: course.description }}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  "Master manual mode and settings",
-                  "Understand lighting and composition",
-                  "Professional editing workflow",
-                  "Landscape & Portrait mastery",
-                ].map((feature, idx) => (
+          {/* Tab Content */}
+          <div className="mt-8">
+            {activeTab === "About" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-gray-50/50 p-8 rounded-3xl border border-gray-100/50">
+                  <h2 className="text-2xl font-black text-gray-900 mb-8">
+                    About this course
+                  </h2>
                   <div
-                    key={idx}
-                    className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm transition-transform hover:-translate-y-1"
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0" />
-                    <span className="text-sm font-semibold text-gray-800">
-                      {feature}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                    className="prose prose-blue max-w-none text-gray-600 leading-relaxed description-content mb-10"
+                    dangerouslySetInnerHTML={{ __html: course.description }}
+                  />
 
-            {/* Curriculum */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black text-gray-900">
-                  Course Curriculum
-                </h2>
-                <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
-                  1 Section • {course.lectures?.length || 0} Lectures •{" "}
-                  {course.lectures?.length * 10 || 0}m total length
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {groupedLectures &&
-                  Object.entries(groupedLectures).map(
-                    ([sectionName, lectures], sIndex) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      "Master manual mode and settings",
+                      "Understand lighting and composition",
+                      "Professional editing workflow",
+                      "Landscape & Portrait mastery",
+                    ].map((feature, idx) => (
                       <div
-                        key={sectionName}
-                        className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
+                        key={idx}
+                        className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm transition-transform hover:-translate-y-1"
                       >
+                        <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0" />
+                        <span className="text-sm font-semibold text-gray-800">
+                          {feature}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "Curriculum" && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-black text-gray-900">
+                    Course Curriculum
+                  </h2>
+                  <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
+                    1 Section • {course.lectures?.length || 0} Lectures •{" "}
+                    {course.lectures?.length * 10 || 0}m total length
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {groupedLectures &&
+                    Object.entries(groupedLectures).map(
+                      ([sectionName, lectures], sIndex) => (
                         <div
-                          onClick={() => toggleSection(sectionName)}
-                          className="flex items-center justify-between p-5 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors"
+                          key={sectionName}
+                          className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
                         >
-                          <div className="flex items-center gap-3">
-                            <ChevronDown
-                              className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${openSections[sectionName] ? "" : "-rotate-90"}`}
-                            />
-                            <h3 className="font-bold text-gray-900">
-                              {sectionName}
-                            </h3>
+                          <div
+                            onClick={() => toggleSection(sectionName)}
+                            className="flex items-center justify-between p-5 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <ChevronDown
+                                className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${openSections[sectionName] ? "" : "-rotate-90"}`}
+                              />
+                              <h3 className="font-bold text-gray-900">
+                                {sectionName}
+                              </h3>
+                            </div>
+                            <span className="text-xs font-semibold text-gray-500 uppercase">
+                              {lectures.length} Lessons
+                            </span>
                           </div>
-                          <span className="text-xs font-semibold text-gray-500 uppercase">
-                            {lectures.length} Lessons
-                          </span>
-                        </div>
 
-                        {openSections[sectionName] && (
-                          <div className="p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                            {lectures.map((lecture, index) => {
-                              const isCompleted = completedLectures.includes(
-                                lecture._id,
-                              );
-                              const sectionStatus =
-                                getSectionStatus(sectionName);
-                              const isLocked =
-                                !lecture.isPreviewFree &&
-                                !isCreator &&
-                                sectionStatus === "locked";
-
-                              return (
-                                <div
-                                  key={lecture._id}
-                                  className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
-                                    lecture.isPreviewFree ||
-                                    (!isLocked && (isEnrolled || isCreator))
-                                      ? "hover:bg-blue-50 cursor-pointer"
-                                      : "opacity-80 cursor-not-allowed"
-                                  }`}
-                                  onClick={() => {
-                                    if (isLocked) {
-                                      toast.error(
-                                        "Please complete previous sections to unlock.",
-                                        { icon: "🔒" },
-                                      );
-                                      return;
-                                    }
-                                    if (
-                                      lecture.isPreviewFree ||
-                                      isEnrolled ||
-                                      isCreator
-                                    ) {
-                                      handlePreviewClick(lecture);
-                                    }
-                                  }}
-                                >
-                                  <div className="flex items-center gap-4">
-                                    {isLocked ? (
-                                      <Lock className="h-4 w-4 text-gray-400" />
-                                    ) : isCompleted ? (
-                                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                    ) : (
-                                      <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                                    )}
-                                    <span
-                                      className={`text-sm font-bold transition-colors ${
-                                        lecture.isPreviewFree || !isLocked
-                                          ? "text-gray-900 group-hover:text-blue-600"
-                                          : "text-gray-400"
-                                      }`}
-                                    >
-                                      {index + 1}. {lecture.lectureTitle}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    {isCompleted && (
-                                      <span className="text-[9px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-0.5 rounded">
-                                        Completed
-                                      </span>
-                                    )}
-                                    {(lecture.isPreviewFree ||
-                                      isEnrolled ||
-                                      isCreator) &&
-                                      !isLocked && (
-                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
-                                          {isEnrolled || isCreator
-                                            ? "Play"
-                                            : "Preview"}
-                                        </span>
-                                      )}
-                                    <span className="text-xs text-gray-400 font-medium">
-                                      {lecture.duration || "10:00"}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {/* Quizzes in Curriculum View */}
-                            {quizzes
-                              .filter((q) => q.sectionName === sectionName)
-                              .map((quiz) => {
-                                const isPassed = quiz.latestAttempt?.isPassed;
+                          {openSections[sectionName] && (
+                            <div className="p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                              {lectures.map((lecture, index) => {
+                                const isCompleted = completedLectures.includes(
+                                  lecture._id,
+                                );
                                 const sectionStatus =
                                   getSectionStatus(sectionName);
                                 const isLocked =
-                                  !isCreator && sectionStatus === "locked";
+                                  !lecture.isPreviewFree &&
+                                  !isCreator &&
+                                  sectionStatus === "locked";
 
                                 return (
                                   <div
-                                    key={quiz._id}
+                                    key={lecture._id}
                                     className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
-                                      !isLocked && (isEnrolled || isCreator)
-                                        ? "hover:bg-indigo-50 cursor-pointer"
+                                      lecture.isPreviewFree ||
+                                      (!isLocked && (isEnrolled || isCreator))
+                                        ? "hover:bg-blue-50 cursor-pointer"
                                         : "opacity-80 cursor-not-allowed"
                                     }`}
                                     onClick={() => {
                                       if (isLocked) {
                                         toast.error(
-                                          "Complete previous lessons to unlock this quiz.",
+                                          "Please complete previous sections to unlock.",
                                           { icon: "🔒" },
                                         );
                                         return;
                                       }
-                                      if (isEnrolled || isCreator) {
-                                        navigate(`/course-progress/${id}`);
+                                      if (
+                                        lecture.isPreviewFree ||
+                                        isEnrolled ||
+                                        isCreator
+                                      ) {
+                                        handlePreviewClick(lecture);
                                       }
                                     }}
                                   >
                                     <div className="flex items-center gap-4">
                                       {isLocked ? (
                                         <Lock className="h-4 w-4 text-gray-400" />
-                                      ) : isPassed ? (
-                                        <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                                      ) : isCompleted ? (
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
                                       ) : (
-                                        <FileText className="h-5 w-5 text-indigo-400" />
+                                        <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
                                       )}
                                       <span
                                         className={`text-sm font-bold transition-colors ${
-                                          !isLocked
-                                            ? "text-gray-900 group-hover:text-indigo-600"
+                                          lecture.isPreviewFree || !isLocked
+                                            ? "text-gray-900 group-hover:text-blue-600"
                                             : "text-gray-400"
                                         }`}
                                       >
-                                        Quiz: {quiz.title}
+                                        {index + 1}. {lecture.lectureTitle}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                      {isPassed ? (
-                                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">
-                                          Passed
+                                      {isCompleted && (
+                                        <span className="text-[9px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-0.5 rounded">
+                                          Completed
                                         </span>
-                                      ) : (
-                                        !isLocked && (
-                                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-600">
-                                            Start
-                                          </span>
-                                        )
                                       )}
+                                      {(lecture.isPreviewFree ||
+                                        isEnrolled ||
+                                        isCreator) &&
+                                        !isLocked && (
+                                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
+                                            {isEnrolled || isCreator
+                                              ? "Play"
+                                              : "Preview"}
+                                          </span>
+                                        )}
+                                      <span className="text-xs text-gray-400 font-medium">
+                                        {lecture.duration || "10:00"}
+                                      </span>
                                     </div>
                                   </div>
                                 );
                               })}
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  )}
-              </div>
-            </div>
 
-            {/* Instructor */}
-            <div className="pt-10 space-y-8">
-              <h2 className="text-2xl font-black text-gray-900">Instructor</h2>
-              <div className="flex flex-col md:flex-row gap-8 items-start bg-blue-50/30 p-8 rounded-3xl border border-blue-100/50">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-100 flex items-center justify-center">
-                    {course.creator?.profilePicture ? (
-                      <img
-                        src={course.creator.profilePicture}
-                        alt={course.creator.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-10 w-10 text-gray-300" />
-                    )}
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1.5 rounded-full shadow-lg">
-                    <Award className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="space-y-3 flex-1">
-                  <h3 className="text-xl font-black text-gray-900">
-                    {course.creator?.name || "Instructor"}
-                  </h3>
-                  <p className="text-blue-600 text-sm font-bold">
-                    {course.creator?.bio ||
-                      "Expert Educator & Industry Professional"}
-                  </p>
-                  <div className="flex gap-6 text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="font-bold">
-                        {averageRating > 0
-                          ? `${averageRating} Rating`
-                          : "No ratings yet"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="font-bold">
-                        {course.enrolledStudents?.length || 0} Students
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed max-w-2xl">
-                    {course.creator?.description ||
-                      `${course.creator?.name || "The instructor"} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.`}
-                  </p>
-                  <Button
-                    variant="link"
-                    className="text-blue-600 font-black p-0 h-auto hover:text-blue-800 transition-colors"
-                    onClick={() =>
-                      navigate(`/instructor/${course.creator?._id}`)
-                    }
-                  >
-                    View Full Profile <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+                              {/* Quizzes in Curriculum View */}
+                              {quizzes
+                                .filter((q) => q.sectionName === sectionName)
+                                .map((quiz) => {
+                                  const isPassed = quiz.latestAttempt?.isPassed;
+                                  const sectionStatus =
+                                    getSectionStatus(sectionName);
+                                  const isLocked =
+                                    !isCreator && sectionStatus === "locked";
 
-            {/* Reviews Section */}
-            <div className="pt-10 space-y-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black text-gray-900">Reviews</h2>
-                <span className="text-sm font-bold text-gray-500">
-                  {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
-                </span>
-              </div>
-
-              {/* Rating Summary */}
-              {totalReviews > 0 && (
-                <div className="flex flex-col md:flex-row gap-8 items-start bg-yellow-50/30 p-8 rounded-3xl border border-yellow-100/50">
-                  <div className="text-center space-y-2">
-                    <div className="text-5xl font-black text-gray-900">
-                      {averageRating}
-                    </div>
-                    <StarRating rating={averageRating} size="h-5 w-5" />
-                    <p className="text-sm text-gray-500 font-medium">
-                      {totalReviews} ratings
-                    </p>
-                  </div>
-                  <div className="flex-1 space-y-2 w-full">
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-gray-600 w-3">
-                          {star}
-                        </span>
-                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
-                        <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-yellow-500 rounded-full transition-all"
-                            style={{
-                              width: `${totalReviews > 0 ? ((distribution[star] || 0) / totalReviews) * 100 : 0}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-400 font-medium w-8 text-right">
-                          {distribution[star] || 0}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Submit Review Form (only for enrolled students) */}
-              {isEnrolled && (
-                <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 space-y-4">
-                  <h3 className="font-bold text-gray-900">Write a Review</h3>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onMouseEnter={() => setReviewHover(star)}
-                        onMouseLeave={() => setReviewHover(0)}
-                        onClick={() => setReviewRating(star)}
-                        className="transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={`h-7 w-7 cursor-pointer transition-colors ${
-                            star <= (reviewHover || reviewRating)
-                              ? "text-yellow-500 fill-current"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    {reviewRating > 0 && (
-                      <span className="ml-2 text-sm font-bold text-gray-600">
-                        {reviewRating}/5
-                      </span>
-                    )}
-                  </div>
-                  <textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Share your experience with this course..."
-                    className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
-                    rows={3}
-                  />
-                  <Button
-                    onClick={() => {
-                      if (reviewRating === 0) {
-                        toast.error("Please select a rating");
-                        return;
-                      }
-                      reviewMutation.mutate({
-                        rating: reviewRating,
-                        comment: reviewComment,
-                      });
-                    }}
-                    disabled={reviewMutation.isPending || reviewRating === 0}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {reviewMutation.isPending
-                      ? "Submitting..."
-                      : "Submit Review"}
-                  </Button>
-                </div>
-              )}
-
-              {/* Review List */}
-              <div className="space-y-4">
-                {reviews.length === 0 ? (
-                  <div className="text-center py-10 text-gray-400">
-                    <Star className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p className="font-medium">No reviews yet</p>
-                    <p className="text-sm">
-                      Be the first to review this course!
-                    </p>
-                  </div>
-                ) : (
-                  reviews.map((review) => (
-                    <div
-                      key={review._id}
-                      className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-3 transition-all hover:shadow-md"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-white shadow">
-                            {review.userId?.profilePicture ? (
-                              <img
-                                src={review.userId.profilePicture}
-                                alt={review.userId.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Users className="h-5 w-5 text-gray-300" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900 text-sm">
-                              {review.userId?.name || "Anonymous"}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <StarRating
-                                rating={review.rating}
-                                size="h-3.5 w-3.5"
-                              />
-                              <span className="text-xs text-gray-400">
-                                {new Date(
-                                  review.createdAt,
-                                ).toLocaleDateString()}
-                              </span>
+                                  return (
+                                    <div
+                                      key={quiz._id}
+                                      className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
+                                        !isLocked && (isEnrolled || isCreator)
+                                          ? "hover:bg-indigo-50 cursor-pointer"
+                                          : "opacity-80 cursor-not-allowed"
+                                      }`}
+                                      onClick={() => {
+                                        if (isLocked) {
+                                          toast.error(
+                                            "Complete previous lessons to unlock this quiz.",
+                                            { icon: "🔒" },
+                                          );
+                                          return;
+                                        }
+                                        if (isEnrolled || isCreator) {
+                                          navigate(`/course-progress/${id}`);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-4">
+                                        {isLocked ? (
+                                          <Lock className="h-4 w-4 text-gray-400" />
+                                        ) : isPassed ? (
+                                          <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                                        ) : (
+                                          <FileText className="h-5 w-5 text-indigo-400" />
+                                        )}
+                                        <span
+                                          className={`text-sm font-bold transition-colors ${
+                                            !isLocked
+                                              ? "text-gray-900 group-hover:text-indigo-600"
+                                              : "text-gray-400"
+                                          }`}
+                                        >
+                                          Quiz: {quiz.title}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        {isPassed ? (
+                                          <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">
+                                            Passed
+                                          </span>
+                                        ) : (
+                                          !isLocked && (
+                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-600">
+                                              Start
+                                            </span>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
-                          </div>
+                          )}
                         </div>
-                        {user?.id === review.userId?._id && (
-                          <button
-                            onClick={() => deleteReviewMutation.mutate()}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                            title="Delete your review"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                      {review.comment && (
-                        <p className="text-gray-600 text-sm leading-relaxed">
-                          {review.comment}
-                        </p>
+                      ),
+                    )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "Instructor" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h2 className="text-2xl font-black text-gray-900">
+                  Instructor
+                </h2>
+                <div className="flex flex-col md:flex-row gap-8 items-start bg-blue-50/30 p-8 rounded-3xl border border-blue-100/50">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-100 flex items-center justify-center">
+                      {course.creator?.profilePicture ? (
+                        <img
+                          src={course.creator.profilePicture}
+                          alt={course.creator.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Users className="h-10 w-10 text-gray-300" />
                       )}
                     </div>
-                  ))
-                )}
+                    <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1.5 rounded-full shadow-lg">
+                      <Award className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                  <div className="space-y-3 flex-1">
+                    <h3 className="text-xl font-black text-gray-900">
+                      {course.creator?.name || "Instructor"}
+                    </h3>
+                    <p className="text-blue-600 text-sm font-bold">
+                      {course.creator?.bio ||
+                        "Expert Educator & Industry Professional"}
+                    </p>
+                    <div className="flex gap-6 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                        <span className="font-bold">
+                          {averageRating > 0
+                            ? `${averageRating} Rating`
+                            : "No ratings yet"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-gray-400" />
+                        <span className="font-bold">
+                          {course.enrolledStudents?.length || 0} Students
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 text-sm leading-relaxed max-w-2xl">
+                      {course.creator?.description ||
+                        `${course.creator?.name || "The instructor"} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.`}
+                    </p>
+                    <Button
+                      variant="link"
+                      className="text-blue-600 font-black p-0 h-auto hover:text-blue-800 transition-colors"
+                      onClick={() =>
+                        navigate(`/instructor/${course.creator?._id}`)
+                      }
+                    >
+                      View Full Profile{" "}
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {activeTab === "Reviews" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-black text-gray-900">Reviews</h2>
+                  <span className="text-sm font-bold text-gray-500">
+                    {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
+                  </span>
+                </div>
+
+                {/* Rating Summary */}
+                {totalReviews > 0 && (
+                  <div className="flex flex-col md:flex-row gap-8 items-start bg-yellow-50/30 p-8 rounded-3xl border border-yellow-100/50">
+                    <div className="text-center space-y-2">
+                      <div className="text-5xl font-black text-gray-900">
+                        {averageRating}
+                      </div>
+                      <StarRating rating={averageRating} size="h-5 w-5" />
+                      <p className="text-sm text-gray-500 font-medium">
+                        {totalReviews} ratings
+                      </p>
+                    </div>
+                    <div className="flex-1 space-y-2 w-full">
+                      {[5, 4, 3, 2, 1].map((star) => (
+                        <div key={star} className="flex items-center gap-3">
+                          <span className="text-sm font-bold text-gray-600 w-3">
+                            {star}
+                          </span>
+                          <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+                          <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-yellow-500 rounded-full transition-all"
+                              style={{
+                                width: `${totalReviews > 0 ? ((distribution[star] || 0) / totalReviews) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400 font-medium w-8 text-right">
+                            {distribution[star] || 0}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Review Form (only for enrolled students) */}
+                {isEnrolled && (
+                  <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 space-y-4">
+                    <h3 className="font-bold text-gray-900">Write a Review</h3>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => setReviewHover(star)}
+                          onMouseLeave={() => setReviewHover(0)}
+                          onClick={() => setReviewRating(star)}
+                          className="transition-transform hover:scale-110"
+                        >
+                          <Star
+                            className={`h-7 w-7 cursor-pointer transition-colors ${
+                              star <= (reviewHover || reviewRating)
+                                ? "text-yellow-500 fill-current"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      {reviewRating > 0 && (
+                        <span className="ml-2 text-sm font-bold text-gray-600">
+                          {reviewRating}/5
+                        </span>
+                      )}
+                    </div>
+                    <textarea
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience with this course..."
+                      className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
+                      rows={3}
+                    />
+                    <Button
+                      onClick={() => {
+                        if (reviewRating === 0) {
+                          toast.error("Please select a rating");
+                          return;
+                        }
+                        reviewMutation.mutate({
+                          rating: reviewRating,
+                          comment: reviewComment,
+                        });
+                      }}
+                      disabled={reviewMutation.isPending || reviewRating === 0}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {reviewMutation.isPending
+                        ? "Submitting..."
+                        : "Submit Review"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Review List */}
+                <div className="space-y-4">
+                  {reviews.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">
+                      <Star className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="font-medium">No reviews yet</p>
+                      <p className="text-sm">
+                        Be the first to review this course!
+                      </p>
+                    </div>
+                  ) : (
+                    reviews.map((review) => (
+                      <div
+                        key={review._id}
+                        className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-3 transition-all hover:shadow-md"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-white shadow">
+                              {review.userId?.profilePicture ? (
+                                <img
+                                  src={review.userId.profilePicture}
+                                  alt={review.userId.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Users className="h-5 w-5 text-gray-300" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 text-sm">
+                                {review.userId?.name || "Anonymous"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <StarRating
+                                  rating={review.rating}
+                                  size="h-3.5 w-3.5"
+                                />
+                                <span className="text-xs text-gray-400">
+                                  {new Date(
+                                    review.createdAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {user?.id === review.userId?._id && (
+                            <button
+                              onClick={() => deleteReviewMutation.mutate()}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              title="Delete your review"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                        {review.comment && (
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
