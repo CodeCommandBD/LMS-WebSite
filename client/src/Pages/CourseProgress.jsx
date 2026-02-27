@@ -27,6 +27,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { getCourseQuizzesWithStatusService } from "@/services/quizApi";
 import QuizPlayer from "@/components/QuizPlayer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const CourseProgress = () => {
   const { id } = useParams();
@@ -35,6 +42,10 @@ const CourseProgress = () => {
   const [openSections, setOpenSections] = useState({});
   const [showQuiz, setShowQuiz] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState(null);
+
+  const [isQAOpen, setIsQAOpen] = useState(false);
+  const [qaList, setQaList] = useState([]);
+  const [newQuestion, setNewQuestion] = useState("");
 
   const {
     data: courseData,
@@ -135,6 +146,62 @@ const CourseProgress = () => {
     }
 
     return "unlocked";
+  };
+
+  useEffect(() => {
+    if (currentLecture) {
+      const savedQa = localStorage.getItem(`qa_${currentLecture._id}`);
+      if (savedQa) {
+        setQaList(JSON.parse(savedQa));
+      } else {
+        setQaList([]);
+      }
+    }
+  }, [currentLecture]);
+
+  const handleAskQuestion = () => {
+    if (!newQuestion.trim()) return;
+    const newQa = {
+      id: Date.now().toString(),
+      user: "You",
+      question: newQuestion,
+      date: new Date().toLocaleDateString(),
+      answers: [],
+    };
+
+    const updatedList = [newQa, ...qaList];
+    setQaList(updatedList);
+    localStorage.setItem(
+      `qa_${currentLecture._id}`,
+      JSON.stringify(updatedList),
+    );
+    setNewQuestion("");
+    toast.success("Question posted!");
+  };
+
+  const handleDownloadNotes = () => {
+    if (!currentLecture) return;
+
+    const notesContent = `Course: ${course?.courseTitle || "Course"}
+Lecture: ${currentLecture.lectureTitle}
+=========================================
+
+Description:
+${course?.description?.replace(/<[^>]*>?/gm, "") || "No description available."}
+
+Instructor: ${course?.creator?.name || "Instructor"}
+    `;
+
+    const blob = new Blob([notesContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentLecture.lectureTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_notes.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Notes downloaded successfully!");
   };
 
   const handleNextMilestone = () => {
@@ -406,6 +473,7 @@ const CourseProgress = () => {
                 <div className="flex gap-4 pt-4">
                   <Button
                     variant="outline"
+                    onClick={() => setIsQAOpen(true)}
                     className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
                   >
                     <MessageSquare className="h-4 w-4 mr-2 text-blue-400" /> Q&A
@@ -413,8 +481,10 @@ const CourseProgress = () => {
                   </Button>
                   <Button
                     variant="outline"
+                    onClick={handleDownloadNotes}
                     className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
                   >
+                    <FileText className="h-4 w-4 mr-2 text-green-400" />{" "}
                     Download Notes
                   </Button>
                 </div>
@@ -644,6 +714,65 @@ const CourseProgress = () => {
           <QuizPlayer quiz={activeQuiz} onComplete={handleQuizComplete} />
         </div>
       )}
+
+      {/* Q&A MODAL */}
+      <Dialog open={isQAOpen} onOpenChange={setIsQAOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-[#0f172a] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">
+              Q&A Session
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Ask questions about "{currentLecture?.lectureTitle}" and view
+              previous answers.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-2 my-4">
+            <input
+              type="text"
+              value={newQuestion}
+              onChange={(e) => setNewQuestion(e.target.value)}
+              placeholder="Type your question..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAskQuestion();
+              }}
+            />
+            <Button
+              onClick={handleAskQuestion}
+              className="bg-blue-600 hover:bg-blue-700 rounded-xl h-auto"
+            >
+              Ask
+            </Button>
+          </div>
+
+          <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar space-y-4">
+            {qaList.length === 0 ? (
+              <p className="text-center text-gray-500 text-sm py-4">
+                No questions asked yet. Be the first!
+              </p>
+            ) : (
+              qaList.map((qa) => (
+                <div
+                  key={qa.id}
+                  className="bg-white/5 rounded-xl p-3 border border-white/5"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold text-sm text-blue-400">
+                      {qa.user}
+                    </span>
+                    <span className="text-[10px] text-gray-500">{qa.date}</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-300">
+                    {qa.question}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Global CSS for scrollbar */}
       <style
