@@ -14,6 +14,8 @@ import courseProgressRouter from "./Routers/courseProgress.route.js";
 import quizRouter from "./Routers/quiz.route.js";
 import reviewRouter from "./Routers/review.route.js";
 import categoryRouter from "./Routers/category.route.js";
+import blogRouter from "./Routers/blog.route.js";
+import settingsRouter from "./Routers/settings.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -128,6 +130,8 @@ app.use("/api/v1/progress", courseProgressRouter);
 app.use("/api/v1/quiz", quizRouter);
 app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/categories", categoryRouter);
+app.use("/api/v1/blogs", blogRouter);
+app.use("/api/v1/settings", settingsRouter);
 
 // Static files & Catch-all route (MUST be at the end)
 // In local dev: serves from client/dist after running the build
