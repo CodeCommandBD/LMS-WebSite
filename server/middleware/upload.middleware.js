@@ -1,10 +1,15 @@
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDir = path.join(__dirname, "..", "uploads");
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/profiles"); // Save in uploads/profiles folder
+    cb(null, path.join(uploadDir, "profiles")); // Save in absolute absolute folder
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -55,7 +60,7 @@ export const uploadProfilePicture = multer({
 // Configure storage for course thumbnails and media
 const courseStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/courses");
+    cb(null, path.join(uploadDir, "courses"));
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
