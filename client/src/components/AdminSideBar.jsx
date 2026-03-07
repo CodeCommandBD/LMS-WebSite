@@ -10,6 +10,8 @@ import {
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
+  Newspaper,
+  CircleDollarSign,
 } from "lucide-react";
 import React from "react";
 import { toggleSidebar } from "@/store/slices/uiSlice";
@@ -43,10 +45,12 @@ const AdminSideBar = () => {
     { icon: HelpCircle, label: "Quizzes", path: "/admin/quizzes" },
     { icon: Users, label: "Users", path: "/admin/users" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+    { icon: Newspaper, label: "Blogs", path: "/admin/blogs" },
   ];
 
   const supportItems = [
     { icon: LayoutGrid, label: "Categories", path: "/admin/categories" },
+    { icon: CircleDollarSign, label: "AdSense", path: "/admin/adsense" },
     { icon: Settings, label: "Settings", path: "/admin/settings" },
     { icon: HelpCircle, label: "Help Center", path: "/admin/help" },
   ];
