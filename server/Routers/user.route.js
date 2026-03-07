@@ -26,7 +26,7 @@ router.post("/reset-password/:token", resetPassword);
 router.get("/me", authenticate, getCurrentUser);
 router.get("/enrolled-courses", authenticate, getEnrolledCourses);
 router.get("/wishlist", authenticate, getWishlistCourses);
-router.get("/", authenticate, authorize("admin"), getAllUsers);
+router.get("/", authenticate, authorize("admin", "teacher"), getAllUsers);
 // Public: get instructor profile
 router.get("/instructor/:instructorId", getInstructorProfile);
 
