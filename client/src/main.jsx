@@ -51,6 +51,12 @@ const AdminSettings = lazy(() => import("./Pages/admin/AdminSettings"));
 const AdminHelpCenter = lazy(() => import("./Pages/admin/AdminHelpCenter"));
 const AdminQuizHome = lazy(() => import("./Pages/admin/AdminQuizHome"));
 const AdminCategories = lazy(() => import("./Pages/admin/AdminCategories"));
+const BlogPage = lazy(() => import("./Pages/Blog/BlogPage"));
+const BlogDetails = lazy(() => import("./Pages/Blog/BlogDetails"));
+const AllBlogs = lazy(() => import("./Pages/Blog/AllBlogs"));
+const AdminBlogs = lazy(() => import("./Pages/admin/AdminBlogs"));
+const AdminCreateBlog = lazy(() => import("./Pages/admin/AdminCreateBlog"));
+const AdminAdSense = lazy(() => import("./Pages/admin/AdminAdSense"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -84,6 +90,18 @@ const router = createBrowserRouter([
       {
         path: "/courses",
         element: <Courses />,
+      },
+      {
+        path: "/blog",
+        element: <BlogPage />,
+      },
+      {
+        path: "/blogs",
+        element: <AllBlogs />,
+      },
+      {
+        path: "/blog/:identifier",
+        element: <BlogDetails />,
       },
       {
         path: "/search",
@@ -241,6 +259,22 @@ const router = createBrowserRouter([
           {
             path: "categories",
             element: <AdminCategories />,
+          },
+          {
+            path: "blogs",
+            element: <AdminBlogs />,
+          },
+          {
+            path: "createBlog",
+            element: <AdminCreateBlog />,
+          },
+          {
+            path: "blogs/:id",
+            element: <AdminCreateBlog />,
+          },
+          {
+            path: "adsense",
+            element: <AdminAdSense />,
           },
         ],
       },
