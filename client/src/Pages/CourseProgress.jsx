@@ -5,22 +5,17 @@ import {
   getCourseById,
   getUserCourseProgressService,
   updateLectureProgressService,
+  getCourseReviewsService,
+  submitReviewService,
+  deleteReviewService,
 } from "@/services/courseApi";
 import {
   Loader2,
   PlayCircle,
-  CheckCircle2,
   ChevronRight,
   ArrowLeft,
-  Lock,
-  Globe,
-  Clock,
-  Layout,
   MessageSquare,
   FileText,
-  CheckCircle,
-  Award,
-  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +32,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSelector } from "react-redux";
-import { toPng } from "html-to-image";
-import jsPDF from "jspdf";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
+// Import the extracted components
+import CourseSidebar from "@/components/CourseProgress/CourseSidebar";
+import QAModal from "@/components/CourseProgress/QAModal";
+import CertificateModal from "@/components/CourseProgress/CertificateModal";
+import AboutTab from "@/components/CourseProgress/AboutTab";
+import CurriculumTab from "@/components/CourseProgress/CurriculumTab";
+import InstructorTab from "@/components/CourseProgress/InstructorTab";
+import ReviewsTab from "@/components/CourseProgress/ReviewsTab";
 
 const CourseProgress = () => {
   const { id } = useParams();
@@ -52,8 +53,10 @@ const CourseProgress = () => {
 
   const [isQAOpen, setIsQAOpen] = useState(false);
   const [isCertificateOpen, setIsCertificateOpen] = useState(false);
-  const [qaList, setQaList] = useState([]);
-  const [newQuestion, setNewQuestion] = useState("");
+  const [activeTab, setActiveTab] = useState("About");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
 
   const {
     data: courseData,
@@ -74,7 +77,40 @@ const CourseProgress = () => {
     queryFn: () => getCourseQuizzesWithStatusService(id),
   });
 
+  // Fetch reviews
+  const { data: reviewsData } = useQuery({
+    queryKey: ["courseReviews", id],
+    queryFn: () => getCourseReviewsService(id),
+    enabled: !!id,
+  });
+
   const queryClient = useQueryClient();
+
+  // Submit review mutation
+  const reviewMutation = useMutation({
+    mutationFn: (data) => submitReviewService(id, data),
+    onSuccess: () => {
+      toast.success("Review submitted!");
+      setReviewRating(0);
+      setReviewComment("");
+      queryClient.invalidateQueries(["courseReviews", id]);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to submit review");
+    },
+  });
+
+  // Delete review mutation
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => deleteReviewService(id),
+    onSuccess: () => {
+      toast.success("Review deleted");
+      queryClient.invalidateQueries(["courseReviews", id]);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to delete");
+    },
+  });
 
   const updateProgressMutation = useMutation({
     mutationFn: (lectureId) => updateLectureProgressService(id, lectureId),
@@ -158,87 +194,6 @@ const CourseProgress = () => {
     }
 
     return "unlocked";
-  };
-
-  const handlePrintCertificate = async () => {
-    try {
-      const element = document.getElementById("certificate-content");
-      if (!element) {
-        toast.error("Certificate element not found!");
-        return;
-      }
-
-      toast.loading("Generating PDF... Please wait.");
-
-      const fileName = `Certificate_${user?.name?.replace(/\\s+/g, "_") || "User"}_${course?.courseTitle?.replace(/\\s+/g, "_") || "Course"}.pdf`;
-
-      // Define explicit dimensions for high-quality landscape A4-like capture
-      const certWidth = 1131; // 800 * 1.414
-      const certHeight = 800;
-
-      const dataUrl = await toPng(element, {
-        quality: 1,
-        pixelRatio: 2,
-        cacheBust: true,
-        width: certWidth,
-        height: certHeight,
-        style: {
-          transform: "scale(1)",
-          transformOrigin: "top left",
-          width: `${certWidth}px`,
-          height: `${certHeight}px`,
-          maxWidth: "none",
-          maxHeight: "none",
-        },
-      });
-
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "pt",
-        format: [certWidth, certHeight],
-      });
-
-      pdf.addImage(dataUrl, "PNG", 0, 0, certWidth, certHeight);
-      pdf.save(fileName);
-
-      toast.dismiss();
-      toast.success("Certificate downloaded successfully!");
-    } catch (error) {
-      console.error("PDF generation error:", error);
-      toast.dismiss();
-      toast.error("Failed to generate PDF. See console for details.");
-    }
-  };
-
-  useEffect(() => {
-    if (currentLecture) {
-      const savedQa = localStorage.getItem(`qa_${currentLecture._id}`);
-      if (savedQa) {
-        setQaList(JSON.parse(savedQa));
-      } else {
-        setQaList([]);
-      }
-    }
-  }, [currentLecture]);
-
-  const handleAskQuestion = () => {
-    if (!newQuestion.trim()) return;
-    const newQa = {
-      id: Date.now().toString(),
-      user: "You",
-      question: newQuestion,
-      date: new Date().toLocaleDateString(),
-      answers: [],
-    };
-
-    const updatedList = [newQa, ...qaList];
-    setQaList(updatedList);
-    localStorage.setItem(
-      `qa_${currentLecture._id}`,
-      JSON.stringify(updatedList),
-    );
-    setNewQuestion("");
-    toast.success("Question posted!");
   };
 
   const handleDownloadNotes = () => {
@@ -335,6 +290,12 @@ Instructor: ${course?.creator?.name || "Instructor"}
     updateProgressMutation.mutate(lectureId || currentLecture?._id);
   };
 
+  const tabs = ["About", "Curriculum", "Instructor", "Reviews"];
+  const averageRating = reviewsData?.averageRating || 0;
+  const totalReviews = reviewsData?.totalReviews || 0;
+  const reviews = reviewsData?.reviews || [];
+  const distribution = reviewsData?.distribution || {};
+
   const isLoading = isCourseLoading || isProgressLoading;
   const isError = isCourseError;
 
@@ -399,9 +360,19 @@ Instructor: ${course?.creator?.name || "Instructor"}
             </span>
             <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500"
                 style={{
-                  width: `${((lectures.indexOf(currentLecture) + 1) / lectures.length) * 100}%`,
+                  width: `${
+                    lectures.length + (quizzesData?.quizzes?.length || 0) > 0
+                      ? ((completedLectures.length +
+                          (quizzesData?.quizzes?.filter(
+                            (q) => q.latestAttempt?.isPassed,
+                          ).length || 0)) /
+                          (lectures.length +
+                            (quizzesData?.quizzes?.length || 0))) *
+                        100
+                      : 0
+                  }%`,
                 }}
               />
             </div>
@@ -416,7 +387,7 @@ Instructor: ${course?.creator?.name || "Instructor"}
         </div>
       </header>
 
-      <main className="flex flex-1 overflow-hidden flex-col lg:row lg:flex-row">
+      <main className="flex flex-1 overflow-hidden flex-col lg:flex-row">
         {/* 2. VIDEO & CONTENT AREA */}
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#020617]">
           {/* Video Section */}
@@ -470,312 +441,101 @@ Instructor: ${course?.creator?.name || "Instructor"}
             </div>
           </div>
 
-          {/* Content Info */}
-          <div className="max-w-4xl mx-auto p-8 lg:p-12 space-y-10">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 px-3 py-1 font-black text-[10px] uppercase tracking-widest">
-                  Lecture {lectures.indexOf(currentLecture) + 1}
-                </Badge>
-                <div className="flex items-center gap-2 text-xs font-bold text-gray-500 italic">
-                  <Clock className="h-3 w-3" /> 12:45 Total Length
-                </div>
-              </div>
-              <h2 className="text-3xl lg:text-5xl font-black tracking-tighter text-white">
-                {currentLecture?.lectureTitle}
-              </h2>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm font-bold text-gray-400">
-                  <span className="flex items-center gap-1.5">
-                    <Globe className="h-4 w-4" /> English Audio
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Layout className="h-4 w-4" /> Supporting Docs
-                  </span>
-                </div>
-                <Button
-                  onClick={() => handleToggleComplete()}
-                  disabled={updateProgressMutation.isPending}
-                  variant={
-                    completedLectures.includes(currentLecture?._id)
-                      ? "secondary"
-                      : "default"
-                  }
-                  className={`rounded-xl px-6 font-black h-12 transition-all ${
-                    completedLectures.includes(currentLecture?._id)
-                      ? "bg-green-500/10 text-green-500 hover:bg-green-500/20 border border-green-500/20"
-                      : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20"
+          {/* Navigation Tabs */}
+          <div className="border-b border-white/5 sticky top-0 bg-[#020617]/95 backdrop-blur-md z-30 pt-2 px-8 lg:px-12">
+            <div className="flex gap-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-4 text-sm font-bold transition-all relative cursor-pointer ${
+                    activeTab === tab
+                      ? "text-blue-500"
+                      : "text-gray-500 hover:text-gray-300"
                   }`}
                 >
-                  {completedLectures.includes(currentLecture?._id) ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" /> Completed
-                    </>
-                  ) : (
-                    "Mark as Complete"
+                  {tab}
+                  {activeTab === tab && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-500 rounded-t-full shadow-[0_-4px_10px_rgba(59,130,246,0.3)]"></div>
                   )}
-                </Button>
-              </div>
+                </button>
+              ))}
             </div>
+          </div>
 
-            <Separator className="bg-white/5" />
+          {/* Dynamic Content Area */}
+          <div className="max-w-4xl mx-auto p-8 lg:p-12">
+            {activeTab === "About" && (
+              <AboutTab
+                course={course}
+                currentLecture={currentLecture}
+                lectures={lectures}
+                completedLectures={completedLectures}
+                handleToggleComplete={handleToggleComplete}
+                updateProgressMutation={updateProgressMutation}
+                setIsQAOpen={setIsQAOpen}
+                handleDownloadNotes={handleDownloadNotes}
+                isCourseCompleted={isCourseCompleted}
+                setIsCertificateOpen={setIsCertificateOpen}
+              />
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              <div className="md:col-span-2 space-y-6">
-                <h3 className="text-xl font-black text-white/90 tracking-tight flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-blue-500" />
-                  Lecture Synopsis
-                </h3>
-                <p className="text-gray-400 leading-relaxed font-medium">
-                  {course?.description
-                    ?.replace(/<[^>]*>?/gm, "")
-                    .substring(0, 400)}
-                  ...
-                </p>
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsQAOpen(true)}
-                    className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2 text-blue-400" /> Q&A
-                    Session
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadNotes}
-                    className="border-white/10 hover:bg-white/5 hover:text-white text-black text-xs font-black px-6 h-12 rounded-xl"
-                  >
-                    <FileText className="h-4 w-4 mr-2 text-green-400" />{" "}
-                    Download Notes
-                  </Button>
-                  {isCourseCompleted && (
-                    <Button
-                      onClick={() => setIsCertificateOpen(true)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-black px-6 h-12 rounded-xl border-none shadow-[0_0_15px_rgba(234,179,8,0.3)] animate-pulse"
-                    >
-                      <Award className="h-4 w-4 mr-2" /> Get Certificate
-                    </Button>
-                  )}
-                </div>
-              </div>
+            {activeTab === "Curriculum" && (
+              <CurriculumTab
+                lectures={lectures}
+                quizzes={quizzes}
+                groupedLectures={groupedLectures}
+                openSections={openSections}
+                toggleSection={toggleSection}
+                completedLectures={completedLectures}
+                currentLecture={currentLecture}
+                setCurrentLecture={setCurrentLecture}
+                getSectionStatus={getSectionStatus}
+              />
+            )}
 
-              <div className="bg-[#1e293b]/30 border border-white/5 rounded-3xl p-6 h-fit space-y-6">
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-lg">
-                    <span className="font-black text-lg">AS</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                      Instructor
-                    </p>
-                    <p className="font-bold text-white truncate">
-                      {course?.creator?.name || "Alex Sterling"}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 leading-relaxed font-medium">
-                  Expert educator with 10+ years of industry experience. Get
-                  direct help in the Q&A tab.
-                </p>
-              </div>
-            </div>
+            {activeTab === "Instructor" && (
+              <InstructorTab course={course} averageRating={averageRating} />
+            )}
+
+            {activeTab === "Reviews" && (
+              <ReviewsTab
+                reviews={reviews}
+                averageRating={averageRating}
+                totalReviews={totalReviews}
+                distribution={distribution}
+                reviewHover={reviewHover}
+                setReviewHover={setReviewHover}
+                reviewRating={reviewRating}
+                setReviewRating={setReviewRating}
+                reviewComment={reviewComment}
+                setReviewComment={setReviewComment}
+                reviewMutation={reviewMutation}
+                deleteReviewMutation={deleteReviewMutation}
+                user={user}
+              />
+            )}
           </div>
         </div>
 
         {/* 3. LECTURE SIDEBAR */}
-        <aside className="w-full lg:w-[400px] bg-[#0f172a] border-l border-white/5 flex flex-col h-[500px] lg:h-auto">
-          <div className="p-6 border-b border-white/5 bg-[#1e293b]/20">
-            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center justify-between">
-              Course Content
-              <span className="text-[10px] bg-white/5 px-2 py-1 rounded-md text-gray-400">
-                {lectures.length} Total
-              </span>
-            </h3>
-          </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="p-3 space-y-4">
-              {Object.entries(groupedLectures).map(
-                ([sectionName, sectionLectures], sIndex) => (
-                  <div key={sectionName} className="space-y-2">
-                    <div
-                      onClick={() => toggleSection(sectionName)}
-                      className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-white/5 rounded-xl transition-colors group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ChevronRight
-                          className={`h-4 w-4 text-blue-500 transition-transform duration-300 ${openSections[sectionName] ? "rotate-90" : ""}`}
-                        />
-                        <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-blue-400">
-                          {sectionName}
-                        </h4>
-                      </div>
-                      <span className="text-[9px] font-bold text-gray-600 bg-white/5 px-2 py-0.5 rounded-md">
-                        {sectionLectures.length}
-                      </span>
-                    </div>
-
-                    {openSections[sectionName] && (
-                      <div className="space-y-1 pl-1 animate-in fade-in slide-in-from-top-1 duration-300">
-                        {sectionLectures.map((lecture) => {
-                          const lectureIndex = lectures.findIndex(
-                            (l) => l._id === lecture._id,
-                          );
-                          const isActive = currentLecture?._id === lecture._id;
-                          const isCompleted = completedLectures.includes(
-                            lecture._id,
-                          );
-                          const sectionStatus = getSectionStatus(sectionName);
-                          const isLocked = sectionStatus === "locked";
-
-                          return (
-                            <div
-                              key={lecture._id}
-                              onClick={() =>
-                                !isLocked && setCurrentLecture(lecture)
-                              }
-                              className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
-                                isActive
-                                  ? "bg-blue-600/10 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]"
-                                  : isLocked
-                                    ? "opacity-50 grayscale cursor-not-allowed"
-                                    : "hover:bg-white/5 border border-transparent"
-                              }`}
-                            >
-                              <div
-                                className="relative shrink-0 mt-0.5"
-                                onClick={(e) => {
-                                  if (isLocked) return;
-                                  e.stopPropagation();
-                                  handleToggleComplete(lecture._id);
-                                }}
-                              >
-                                {isLocked ? (
-                                  <div className="w-5 h-5 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center">
-                                    <Lock className="h-2.5 w-2.5 text-gray-600" />
-                                  </div>
-                                ) : isCompleted ? (
-                                  <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-green-900/40">
-                                    <CheckCircle2 className="h-3 w-3 text-white" />
-                                  </div>
-                                ) : isActive ? (
-                                  <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-blue-900/40 animate-pulse">
-                                    <PlayCircle className="h-3 w-3 text-white" />
-                                  </div>
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-black text-gray-500 group-hover:border-white/30 transition-colors">
-                                    {lectureIndex + 1}
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <h4
-                                  className={`text-[13px] font-bold leading-tight line-clamp-2 transition-colors ${
-                                    isActive
-                                      ? "text-blue-400"
-                                      : "text-gray-300 group-hover:text-white"
-                                  }`}
-                                >
-                                  {lecture.lectureTitle}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1.5 font-bold">
-                                  <span className="text-[9px] text-gray-500 flex items-center gap-1 uppercase tracking-tighter">
-                                    <Clock className="h-2.5 w-2.5" /> 10 mins
-                                  </span>
-                                  {lecture.isPreviewFree && (
-                                    <span className="text-[8px] text-blue-400/80 bg-blue-400/5 px-1.5 py-0.5 rounded border border-blue-400/10 uppercase tracking-widest">
-                                      Preview
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {isActive && (
-                                <div className="absolute left-[-2px] top-4 bottom-4 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {/* Quizzes Section */}
-                        {groupedQuizzes[sectionName]?.map((quiz) => {
-                          const isCompleted = quiz.latestAttempt?.isPassed;
-                          const sectionStatus = getSectionStatus(sectionName);
-                          const isLocked = sectionStatus === "locked";
-
-                          return (
-                            <div
-                              key={quiz._id}
-                              onClick={() => {
-                                if (!isLocked) {
-                                  setActiveQuiz(quiz);
-                                  setShowQuiz(true);
-                                }
-                              }}
-                              className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
-                                isLocked
-                                  ? "opacity-50 grayscale cursor-not-allowed"
-                                  : "hover:bg-blue-600/5 border border-transparent"
-                              }`}
-                            >
-                              <div className="relative shrink-0 mt-0.5">
-                                {isLocked ? (
-                                  <div className="w-5 h-5 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center">
-                                    <Lock className="h-2.5 w-2.5 text-gray-600" />
-                                  </div>
-                                ) : isCompleted ? (
-                                  <div className="w-5 h-5 rounded-full bg-indigo-500 border-2 border-white/20 flex items-center justify-center shadow-lg shadow-indigo-900/40">
-                                    <CheckCircle2 className="h-3 w-3 text-white" />
-                                  </div>
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                                    <FileText className="h-3 w-3 text-indigo-400" />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <h4
-                                  className={`text-[13px] font-bold leading-tight line-clamp-2 transition-colors ${
-                                    isCompleted
-                                      ? "text-indigo-300"
-                                      : "text-gray-300 group-hover:text-indigo-400"
-                                  }`}
-                                >
-                                  {quiz.title}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1.5 font-bold">
-                                  <span className="text-[8px] text-indigo-400 uppercase tracking-widest bg-indigo-400/10 px-1.5 py-0.5 rounded border border-indigo-400/20">
-                                    Quiz
-                                  </span>
-                                  {isCompleted && (
-                                    <span className="text-[8px] text-green-400 uppercase tracking-widest bg-green-400/10 px-1.5 py-0.5 rounded border border-green-400/20">
-                                      Passed
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-
-          <div className="p-6 bg-blue-600/5 border-t border-white/5">
-            <Button
-              onClick={handleNextMilestone}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-black h-12 rounded-xl tracking-widest uppercase"
-            >
-              Next Milestone <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </aside>
+        <CourseSidebar
+          lectures={lectures}
+          currentLecture={currentLecture}
+          setCurrentLecture={setCurrentLecture}
+          groupedLectures={groupedLectures}
+          groupedQuizzes={groupedQuizzes}
+          openSections={openSections}
+          toggleSection={toggleSection}
+          completedLectures={completedLectures}
+          getSectionStatus={getSectionStatus}
+          handleToggleComplete={handleToggleComplete}
+          handleNextMilestone={handleNextMilestone}
+          setActiveQuiz={setActiveQuiz}
+          setShowQuiz={setShowQuiz}
+        />
       </main>
 
       {/* QUIZ PLAYER OVERLAY */}
@@ -786,265 +546,19 @@ Instructor: ${course?.creator?.name || "Instructor"}
       )}
 
       {/* Q&A MODAL */}
-      <Dialog open={isQAOpen} onOpenChange={setIsQAOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-[#0f172a] border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">
-              Q&A Session
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Ask questions about "{currentLecture?.lectureTitle}" and view
-              previous answers.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex gap-2 my-4">
-            <input
-              type="text"
-              value={newQuestion}
-              onChange={(e) => setNewQuestion(e.target.value)}
-              placeholder="Type your question..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAskQuestion();
-              }}
-            />
-            <Button
-              onClick={handleAskQuestion}
-              className="bg-blue-600 hover:bg-blue-700 rounded-xl h-auto"
-            >
-              Ask
-            </Button>
-          </div>
-
-          <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar space-y-4">
-            {qaList.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm py-4">
-                No questions asked yet. Be the first!
-              </p>
-            ) : (
-              qaList.map((qa) => (
-                <div
-                  key={qa.id}
-                  className="bg-white/5 rounded-xl p-3 border border-white/5"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-sm text-blue-400">
-                      {qa.user}
-                    </span>
-                    <span className="text-[10px] text-gray-500">{qa.date}</span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-300">
-                    {qa.question}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <QAModal
+        isOpen={isQAOpen}
+        onOpenChange={setIsQAOpen}
+        currentLecture={currentLecture}
+      />
 
       {/* CERTIFICATE MODAL */}
-      <Dialog open={isCertificateOpen} onOpenChange={setIsCertificateOpen}>
-        <DialogContent
-          className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-2xl"
-          aria-describedby="certificate-desc"
-        >
-          <VisuallyHidden>
-            <DialogTitle>Course Certificate</DialogTitle>
-            <DialogDescription id="certificate-desc">
-              Your generated certificate for completing the course.
-            </DialogDescription>
-          </VisuallyHidden>
-
-          {/* Print Styles for Certificate */}
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-            @media print {
-              body * {
-                visibility: hidden;
-              }
-              .certificate-container, .certificate-container * {
-                visibility: visible;
-              }
-              .certificate-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100vh;
-                padding: 2cm !important;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: white !important;
-              }
-              .hide-on-print {
-                display: none !important;
-              }
-            }
-          `,
-            }}
-          />
-
-          <div className="w-full max-w-4xl mx-auto overflow-auto custom-scrollbar flex justify-center p-4">
-            <div
-              id="certificate-content"
-              className="certificate-container shrink-0 relative p-12 flex flex-col items-center justify-center text-center overflow-hidden"
-              style={{
-                backgroundColor: "#ffffff",
-                width: "1131px",
-                height: "800px",
-              }}
-            >
-              {/* Outer border (instead of Tailwind utility) */}
-              <div
-                className="absolute inset-0 m-4 border-[8px] border-double"
-                style={{ borderColor: "#312e81" }}
-              />
-
-              {/* Decorative corners */}
-              <div
-                className="absolute top-8 left-8 w-16 h-16 border-t-2 border-l-2 opacity-50"
-                style={{ borderColor: "#312e81" }}
-              />
-              <div
-                className="absolute top-8 right-8 w-16 h-16 border-t-2 border-r-2 opacity-50"
-                style={{ borderColor: "#312e81" }}
-              />
-              <div
-                className="absolute bottom-8 left-8 w-16 h-16 border-b-2 border-l-2 opacity-50"
-                style={{ borderColor: "#312e81" }}
-              />
-              <div
-                className="absolute bottom-8 right-8 w-16 h-16 border-b-2 border-r-2 opacity-50"
-                style={{ borderColor: "#312e81" }}
-              />
-
-              <div
-                className="w-full flex-1 border-2 p-12 flex flex-col items-center relative z-10"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  borderColor: "rgba(49, 46, 129, 0.1)",
-                }}
-              >
-                <div className="mb-8">
-                  <Award
-                    className="w-20 h-20 mx-auto opacity-80"
-                    style={{ color: "#eab308" }}
-                  />
-                </div>
-
-                <h1
-                  className="text-4xl md:text-5xl font-black tracking-widest uppercase font-serif mb-2"
-                  style={{ color: "#1e293b" }}
-                >
-                  Certificate of Completion
-                </h1>
-                <p
-                  className="text-sm tracking-widest uppercase mb-12"
-                  style={{ color: "#64748b" }}
-                >
-                  This is proudly presented to
-                </p>
-
-                <h2
-                  className="text-5xl md:text-6xl font-black mb-8 border-b-2 pb-4 px-12 italic font-serif"
-                  style={{
-                    color: "#312e81",
-                    borderColor: "rgba(49, 46, 129, 0.2)",
-                  }}
-                >
-                  {user?.name || "Student Name"}
-                </h2>
-
-                <p
-                  className="max-w-xl text-lg mb-4"
-                  style={{ color: "#475569" }}
-                >
-                  For successfully completing the comprehensive course:
-                </p>
-
-                <h3
-                  className="text-2xl font-bold mb-12"
-                  style={{ color: "#1e293b" }}
-                >
-                  {course?.courseTitle}
-                </h3>
-
-                <div className="flex justify-between w-full mt-auto pt-8 px-12">
-                  <div className="text-center">
-                    <div
-                      className="w-40 border-b mb-2"
-                      style={{ borderColor: "#94a3b8" }}
-                    ></div>
-                    <p
-                      className="text-sm font-bold uppercase tracking-widest"
-                      style={{ color: "#475569" }}
-                    >
-                      {course?.creator?.name || "Instructor Name"}
-                    </p>
-                    <p className="text-xs" style={{ color: "#94a3b8" }}>
-                      Lead Instructor
-                    </p>
-                  </div>
-
-                  <div className="text-center">
-                    <div
-                      className="w-40 border-b mb-2 pb-1 font-medium"
-                      style={{ borderColor: "#94a3b8", color: "#1e293b" }}
-                    >
-                      {new Date().toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </div>
-                    <p
-                      className="text-sm font-bold uppercase tracking-widest"
-                      style={{ color: "#475569" }}
-                    >
-                      Date Issued
-                    </p>
-                  </div>
-                </div>
-
-                {/* Seal */}
-                <div
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full border-4 flex items-center justify-center opacity-90 rotate-12"
-                  style={{ borderColor: "#eab308", backgroundColor: "#fefce8" }}
-                >
-                  <div
-                    className="w-20 h-20 rounded-full border flex items-center justify-center"
-                    style={{ borderColor: "#ca8a04" }}
-                  >
-                    <span
-                      className="font-bold text-xs uppercase text-center leading-tight tracking-widest"
-                      style={{ color: "#ca8a04" }}
-                    >
-                      Official
-                      <br />
-                      Learning
-                      <br />
-                      Seal
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-center p-4 bg-slate-900 rounded-b-xl hide-on-print">
-            <Button
-              onClick={handlePrintCertificate}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 px-8 rounded-xl shadow-lg border-2 border-indigo-500"
-            >
-              <Download className="mr-2 h-5 w-5" /> Download / Print PDF
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CertificateModal
+        isOpen={isCertificateOpen}
+        onOpenChange={setIsCertificateOpen}
+        user={user}
+        course={course}
+      />
 
       {/* Global CSS for scrollbar */}
       <style
