@@ -10,6 +10,7 @@ import {
 import { Provider } from "react-redux";
 import { store } from "./store/store.js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "react-hot-toast";
 import ErrorBoundary from "./components/ErrorBoundary";
 import GlobalErrorPage from "./components/GlobalErrorPage";
@@ -291,10 +292,12 @@ createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Toaster position="top-right" />
-        <Suspense fallback={<PageLoader />}>
-          <RouterProvider router={router} />
-        </Suspense>
+        <HelmetProvider>
+          <Toaster position="top-right" />
+          <Suspense fallback={<PageLoader />}>
+            <RouterProvider router={router} />
+          </Suspense>
+        </HelmetProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   </Provider>,
