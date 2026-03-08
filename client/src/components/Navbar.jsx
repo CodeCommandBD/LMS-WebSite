@@ -90,6 +90,18 @@ const Navbar = () => {
             </li>
             <li className="relative group">
               <NavLink
+                to="/blog"
+                className={({ isActive }) =>
+                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                  }`
+                }
+              >
+                Blog
+              </NavLink>
+            </li>
+            <li className="relative group">
+              <NavLink
                 to="/courses"
                 className={({ isActive }) =>
                   `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
