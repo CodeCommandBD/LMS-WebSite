@@ -3,10 +3,12 @@ import Navbar from "./components/Navbar";
 import { Outlet, useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import { useAuthInit } from "./hooks/useAuthInit";
+import { useAdSenseInit } from "./hooks/useAdSenseInit";
 import { Loader2 } from "lucide-react";
 
 const App = () => {
   const { isLoading } = useAuthInit();
+  useAdSenseInit();
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
   const isCourseProgressPath = location.pathname.startsWith("/course-progress");
