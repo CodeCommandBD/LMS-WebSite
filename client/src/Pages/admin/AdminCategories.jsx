@@ -101,7 +101,7 @@ const AdminCategories = () => {
             Category Management
           </h1>
           <p className="text-gray-400 mt-1 text-sm font-medium">
-            Manage your courses by creating and organizing categories
+            Manage your courses and blogs by creating and organizing categories
           </p>
         </div>
 
