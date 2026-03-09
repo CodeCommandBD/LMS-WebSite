@@ -156,7 +156,12 @@ const AdminAnalytics = () => {
             </div>
           </div>
           <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              minHeight={0}
+            >
               <AreaChart data={stats.engagementData}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -212,7 +217,12 @@ const AdminAnalytics = () => {
             Course Categories
           </h3>
           <div className="h-[250px] w-full relative mb-auto">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              minHeight={0}
+            >
               <RePieChart>
                 <Pie
                   data={stats.categoryEnrollment}
