@@ -7,6 +7,7 @@ import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import xssClean from "xss-clean";
 import rateLimit from "express-rate-limit";
+import hpp from "hpp";
 import userRouter from "./Routers/user.route.js";
 import courseRouter from "./Routers/course.route.js";
 import purchaseRouter from "./Routers/purchase.route.js";
@@ -57,9 +58,21 @@ const authLimiter = rateLimit({
   },
 });
 
+// Extra strict limiter for password reset
+const sensitiveLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Only 5 attempts per hour
+  message: {
+    success: false,
+    message: "Too many attempts, please try again after an hour",
+  },
+});
+
 app.use("/api/", limiter);
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/register", authLimiter);
+app.use("/api/v1/users/forgot-password", sensitiveLimiter);
+app.use("/api/v1/users/reset-password", sensitiveLimiter);
 // 3. Express 5 compatibility shim (Required for express-mongo-sanitize & xss-clean)
 app.use((req, res, next) => {
   if (req.query) {
@@ -88,6 +101,7 @@ app.post("/api/v1/purchase/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "1mb" })); // Protection against large payloads
 app.use(mongoSanitize()); // Protection against NoSQL Injection
 app.use(xssClean()); // Protection against XSS attacks
+app.use(hpp()); // Protection against HTTP Parameter Pollution attacks
 
 // CORS configuration — driven by environment variables
 // Development: CLIENT_URL=http://localhost:5173
