@@ -65,6 +65,32 @@ const Privacy = () => {
               credit card details on our own servers.
             </p>
           </section>
+
+          <section className="space-y-4 pt-6 border-t border-gray-800/30">
+            <h2 className="text-xl font-black flex items-center gap-3 text-amber-500">
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              Google AdSense & Cookies
+            </h2>
+            <p className="text-gray-400 font-medium leading-relaxed">
+              We use Google AdSense to serve ads when you visit our website.
+              Google may use cookies to serve ads based on your prior visits to
+              this website or other websites. Google's use of advertising
+              cookies enables it and its partners to serve ads to you based on
+              your visit to our sites and/or other sites on the Internet.
+            </p>
+            <p className="text-gray-400 font-medium leading-relaxed italic text-xs">
+              Users may opt out of personalized advertising by visiting{" "}
+              <a
+                href="https://www.google.com/settings/ads"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-amber-500 hover:underline"
+              >
+                Ads Settings
+              </a>
+              .
+            </p>
+          </section>
         </div>
 
         <div className="pt-12 text-center text-gray-500 text-sm font-medium border-t border-gray-800/50">
