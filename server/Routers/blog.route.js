@@ -5,6 +5,9 @@ import {
   getBlogBySlugOrId,
   updateBlog,
   deleteBlog,
+  getComments,
+  addComment,
+  deleteComment,
 } from "../Controller/blog.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";
@@ -34,5 +37,10 @@ router.put(
 );
 
 router.delete("/:id", authenticate, authorize("admin", "teacher"), deleteBlog);
+
+// Comment routes (public read, auth write)
+router.get("/:id/comments", getComments);
+router.post("/:id/comments", authenticate, addComment);
+router.delete("/:id/comments/:commentId", authenticate, deleteComment);
 
 export default router;
