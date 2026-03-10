@@ -357,6 +357,12 @@ const CourseCardDetails = () => {
                     {course.enrolledStudents?.length || 0} Students
                   </span>
                 </div>
+                {course.language && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Globe className="h-4 w-4 text-gray-400" />
+                    <span className="font-semibold">{course.language}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -396,24 +402,70 @@ const CourseCardDetails = () => {
                     dangerouslySetInnerHTML={{ __html: course.description }}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                      "Master manual mode and settings",
-                      "Understand lighting and composition",
-                      "Professional editing workflow",
-                      "Landscape & Portrait mastery",
-                    ].map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm transition-transform hover:-translate-y-1"
+                  {/* Preview Video */}
+                  {course.previewVideo && (
+                    <div className="mb-6">
+                      <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <PlayCircle className="h-5 w-5 text-blue-500" /> Course
+                        Preview
+                      </h3>
+                      <a
+                        href={course.previewVideo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-3 bg-blue-50 hover:bg-blue-100 transition-colors px-6 py-3 rounded-2xl border border-blue-100 font-bold text-blue-700 text-sm group"
                       >
-                        <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0" />
-                        <span className="text-sm font-semibold text-gray-800">
-                          {feature}
-                        </span>
+                        <PlayCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        Watch Free Preview
+                      </a>
+                    </div>
+                  )}
+
+                  {/* What You'll Learn */}
+                  {course.whatYouWillLearn?.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-base font-bold text-gray-800 mb-4">
+                        What you'll learn
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {course.whatYouWillLearn
+                          .filter(Boolean)
+                          .map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:-translate-y-1 transition-transform"
+                            >
+                              <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                              <span className="text-sm font-semibold text-gray-800">
+                                {item}
+                              </span>
+                            </div>
+                          ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Requirements */}
+                  {course.requirements?.length > 0 && (
+                    <div>
+                      <h3 className="text-base font-bold text-gray-800 mb-3">
+                        Requirements / Prerequisites
+                      </h3>
+                      <ul className="space-y-2">
+                        {course.requirements.filter(Boolean).map((req, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 text-sm text-gray-700"
+                          >
+                            <span className="text-blue-500 font-bold mt-0.5">
+                              →
+                            </span>
+                            {req}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
