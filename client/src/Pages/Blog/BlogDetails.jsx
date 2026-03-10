@@ -1,16 +1,219 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import api from "@/lib/api";
+import toast from "react-hot-toast";
 import AdSense from "../../components/Blog/AdSense";
 import SEO from "../../components/SEO";
 
+// ─────────────────────────────────────────────
+// CommentSection component
+// ─────────────────────────────────────────────
+const CommentSection = ({ blogId, user, navigate }) => {
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["blogComments", blogId],
+    queryFn: () => api.get(`/blogs/${blogId}/comments`).then((r) => r.data),
+    enabled: !!blogId,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: (comment) =>
+      api.post(`/blogs/${blogId}/comments`, { comment }).then((r) => r.data),
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries(["blogComments", blogId]);
+      toast.success("Comment posted!");
+    },
+    onError: (err) =>
+      toast.error(err?.response?.data?.message || "Failed to post comment"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (commentId) =>
+      api.delete(`/blogs/${blogId}/comments/${commentId}`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["blogComments", blogId]);
+      toast.success("Comment deleted");
+    },
+    onError: (err) =>
+      toast.error(err?.response?.data?.message || "Failed to delete"),
+  });
+
+  const comments = data?.comments || [];
+
+  return (
+    <section className="mt-16 border-t border-slate-200 pt-12 max-w-3xl mx-auto">
+      <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+        <span className="text-3xl">💬</span>
+        {comments.length > 0
+          ? `${comments.length} Comment${comments.length !== 1 ? "s" : ""}`
+          : "Comments"}
+      </h2>
+
+      {/* Comment Form */}
+      {user ? (
+        <div className="mb-10 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 shrink-0">
+              {user.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-purple-500 text-white font-bold text-sm">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <span className="font-semibold text-slate-800">{user.name}</span>
+          </div>
+          <textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Share your thoughts on this article..."
+            rows={3}
+            className="w-full border border-slate-200 rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-slate-700"
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                if (!commentText.trim())
+                  return toast.error("Please write something.");
+                addMutation.mutate(commentText.trim());
+              }}
+              disabled={addMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              {addMutation.isPending ? "Posting..." : "Post Comment"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-10 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
+          <p className="text-slate-600 font-medium">
+            Join the conversation — sign in to comment.
+          </p>
+          <button
+            onClick={() => navigate("/login")}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
+
+      {/* Comments List */}
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl border border-slate-100 p-5 animate-pulse"
+            >
+              <div className="flex gap-3">
+                <div className="w-9 h-9 bg-slate-200 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-slate-200 rounded w-1/4" />
+                  <div className="h-3 bg-slate-100 rounded w-3/4" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <div className="text-5xl mb-3">💭</div>
+          <p className="font-medium">No comments yet. Be the first!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {comments.map((c) => (
+            <div
+              key={c._id}
+              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 shrink-0 mt-0.5">
+                  {c.userId?.profilePicture ? (
+                    <img
+                      src={c.userId.profilePicture}
+                      alt={c.userId?.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-indigo-500 text-white font-bold text-sm">
+                      {c.userId?.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-slate-900 text-sm">
+                      {c.userId?.name}
+                    </span>
+                    {c.userId?.role === "admin" && (
+                      <span className="text-[10px] font-black text-purple-500 bg-purple-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                        Admin
+                      </span>
+                    )}
+                    {c.userId?.role === "teacher" && (
+                      <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                        Teacher
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400">
+                      {new Date(c.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-slate-700 text-sm mt-1.5 leading-relaxed">
+                    {c.comment}
+                  </p>
+                </div>
+                {/* Delete button — shown to author or admin */}
+                {user &&
+                  (user._id === c.userId?._id ||
+                    user.id === c.userId?._id ||
+                    user.role === "admin") && (
+                    <button
+                      onClick={() => deleteMutation.mutate(c._id)}
+                      disabled={deleteMutation.isPending}
+                      className="text-slate-300 hover:text-red-400 transition-colors ml-2 shrink-0 text-xs font-bold"
+                      title="Delete comment"
+                    >
+                      ✕
+                    </button>
+                  )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
 const BlogDetails = () => {
   const { identifier } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useSelector((state) => state.auth);
   const [blog, setBlog] = useState(null);
   const [popularBlogs, setPopularBlogs] = useState([]);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [commentText, setCommentText] = useState("");
 
   useEffect(() => {
     const fetchBlogData = async () => {
@@ -299,6 +502,11 @@ const BlogDetails = () => {
             </div>
           </aside>
         </div>
+
+        {/* ─────────── COMMENTS SECTION ─────────── */}
+        {blog && (
+          <CommentSection blogId={blog._id} user={user} navigate={navigate} />
+        )}
 
         {/* Related Posts Section */}
         <section className="mt-24 border-t border-slate-200 dark:border-slate-800 pt-16">
