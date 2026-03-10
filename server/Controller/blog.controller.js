@@ -187,3 +187,76 @@ export const deleteBlog = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ─────────────────────────────────────────────
+// Blog Comments
+// ─────────────────────────────────────────────
+import BlogComment from "../models/blogComment.model.js";
+
+// GET /api/v1/blogs/:id/comments — list comments for a blog
+export const getComments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const comments = await BlogComment.find({ blogId: id })
+      .populate("userId", "name profilePicture role")
+      .sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, comments });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/v1/blogs/:id/comments — add a comment (authenticated users)
+export const addComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    if (!comment?.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Comment cannot be empty." });
+    }
+
+    const newComment = await BlogComment.create({
+      blogId: id,
+      userId: req.user.id,
+      comment: comment.trim(),
+    });
+
+    const populated = await newComment.populate(
+      "userId",
+      "name profilePicture role",
+    );
+
+    return res.status(201).json({ success: true, comment: populated });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/v1/blogs/:id/comments/:commentId — delete a comment
+export const deleteComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const comment = await BlogComment.findById(commentId);
+    if (!comment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Comment not found." });
+    }
+
+    // Only the comment author or admin can delete
+    if (comment.userId.toString() !== userId && userRole !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized." });
+    }
+
+    await BlogComment.findByIdAndDelete(commentId);
+    return res.status(200).json({ success: true, message: "Comment deleted." });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
