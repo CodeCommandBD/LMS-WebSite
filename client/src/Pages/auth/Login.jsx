@@ -59,6 +59,13 @@ const Login = () => {
     },
     onError: (error) => {
       // Handle different error scenarios
+      // Check for needsVerification flag
+      if (error.response?.data?.needsVerification) {
+        toast.error(error.response.data.message, { duration: 5000 });
+        navigate("/verify-email");
+        return;
+      }
+
       const errorMessage = error.message?.toLowerCase() || "";
 
       if (errorMessage.includes("email") || errorMessage.includes("password")) {
