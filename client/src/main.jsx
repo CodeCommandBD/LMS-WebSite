@@ -38,6 +38,7 @@ const InstructorProfile = lazy(() => import("./Pages/InstructorProfile"));
 const NotFound = lazy(() => import("./Pages/NotFound"));
 const ForgotPassword = lazy(() => import("./Pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./Pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("./Pages/auth/VerifyEmail"));
 const SearchPage = lazy(() => import("./Pages/SearchPage"));
 const MyEnrolledCourses = lazy(() => import("./Pages/MyEnrolledCourses"));
 const Wishlist = lazy(() => import("./Pages/Wishlist"));
@@ -119,6 +120,10 @@ const router = createBrowserRouter([
       {
         path: "/reset-password/:token",
         element: <ResetPassword />,
+      },
+      {
+        path: "/verify-email",
+        element: <VerifyEmail />,
       },
       {
         path: "/signup",
