@@ -18,6 +18,8 @@ import categoryRouter from "./Routers/category.route.js";
 import blogRouter from "./Routers/blog.route.js";
 import settingsRouter from "./Routers/settings.route.js";
 import statsRouter from "./Routers/stats.route.js";
+import contactRouter from "./Routers/contact.route.js";
+import certificateRouter from "./Routers/certificate.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -148,6 +150,8 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/blogs", blogRouter);
 app.use("/api/v1/settings", settingsRouter);
 app.use("/api/v1/stats", statsRouter);
+app.use("/api/v1/contact", contactRouter);
+app.use("/api/v1/certificates", certificateRouter);
 
 // Static files & Catch-all route (MUST be at the end)
 // In local dev: serves from client/dist after running the build
