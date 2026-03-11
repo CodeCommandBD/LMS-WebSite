@@ -47,6 +47,11 @@ const useEditCourse = () => {
       description: "",
       courseLevel: "",
       price: 0,
+      discount: 0,
+      language: "English",
+      previewVideo: "",
+      whatYouWillLearn: [],
+      requirements: [],
     },
     // Automatically populate form when 'course' data is available
     values: course
@@ -57,6 +62,11 @@ const useEditCourse = () => {
           description: course.description,
           courseLevel: course.courseLevel,
           price: course.price,
+          discount: course.discount || 0,
+          language: course.language || "English",
+          previewVideo: course.previewVideo || "",
+          whatYouWillLearn: course.whatYouWillLearn || [],
+          requirements: course.requirements || [],
         }
       : undefined,
   });
@@ -100,16 +110,24 @@ const useEditCourse = () => {
   const onSubmit = (data) => {
     const formData = new FormData();
 
-    // Directly add fields to FormData (Easy to understand)
+    // Directly add fields to FormData
     formData.append("courseTitle", data.courseTitle);
     formData.append("subTitle", data.subTitle || "");
     formData.append("description", data.description || "");
     formData.append("category", data.category);
     formData.append("courseLevel", data.courseLevel);
     formData.append("price", Number(data.price) || 0);
+    formData.append("discount", Number(data.discount) || 0);
+    formData.append("language", data.language || "English");
+    formData.append("previewVideo", data.previewVideo || "");
+    // Send arrays as JSON strings
+    formData.append(
+      "whatYouWillLearn",
+      JSON.stringify(data.whatYouWillLearn || []),
+    );
+    formData.append("requirements", JSON.stringify(data.requirements || []));
 
     // Add thumbnail file (if selected)
-    // Check if it's a FileList or an actual file from selectThumbnail
     if (data.courseThumbnail?.[0]) {
       formData.append("courseThumbnail", data.courseThumbnail[0]);
     }
