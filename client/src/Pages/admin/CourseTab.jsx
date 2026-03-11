@@ -16,9 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Controller } from "react-hook-form";
+import { Controller, useFieldArray } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, X, Youtube } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import useEditCourse from "@/hooks/useEditCourse";
 import { getCategories } from "@/services/categoryApi";
@@ -38,6 +38,18 @@ const CourseTab = () => {
     togglePublishCourseMutaion,
     course,
   } = useEditCourse();
+
+  // Dynamic list builders for whatYouWillLearn and requirements
+  const {
+    fields: learnFields,
+    append: appendLearn,
+    remove: removeLearn,
+  } = useFieldArray({ control, name: "whatYouWillLearn" });
+  const {
+    fields: reqFields,
+    append: appendReq,
+    remove: removeReq,
+  } = useFieldArray({ control, name: "requirements" });
 
   const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
     queryKey: ["categories"],
@@ -226,16 +238,90 @@ const CourseTab = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label className="text-gray-300 font-bold ml-1">
+                      Price (৳)
+                    </Label>
+                    <Input
+                      {...register("price")}
+                      type="number"
+                      placeholder="200"
+                      className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all font-extrabold text-xl placeholder:text-gray-600 tabular-nums"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-gray-300 font-bold ml-1">
+                      Discount (%)
+                    </Label>
+                    <Input
+                      {...register("discount")}
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="e.g. 20 for 20% off"
+                      className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-amber-500 transition-all font-extrabold text-xl placeholder:text-gray-600 tabular-nums"
+                    />
+                    <p className="text-xs text-gray-500 ml-1">
+                      0 = no discount. 100 = free.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Language */}
                 <div className="space-y-3">
                   <Label className="text-gray-300 font-bold ml-1">
-                    Price (৳)
+                    Course Language
+                  </Label>
+                  <Controller
+                    name="language"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full bg-[#0f172a] border-none rounded-2xl p-4 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all"
+                      >
+                        {[
+                          "English",
+                          "Bengali",
+                          "Hindi",
+                          "Arabic",
+                          "French",
+                          "Spanish",
+                          "German",
+                          "Turkish",
+                          "Urdu",
+                          "Portuguese",
+                        ].map((lang) => (
+                          <option
+                            key={lang}
+                            value={lang}
+                            className="bg-[#1e293b]"
+                          >
+                            {lang}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+
+                {/* Preview Video URL */}
+                <div className="space-y-3">
+                  <Label className="text-gray-300 font-bold ml-1 flex items-center gap-2">
+                    <Youtube className="w-4 h-4 text-red-400" />
+                    Preview / Intro Video URL
                   </Label>
                   <Input
-                    {...register("price")}
-                    type="number"
-                    placeholder="200"
-                    className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all font-extrabold text-xl placeholder:text-gray-600 tabular-nums"
+                    {...register("previewVideo")}
+                    type="url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="bg-[#0f172a] border-none rounded-2xl p-6 h-14 text-white focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-600"
                   />
+                  <p className="text-xs text-gray-500 ml-1">
+                    YouTube or direct video URL shown on course details page
+                    before purchase.
+                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -292,6 +378,75 @@ const CourseTab = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* What You'll Learn + Requirements — Full Width */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-2">
+              {/* What You'll Learn */}
+              <div className="space-y-4 p-6 bg-[#0f172a] rounded-3xl border border-gray-800">
+                <Label className="text-gray-300 font-bold text-sm flex items-center gap-2">
+                  <span className="text-green-400">✓</span> What Students Will
+                  Learn
+                </Label>
+                <div className="space-y-2">
+                  {learnFields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                      <Input
+                        {...register(`whatYouWillLearn.${index}`)}
+                        placeholder={`Learning point ${index + 1}`}
+                        className="bg-[#1e293b] border-none rounded-xl h-10 text-white text-sm focus:ring-2 focus:ring-green-500/50 flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeLearn(index)}
+                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => appendLearn("")}
+                  className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-bold transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add Learning Point
+                </button>
+              </div>
+
+              {/* Requirements */}
+              <div className="space-y-4 p-6 bg-[#0f172a] rounded-3xl border border-gray-800">
+                <Label className="text-gray-300 font-bold text-sm flex items-center gap-2">
+                  <span className="text-blue-400">→</span> Prerequisites /
+                  Requirements
+                </Label>
+                <div className="space-y-2">
+                  {reqFields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                      <Input
+                        {...register(`requirements.${index}`)}
+                        placeholder={`Requirement ${index + 1}`}
+                        className="bg-[#1e293b] border-none rounded-xl h-10 text-white text-sm focus:ring-2 focus:ring-blue-500/50 flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeReq(index)}
+                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => appendReq("")}
+                  className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-bold transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add Requirement
+                </button>
               </div>
             </div>
 
