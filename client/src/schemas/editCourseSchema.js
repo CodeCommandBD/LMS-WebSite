@@ -7,5 +7,10 @@ export const editCourseSchema = z.object({
   category: z.string().min(1, "Please select a category"),
   courseLevel: z.string().optional(),
   price: z.coerce.number().min(0, "Price must be 0 or more").optional(),
+  discount: z.coerce.number().min(0).max(100).optional(),
   courseThumbnail: z.any().optional(),
+  language: z.string().optional(),
+  previewVideo: z.string().optional(),
+  whatYouWillLearn: z.array(z.string()).optional(),
+  requirements: z.array(z.string()).optional(),
 });
