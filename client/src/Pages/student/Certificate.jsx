@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import {
@@ -7,37 +7,81 @@ import {
   Download,
   Share2,
   CheckCircle2,
-  GraduationCap,
   Calendar,
   User,
   BookOpen,
   ArrowLeft,
+  Lock,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-import { getCourseById } from "@/services/courseApi";
-import { getCurrentUser } from "@/services/authApi";
+import toast from "react-hot-toast";
 
 const Certificate = () => {
   const { id: courseId } = useParams();
+  const navigate = useNavigate();
 
-  const { data: courseData, isLoading } = useQuery({
-    queryKey: ["course", courseId],
-    queryFn: () => getCourseById(courseId),
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["certificate", courseId],
+    queryFn: () => api.get(`/certificates/${courseId}`).then((r) => r.data),
     enabled: !!courseId,
+    retry: false,
   });
 
-  const { data: userData } = useQuery({
-    queryKey: ["profile"],
-    queryFn: getCurrentUser,
-  });
+  // Share using Web Share API (or fallback to copy link)
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Certificate — ${certificate?.courseId?.courseTitle}`,
+          text: `I just earned a certificate in "${certificate?.courseId?.courseTitle}"!`,
+          url: shareUrl,
+        });
+      } catch {
+        // user cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Certificate link copied to clipboard!");
+    }
+  };
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Loading certificate...
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
+  }
+
+  // Completion gate: show friendly message if not completed
+  if (isError) {
+    const msg =
+      error?.response?.data?.message ||
+      "You don't have access to this certificate.";
+    return (
+      <div className="min-h-screen pt-24 pb-12 px-4 flex items-center justify-center">
+        <div className="max-w-md text-center space-y-6">
+          <div className="bg-amber-500/10 p-6 rounded-full inline-flex">
+            <Lock className="w-16 h-16 text-amber-400" />
+          </div>
+          <h2 className="text-2xl font-black text-white">{msg}</h2>
+          <p className="text-gray-400">
+            Complete all lectures in the course to unlock your certificate.
+          </p>
+          <Button
+            onClick={() => navigate(`/course-progress/${courseId}`)}
+            className="bg-blue-600 hover:bg-blue-700 rounded-full px-8"
+          >
+            Continue Learning
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const certificate = data?.certificate;
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 bg-gray-50 dark:bg-gray-950">
@@ -51,8 +95,8 @@ const Certificate = () => {
         </Link>
 
         <div className="bg-white dark:bg-gray-900 rounded-[40px] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 relative">
-          {/* Decorative Background Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl text-sm" />
+          {/* Decorative Background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
           <div className="p-12 md:p-20 flex flex-col items-center text-center relative z-10">
@@ -76,7 +120,7 @@ const Certificate = () => {
             {/* Recipient Name */}
             <div className="mb-12">
               <h2 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tight mb-4 capitalize">
-                {userData?.user?.name || "Student Name"}
+                {certificate?.userId?.name || "Student Name"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-lg">
                 For successfully completing all requirements and assessments of
@@ -89,12 +133,12 @@ const Certificate = () => {
               <div className="inline-flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 px-8 py-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <BookOpen className="w-6 h-6 text-blue-600" />
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {courseData?.course?.courseTitle || "Course Title"}
+                  {certificate?.courseId?.courseTitle || "Course Title"}
                 </h3>
               </div>
             </div>
 
-            {/* Certificate Footer Info */}
+            {/* Certificate Footer */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full pt-12 border-t border-gray-100 dark:border-gray-800">
               <div className="flex flex-col items-center gap-2">
                 <Calendar className="w-5 h-5 text-gray-400" />
@@ -102,11 +146,16 @@ const Certificate = () => {
                   Date Issued
                 </span>
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  {new Date().toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {certificate?.issuedAt
+                    ? new Date(certificate.issuedAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )
+                    : "—"}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-2">
@@ -115,7 +164,7 @@ const Certificate = () => {
                   Instructor
                 </span>
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  {courseData?.course?.creator?.name || "Instructor"}
+                  {certificate?.courseId?.creator?.name || "Instructor"}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-2">
@@ -124,7 +173,7 @@ const Certificate = () => {
                   Certificate ID
                 </span>
                 <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">
-                  {Math.random().toString(36).substring(2, 10).toUpperCase()}
+                  {certificate?.certificateId || "—"}
                 </span>
               </div>
             </div>
@@ -142,6 +191,7 @@ const Certificate = () => {
             Download PDF
           </Button>
           <Button
+            onClick={handleShare}
             variant="outline"
             size="lg"
             className="rounded-full px-8 py-6 border-2 font-bold flex items-center gap-2 w-full md:w-auto bg-white dark:bg-gray-900"
