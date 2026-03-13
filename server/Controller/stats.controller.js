@@ -1,6 +1,7 @@
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import Purchase from "../models/purchase.model.js";
+import CourseProgress from "../models/courseProgress.model.js";
 
 export const getPlatformStats = async (req, res) => {
   try {
@@ -11,8 +12,15 @@ export const getPlatformStats = async (req, res) => {
       status: "completed",
     });
 
-    // Mock success rate for now or calculate based on reviews/completions if available
-    const successRate = 98;
+    // Real success rate: percentage of course progress entries that are completed
+    const totalProgress = await CourseProgress.countDocuments({});
+    const completedProgress = await CourseProgress.countDocuments({
+      isCompleted: true,
+    });
+    const successRate =
+      totalProgress > 0
+        ? Math.round((completedProgress / totalProgress) * 100)
+        : 0;
 
     res.status(200).json({
       success: true,
