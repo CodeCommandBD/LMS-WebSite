@@ -28,6 +28,22 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    language: {
+      type: String,
+      default: "English",
+    },
+    previewVideo: {
+      type: String,
+      default: "",
+    },
+    whatYouWillLearn: {
+      type: [String],
+      default: [],
+    },
+    requirements: {
+      type: [String],
+      default: [],
+    },
     enrolledStudents: [
       {
         type: mongoose.Schema.Types.ObjectId,
