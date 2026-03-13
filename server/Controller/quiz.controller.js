@@ -137,6 +137,30 @@ export const getCourseQuizzesWithStatus = async (req, res) => {
   }
 };
 
+// 8. Delete Quiz (Admin/Teacher)
+export const deleteQuiz = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+
+    const quiz = await Quiz.findByIdAndDelete(quizId);
+    if (!quiz) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Quiz not found" });
+    }
+
+    // Also delete all attempts for this quiz
+    await QuizAttempt.deleteMany({ quizId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Quiz and all its attempts deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // 7. Submit Quiz Attempt
 export const submitQuizAttempt = async (req, res) => {
   try {
