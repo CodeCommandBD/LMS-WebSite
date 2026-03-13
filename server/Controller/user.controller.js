@@ -7,6 +7,11 @@ import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import crypto from "crypto";
+import {
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+  sendVerificationEmail,
+} from "../utils/email.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -35,14 +40,33 @@ export const registerUser = async (req, res) => {
       role,
     });
 
+    // Generate email verification token (24h expiry)
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    newUser.emailVerifyToken = crypto
+      .createHash("sha256")
+      .update(verifyToken)
+      .digest("hex");
+    newUser.emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await newUser.save();
+
+    // Build the verify URL
+    const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/verify-email?token=${verifyToken}`;
+
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, name, verifyUrl).catch((err) =>
+      console.error("Verification email failed:", err.message),
+    );
+
     return res.status(201).json({
       success: true,
-      message: "Account created successfully",
+      message:
+        "Account created! Please check your email to verify your account.",
       user: {
         id: newUser._id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
+        isVerified: false,
       },
     });
   } catch (error) {
@@ -79,6 +103,17 @@ export const loginUser = async (req, res) => {
       return res
         .status(401)
         .json({ success: false, message: "Incorrect email or password" });
+    }
+
+    // Block unverified users
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Please verify your email before logging in. Check your inbox for the verification link.",
+        needsVerification: true,
+        email: user.email,
+      });
     }
 
     // token generation
@@ -382,13 +417,26 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
-    // In production, send email here. For now, log to console.
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
-    console.log("\n🔑 PASSWORD RESET LINK (Log for Dev):\n", resetUrl, "\n");
+
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail(email, user.name, resetUrl);
+    } catch (emailErr) {
+      // Rollback token if email fails so user can try again
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      console.error("Password reset email failed:", emailErr.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send reset email. Please try again later.",
+      });
+    }
 
     return res.json({
       success: true,
-      message: "Reset link sent to email (check server logs for link)",
+      message: "Password reset link has been sent to your email address.",
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -440,6 +488,234 @@ export const getAllUsers = async (req, res) => {
     return res.status(200).json({
       success: true,
       users,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Toggle ban/unban user
+export const toggleBanUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Prevent admin from banning themselves
+    if (userId === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot ban your own account.",
+      });
+    }
+
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Don't allow banning other admins
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot ban an admin account.",
+      });
+    }
+
+    user.isBanned = !user.isBanned;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: user.isBanned
+        ? `User "${user.name}" has been banned.`
+        : `User "${user.name}" has been unbanned.`,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Change user role
+export const changeUserRole = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    if (!["student", "teacher", "admin"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Must be student, teacher, or admin.",
+      });
+    }
+
+    // Prevent self-demotion
+    if (userId === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot change your own role.",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { role },
+      { new: true, runValidators: true },
+    ).select("-password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Role updated to "${role}" for ${user.name}.`,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Delete user
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Prevent self-deletion
+    if (userId === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own account.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Prevent deleting other admins
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot delete an admin account.",
+      });
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `User "${user.name}" has been deleted.`,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────
+// Email Verification
+// ─────────────────────────────────────────────
+
+// GET /api/v1/users/verify-email?token=...
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token is missing.",
+      });
+    }
+
+    // Hash the raw token to compare with DB
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      emailVerifyToken: hashedToken,
+      emailVerifyExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Verification link is invalid or has expired. Please request a new one.",
+      });
+    }
+
+    // Mark as verified and clear token
+    user.isVerified = true;
+    user.emailVerifyToken = undefined;
+    user.emailVerifyExpires = undefined;
+    await user.save();
+
+    // Send welcome email now that they're verified
+    sendWelcomeEmail(user.email, user.name).catch((err) =>
+      console.error("Welcome email failed:", err.message),
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully! You can now log in.",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/v1/users/resend-verification
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Don't reveal if email exists
+      return res.status(200).json({
+        success: true,
+        message:
+          "If an account with that email exists and is unverified, a new link has been sent.",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "This account is already verified.",
+      });
+    }
+
+    // Generate new token
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    user.emailVerifyToken = crypto
+      .createHash("sha256")
+      .update(verifyToken)
+      .digest("hex");
+    user.emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/verify-email?token=${verifyToken}`;
+
+    sendVerificationEmail(user.email, user.name, verifyUrl).catch((err) =>
+      console.error("Resend verification email failed:", err.message),
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "A new verification link has been sent. Please check your inbox.",
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
