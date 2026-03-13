@@ -84,8 +84,19 @@ export const getCreatorCourses = async (req, res) => {
 export const editCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { courseTitle, category, subTitle, description, courseLevel, price } =
-      req.body;
+    const {
+      courseTitle,
+      category,
+      subTitle,
+      description,
+      courseLevel,
+      price,
+      discount,
+      language,
+      previewVideo,
+      whatYouWillLearn,
+      requirements,
+    } = req.body;
     const file = req.file;
 
     // 1. Check if course exists and belongs to user
@@ -107,6 +118,23 @@ export const editCourse = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (courseLevel !== undefined) updateData.courseLevel = courseLevel;
     if (price !== undefined) updateData.price = price;
+    if (discount !== undefined)
+      updateData.discount = Math.min(100, Math.max(0, Number(discount)));
+    if (language !== undefined) updateData.language = language;
+    if (previewVideo !== undefined) updateData.previewVideo = previewVideo;
+    // Handle array fields sent as JSON strings or actual arrays
+    if (whatYouWillLearn !== undefined) {
+      updateData.whatYouWillLearn =
+        typeof whatYouWillLearn === "string"
+          ? JSON.parse(whatYouWillLearn)
+          : whatYouWillLearn;
+    }
+    if (requirements !== undefined) {
+      updateData.requirements =
+        typeof requirements === "string"
+          ? JSON.parse(requirements)
+          : requirements;
+    }
 
     // 3. Upload Thumbnail if exists
     if (file) {

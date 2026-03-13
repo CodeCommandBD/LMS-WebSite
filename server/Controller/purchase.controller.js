@@ -4,6 +4,7 @@ import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
 import fs from "fs";
+import { sendEnrollmentEmail } from "../utils/email.js";
 
 // Helper to get Stripe instance
 const getStripe = () => {
@@ -50,6 +51,14 @@ export const createCheckoutSession = async (req, res) => {
     // Create session
     const stripe = getStripe();
 
+    // Calculate effective price (apply discount if set)
+    const discountPct = course.discount || 0;
+    const originalPrice = course.price;
+    const discountedPrice =
+      discountPct > 0
+        ? Math.max(1, Math.round(originalPrice * (1 - discountPct / 100)))
+        : originalPrice;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -58,9 +67,12 @@ export const createCheckoutSession = async (req, res) => {
             currency: "bdt",
             product_data: {
               name: course.courseTitle,
-              description: course.subTitle || "Course enrollment",
+              description:
+                discountPct > 0
+                  ? `${discountPct}% OFF — Original price: ৳${originalPrice}`
+                  : course.subTitle || "Course enrollment",
             },
-            unit_amount: Math.round(course.price * 100), // convert to cents/paisa
+            unit_amount: Math.round(discountedPrice * 100), // convert to paisa
           },
           quantity: 1,
         },
@@ -80,7 +92,7 @@ export const createCheckoutSession = async (req, res) => {
     await Purchase.create({
       courseId,
       userId,
-      amount: course.price,
+      amount: discountedPrice,
       status: "pending",
       paymentId: session.id,
     });
@@ -182,6 +194,13 @@ export const stripeWebhook = async (req, res) => {
           await course.save();
           console.log("Successfully added user to course student list");
         }
+      }
+
+      // 4. Send enrollment confirmation email (non-blocking)
+      if (user && course) {
+        sendEnrollmentEmail(user.email, user.name, course.courseTitle).catch(
+          (err) => console.error("Enrollment email failed:", err.message),
+        );
       }
 
       console.log("Enrollment fulfillment complete for user:", userId);
