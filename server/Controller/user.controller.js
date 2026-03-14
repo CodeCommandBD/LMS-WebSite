@@ -105,7 +105,8 @@ export const loginUser = async (req, res) => {
         .json({ success: false, message: "Incorrect email or password" });
     }
 
-    // Block unverified users
+    // Block unverified users (TEMPORARILY DISABLED FOR TESTING)
+    /*
     if (!user.isVerified) {
       return res.status(403).json({
         success: false,
@@ -115,6 +116,7 @@ export const loginUser = async (req, res) => {
         email: user.email,
       });
     }
+    */
 
     // token generation
     const token = jwt.sign(
