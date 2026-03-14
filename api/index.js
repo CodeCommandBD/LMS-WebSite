@@ -13,15 +13,19 @@ import "../server/models/quiz.model.js";
 import "../server/models/quizAttempt.model.js";
 import "../server/models/review.model.js";
 
-// Validate environment variables
+// Initiate DB connection and validation
+let validationError = null;
 try {
   validateEnv();
 } catch (error) {
+  validationError = error.message;
   console.error("Environment validation failed:", error);
 }
 
-// Initiate DB connection at top level (Vercel reuses containers)
-const dbPromise = connectDB();
+const dbPromise = connectDB().catch((err) => {
+  console.error("Initial DB connection failed:", err);
+  return null;
+});
 
 // Global error handler for the serverless function
 app.use((err, req, res, next) => {
@@ -36,6 +40,16 @@ app.use((err, req, res, next) => {
 
 // Export the express app as the default handler
 export default async (req, res) => {
+  // If validation failed, return a helpful error
+  if (validationError) {
+    return res.status(500).json({
+      success: false,
+      message: "Vercel Environment Configuration Error",
+      error: validationError,
+      action: "Please add the missing variables to the Vercel Dashboard Settings.",
+    });
+  }
+
   await dbPromise; // Ensure DB is connected before handling the request
   return app(req, res);
 };

@@ -112,17 +112,17 @@ export function validateEnv() {
     console.warn("");
   }
 
-  // Crash if there are errors
+  // Throw error if there are missing variables
   if (errors.length > 0) {
-    console.error("🚨 FATAL: Missing or invalid environment variables!\n");
-    console.error(
-      "The server cannot start until these are set in your .env file.\n",
-    );
-    console.error(
-      "📄 Copy server/.env.example → server/.env and fill in your values.\n",
-    );
-    errors.forEach((e) => console.error(e + "\n"));
-    process.exit(1);
+    const errorMsg = `🚨 FATAL: Missing or invalid environment variables!\n${errors.join("\n")}`;
+    console.error(errorMsg);
+    // In serverless environments like Vercel, we should THROW an error
+    // instead of process.exit(1) so it can be handled by the route handler.
+    if (process.env.VERCEL) {
+      throw new Error(errorMsg);
+    } else {
+      process.exit(1);
+    }
   }
 
   console.log("✅ All required environment variables are set.\n");
