@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import Course from "../models/course.model.js";
 import Review from "../models/review.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
