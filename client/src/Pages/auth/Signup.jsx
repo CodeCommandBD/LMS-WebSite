@@ -89,69 +89,67 @@ const Signup = () => {
   };
 
   return (
-    <div className="mt-20 flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-gray-700">
-          Sign Up
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Join us today! It's quick and easy.
-        </p>
-        <div>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-6"
-          >
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-purple-950 to-slate-900 px-4 py-12">
+      <div className="max-w-md w-full mt-10">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-4xl p-10 shadow-2xl text-center space-y-8">
+          <div>
+            <h1 className="text-3xl font-black text-white mb-2">Create Account</h1>
+            <p className="text-gray-400 text-sm">Join our community of learners today</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 text-left">
             {/* Name Field */}
-            <div>
-              <Label className="block text-gray-700 font-bold mb-2">
+            <div className="space-y-2">
+              <Label className="text-gray-300 text-sm font-bold block ml-1">
                 Full Name
               </Label>
               <Input
                 type="text"
-                placeholder="Enter your name"
+                placeholder="John Doe"
                 {...register("name")}
+                className="bg-white/5 border-white/10 rounded-xl px-4 py-6 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 transition-all"
               />
               {errors.name && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-400 text-xs mt-1 ml-1 font-medium">
                   {errors.name.message}
                 </p>
               )}
             </div>
 
             {/* Email Field */}
-            <div>
-              <Label className="block text-gray-700 font-bold mb-2">
-                Email
+            <div className="space-y-2">
+              <Label className="text-gray-300 text-sm font-bold block ml-1">
+                Email Address
               </Label>
               <Input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="name@example.com"
                 {...register("email")}
+                className="bg-white/5 border-white/10 rounded-xl px-4 py-6 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 transition-all"
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-400 text-xs mt-1 ml-1 font-medium">
                   {errors.email.message}
                 </p>
               )}
             </div>
 
             {/* Password Field */}
-            <div>
-              <Label className="block text-gray-700 font-bold mb-2">
+            <div className="space-y-2">
+              <Label className="text-gray-300 text-sm font-bold block ml-1">
                 Password
               </Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   {...register("password")}
-                  className="pr-10"
+                  className="bg-white/5 border-white/10 rounded-xl px-4 py-6 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 transition-all pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -161,15 +159,15 @@ const Signup = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-400 text-xs mt-1 ml-1 font-medium">
                   {errors.password.message}
                 </p>
               )}
             </div>
 
             {/* Role Field */}
-            <div>
-              <Label className="block text-gray-700 font-bold mb-2">Role</Label>
+            <div className="space-y-3">
+              <Label className="text-gray-300 text-sm font-bold block ml-1">Join as</Label>
               <Controller
                 name="role"
                 control={control}
@@ -177,53 +175,52 @@ const Signup = () => {
                   <RadioGroup
                     value={field.value}
                     onValueChange={field.onChange}
-                    className="flex gap-3"
+                    className="flex gap-4 p-1"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 cursor-pointer group">
                       <RadioGroupItem
-                        className="text-blue-500"
                         value="student"
                         id="student"
+                        className="border-white/20 text-purple-500 focus:ring-purple-500"
                       />
-                      <Label htmlFor="student">Student</Label>
+                      <Label htmlFor="student" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
+                        Student
+                      </Label>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 cursor-pointer group">
                       <RadioGroupItem
-                        className="text-blue-500"
                         value="teacher"
                         id="teacher"
+                        className="border-white/20 text-purple-500 focus:ring-purple-500"
                       />
-                      <Label htmlFor="teacher">Teacher</Label>
+                      <Label htmlFor="teacher" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
+                        Teacher
+                      </Label>
                     </div>
                   </RadioGroup>
                 )}
               />
-              {errors.role && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.role.message}
-                </p>
-              )}
             </div>
 
             {/* Submit Button */}
             <Button
-              className="bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+              className="w-full rounded-2xl py-6 bg-purple-600 hover:bg-purple-700 font-bold text-white transition-all transform active:scale-[0.98] shadow-lg shadow-purple-900/20"
               type="submit"
               disabled={signupMutation.isPending}
             >
               {signupMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Signing up...
+                  Creating account...
                 </span>
               ) : (
                 "Sign Up"
               )}
             </Button>
 
-            <p className="text-center text-gray-600 mt-4">
+            <p className="text-center text-gray-400 text-sm mt-6">
               Already have an account?{" "}
-              <Link to="/login" className="text-blue-500 hover:underline">
+              <Link to="/login" className="text-purple-400 hover:text-purple-300 font-bold transition-colors">
                 Login
               </Link>
             </p>
