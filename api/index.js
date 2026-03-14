@@ -44,16 +44,31 @@ app.use((err, req, res, next) => {
 
 // Export the express app as the default handler
 export default async (req, res) => {
-  // If validation failed, return a helpful error
+  // 1. Check for Environment Validation Error
   if (validationError) {
     return res.status(500).json({
       success: false,
-      message: "Vercel Environment Configuration Error",
+      message: "Vercel Configuration Error: Missing Environment Variables",
       error: validationError,
-      action: "Please add the missing variables to the Vercel Dashboard Settings.",
+      suggestion: "Please check your Vercel Project Settings -> Environment Variables.",
     });
   }
 
-  await dbPromise; // Ensure DB is connected before handling the request
+  // 2. Wait for DB Connection and handle failure
+  try {
+    const db = await dbPromise;
+    if (!db && dbPromise !== null) {
+        // This handles cases where connectDB didn't throw but returned nothing
+    }
+  } catch (dbError) {
+    return res.status(500).json({
+      success: false,
+      message: "Vercel Database Connection Error",
+      error: dbError.message,
+      suggestion: "Check if MONGO_URL is correct and MongoDB Atlas allows Vercel IPs (0.0.0.0/0).",
+    });
+  }
+
+  // 3. Forward to Express App
   return app(req, res);
 };
