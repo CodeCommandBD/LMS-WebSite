@@ -3,10 +3,14 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { CheckCircle2, XCircle, Loader2, Mail, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/store/slices/authSlice";
+import toast from "react-hot-toast";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const token = searchParams.get("token");
 
   const [status, setStatus] = useState("loading"); // "loading" | "success" | "error" | "resend"
@@ -29,8 +33,16 @@ const VerifyEmail = () => {
         if (data.success) {
           setStatus("success");
           setMessage(data.message);
-          // Redirect to login after 3s
-          setTimeout(() => navigate("/login"), 3000);
+
+          // Auto-login: update Redux state
+          if (data.user) {
+            dispatch(setUser(data.user));
+          }
+
+          toast.success("Verification successful! Welcome to the platform.");
+
+          // Redirect to home after 2s
+          setTimeout(() => navigate("/"), 2000);
         } else {
           setStatus("error");
           setMessage(data.message || "Verification failed.");
@@ -45,7 +57,7 @@ const VerifyEmail = () => {
     };
 
     verify();
-  }, [token, navigate]);
+  }, [token, navigate, dispatch]);
 
   const handleResend = async (e) => {
     e.preventDefault();
@@ -93,13 +105,13 @@ const VerifyEmail = () => {
               </h1>
               <p className="text-gray-300">{message}</p>
               <p className="text-gray-500 text-sm">
-                Redirecting to login in 3 seconds...
+                Redirecting to home in 2 seconds...
               </p>
               <Button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="w-full rounded-2xl py-6 bg-green-600 hover:bg-green-700 font-bold text-white"
               >
-                Go to Login Now
+                Go to Home Now
               </Button>
             </>
           )}

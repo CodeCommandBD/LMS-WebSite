@@ -105,8 +105,7 @@ export const loginUser = async (req, res) => {
         .json({ success: false, message: "Incorrect email or password" });
     }
 
-    // Block unverified users (TEMPORARILY DISABLED FOR TESTING)
-    /*
+    // Block unverified users
     if (!user.isVerified) {
       return res.status(403).json({
         success: false,
@@ -116,7 +115,6 @@ export const loginUser = async (req, res) => {
         email: user.email,
       });
     }
-    */
 
     // token generation
     const token = jwt.sign(
@@ -658,15 +656,41 @@ export const verifyEmail = async (req, res) => {
     user.emailVerifyExpires = undefined;
     await user.save();
 
+    // Generate JWT token for auto-login
+    const tokenPayload = { id: user._id, role: user.role };
+    const authToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: "48h",
+    });
+
     // Send welcome email now that they're verified
     sendWelcomeEmail(user.email, user.name).catch((err) =>
       console.error("Welcome email failed:", err.message),
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Email verified successfully! You can now log in.",
-    });
+    return res
+      .status(200)
+      .cookie("token", authToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+        maxAge: 48 * 60 * 60 * 1000,
+      })
+      .json({
+        success: true,
+        message: "Email verified successfully! You are now logged in.",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          photoUrl: user.profilePicture
+            ? user.profilePicture.startsWith("http")
+              ? user.profilePicture
+              : `${process.env.BACKEND_URL || "http://localhost:4000"}/${user.profilePicture}`
+            : null,
+          enrolledCourses: user.enrolledCourses || [],
+        },
+      });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
