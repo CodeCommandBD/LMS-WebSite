@@ -4,6 +4,7 @@ import {
   createQuiz,
   getCourseQuizzes,
   editQuiz,
+  deleteQuiz,
   getQuizForStudent,
   getCourseQuizzesWithStatus,
   submitQuizAttempt,
@@ -25,6 +26,12 @@ router.put(
   authenticate,
   authorize("admin", "teacher"),
   editQuiz,
+);
+router.delete(
+  "/:quizId",
+  authenticate,
+  authorize("admin", "teacher"),
+  deleteQuiz,
 );
 
 // Student Routes
