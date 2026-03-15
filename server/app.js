@@ -20,6 +20,7 @@ import settingsRouter from "./Routers/settings.route.js";
 import statsRouter from "./Routers/stats.route.js";
 import contactRouter from "./Routers/contact.route.js";
 import certificateRouter from "./Routers/certificate.route.js";
+import notificationRouter from "./Routers/notification.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -152,6 +153,7 @@ app.use("/api/v1/settings", settingsRouter);
 app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/contact", contactRouter);
 app.use("/api/v1/certificates", certificateRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 // Static files & Catch-all route (MUST be at the end)
 // In local dev: serves from client/dist after running the build
