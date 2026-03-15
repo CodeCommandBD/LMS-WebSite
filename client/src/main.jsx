@@ -1,4 +1,5 @@
 import { StrictMode, lazy, Suspense } from "react";
+import { ThemeProvider } from "./context/ThemeContext";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
@@ -293,10 +294,12 @@ const router = createBrowserRouter([
   },
 ]);
 
+
 createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
         <HelmetProvider>
           <Toaster position="top-right" />
           <Suspense fallback={<PageLoader />}>
@@ -304,6 +307,7 @@ createRoot(document.getElementById("root")).render(
           </Suspense>
         </HelmetProvider>
       </QueryClientProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </ThemeProvider>
   </Provider>,
 );
