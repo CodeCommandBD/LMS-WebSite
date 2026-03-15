@@ -171,7 +171,7 @@ export const getCourseById = async (req, res) => {
 
     const course = await Course.findById(courseId)
       .populate("lectures")
-      .populate("creator", "name profilePicture");
+      .populate("creator", "_id name profilePicture bio description role");
 
     if (!course) {
       return res
