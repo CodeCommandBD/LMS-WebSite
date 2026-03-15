@@ -1,6 +1,10 @@
 import CourseProgress from "../models/courseProgress.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
+import Quiz from "../models/quiz.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
+import Points from "../models/points.model.js";
+import { createNotification } from "./notification.controller.js";
 
 // 1. Get User Course Progress
 export const getUserCourseProgress = async (req, res) => {
@@ -71,17 +75,70 @@ export const updateLectureProgress = async (req, res) => {
     if (index === -1) {
       // Mark as completed
       progress.completedLectures.push(lectureId);
+      
+      // Reward points for completion
+      await Points.findOneAndUpdate(
+        { userId },
+        { 
+          $inc: { totalPoints: 10 }, 
+          $push: { history: { points: 10, reason: "Completed a lecture" } } 
+        },
+        { upsert: true }
+      );
     } else {
       // Unmark as completed
       progress.completedLectures.splice(index, 1);
+      
+      // Deduct points for unmarking (optional but fair for consistency)
+      await Points.findOneAndUpdate(
+        { userId },
+        { 
+          $inc: { totalPoints: -10 }, 
+          $push: { history: { points: -10, reason: "Unmarked a lecture completion" } } 
+        }
+      );
     }
 
-    // Check if course is fully completed
+    // Check if course is fully completed (Lectures + Quizzes)
     const course = await Course.findById(courseId);
     if (course) {
       const totalLectures = course.lectures.length;
-      progress.isCompleted =
-        progress.completedLectures.length === totalLectures;
+      const allLecturesDone = progress.completedLectures.length === totalLectures;
+
+      // Check if all quizzes for this course are passed
+      const quizzes = await Quiz.find({ courseId });
+      let allQuizzesPassed = true;
+
+      if (quizzes.length > 0) {
+        const quizIds = quizzes.map((q) => q._id);
+        const passedAttempts = await QuizAttempt.countDocuments({
+          userId,
+          quizId: { $in: quizIds },
+          isPassed: true,
+        });
+        
+        // We need to ensure each unique quiz is passed
+        // A more robust way:
+        const userPassedQuizzes = await QuizAttempt.distinct("quizId", {
+            userId,
+            quizId: { $in: quizIds },
+            isPassed: true
+        });
+
+        allQuizzesPassed = userPassedQuizzes.length === quizzes.length;
+      }
+
+      progress.isCompleted = allLecturesDone && allQuizzesPassed;
+      
+      if (progress.isCompleted) {
+        await createNotification(
+          userId,
+          "Course Completed!",
+          `Congratulations! You have completed "${course.courseTitle}".`,
+          "achievement",
+          `/certificate/${courseId}`
+        );
+      }
     }
 
     await progress.save();
