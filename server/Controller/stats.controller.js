@@ -8,9 +8,11 @@ export const getPlatformStats = async (req, res) => {
     const totalCourses = await Course.countDocuments({ isPublished: true });
     const totalStudents = await User.countDocuments({ role: "student" });
     const totalInstructors = await User.countDocuments({ role: "teacher" });
-    const totalEnrollments = await Purchase.countDocuments({
-      status: "completed",
-    });
+    
+    // Revenue and Sales from Purchase model
+    const purchases = await Purchase.find({ status: "completed" });
+    const totalRevenue = purchases.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalEnrollments = purchases.length;
 
     // Real success rate: percentage of course progress entries that are completed
     const totalProgress = await CourseProgress.countDocuments({});
@@ -28,8 +30,9 @@ export const getPlatformStats = async (req, res) => {
         totalCourses,
         totalStudents,
         totalInstructors,
-        totalEnrollments,
-        successRate,
+        totalEnrollments, // Total Sales
+        totalRevenue,
+        successRate, // Completion Rate
       },
     });
   } catch (error) {
