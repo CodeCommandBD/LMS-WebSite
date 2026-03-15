@@ -8,9 +8,13 @@ import { logoutUser } from "@/services/authApi";
 import { clearUser } from "@/store/slices/authSlice";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { useTheme } from "@/context/ThemeContext";
+import { Sun, Moon } from "lucide-react";
+import { Switch } from "./ui/switch";
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
+  const { theme, toggleTheme } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,6 +166,14 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
+            <li className="flex items-center gap-2 ml-4">
+              {theme === "dark" ? <Moon className="w-4 h-4 text-white" /> : <Sun className="w-4 h-4 text-white" />}
+              <Switch
+                checked={theme === "dark"}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </li>
           </ul>
         </nav>
       </div>
