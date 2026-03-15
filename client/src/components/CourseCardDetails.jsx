@@ -250,9 +250,9 @@ const CourseCardDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <p className="text-gray-500 font-medium animate-pulse">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-white mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">
           Loading course details...
         </p>
       </div>
@@ -287,25 +287,25 @@ const CourseCardDetails = () => {
   const tabs = ["About", "Curriculum", "Instructor", "Reviews"];
 
   return (
-    <div className="bg-white min-h-screen pt-20">
+    <div className="bg-white dark:bg-gray-900 min-h-screen pt-20 transition-colors duration-300">
       {/* 1. BREADCRUMBS */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
         <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
           <span
             onClick={() => navigate("/")}
-            className="hover:text-blue-600 cursor-pointer transition-colors"
+            className="hover:text-blue-600 dark:hover:text-white cursor-pointer transition-colors"
           >
             Home
           </span>
           <ChevronRight className="h-4 w-4" />
           <span
             onClick={() => navigate("/courses")}
-            className="hover:text-blue-600 cursor-pointer transition-colors"
+            className="hover:text-blue-600 dark:hover:text-white cursor-pointer transition-colors"
           >
             Courses
           </span>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-gray-900 font-semibold truncate">
+          <span className="text-gray-900 dark:text-white font-semibold truncate">
             {course.courseTitle}
           </span>
         </div>
@@ -317,7 +317,7 @@ const CourseCardDetails = () => {
         <div className="lg:col-span-8 space-y-10">
           {/* Hero Content */}
           <div className="space-y-6">
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-100 group">
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 group">
               <img
                 src={course.courseThumbnail}
                 alt={course.courseTitle}
@@ -326,7 +326,7 @@ const CourseCardDetails = () => {
               />
               <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="bg-white/90 p-4 rounded-full shadow-lg">
-                  <PlayCircle className="h-12 w-12 text-blue-600" />
+                  <PlayCircle className="h-12 w-12 text-blue-600 dark:text-white transition-colors" />
                 </div>
               </div>
             </div>
@@ -337,14 +337,14 @@ const CourseCardDetails = () => {
               >
                 {isEnrolled ? "ENROLLED" : "BEST SELLER"}
               </Badge>
-              <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+              <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
                 {course.courseTitle}
               </h1>
 
               <div className="flex flex-wrap items-center gap-6">
                 <div className="flex items-center gap-2">
                   <StarRating rating={averageRating} />
-                  <span className="font-bold text-gray-900">
+                  <span className="font-bold text-gray-900 dark:text-white">
                     {averageRating}
                   </span>
                   <span className="text-gray-500 text-sm">
@@ -368,7 +368,7 @@ const CourseCardDetails = () => {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="border-b border-gray-200 sticky top-20 bg-white z-20 pt-2">
+          <div className="border-b border-gray-200 dark:border-gray-800 sticky top-20 bg-white dark:bg-gray-900 z-20 pt-2 transition-colors duration-300">
             <div className="flex gap-8">
               {tabs.map((tab) => (
                 <button
@@ -376,8 +376,8 @@ const CourseCardDetails = () => {
                   onClick={() => setActiveTab(tab)}
                   className={`pb-4 text-sm font-bold transition-all relative ${
                     activeTab === tab
-                      ? "text-blue-600"
-                      : "text-gray-500 hover:text-gray-900"
+                      ? "text-blue-600 dark:text-white"
+                      : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   {tab}
@@ -393,27 +393,27 @@ const CourseCardDetails = () => {
           <div className="mt-8">
             {activeTab === "About" && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-gray-50/50 p-8 rounded-3xl border border-gray-100/50">
-                  <h2 className="text-2xl font-black text-gray-900 mb-8">
+                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-8 rounded-3xl border border-gray-100/50 dark:border-gray-700/50">
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-8">
                     About this course
                   </h2>
                   <div
-                    className="prose prose-blue max-w-none text-gray-600 leading-relaxed description-content mb-10"
+                    className="prose prose-blue dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed description-content mb-10"
                     dangerouslySetInnerHTML={{ __html: course.description }}
                   />
 
                   {/* Preview Video */}
                   {course.previewVideo && (
                     <div className="mb-6">
-                      <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <PlayCircle className="h-5 w-5 text-blue-500" /> Course
+                      <h3 className="text-base font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <PlayCircle className="h-5 w-5 text-blue-500 dark:text-white" /> Course
                         Preview
                       </h3>
                       <a
                         href={course.previewVideo}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-3 bg-blue-50 hover:bg-blue-100 transition-colors px-6 py-3 rounded-2xl border border-blue-100 font-bold text-blue-700 text-sm group"
+                        className="inline-flex items-center gap-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors px-6 py-3 rounded-2xl border border-blue-100 dark:border-blue-800 font-bold text-blue-700 dark:text-white text-sm group"
                       >
                         <PlayCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         Watch Free Preview
@@ -424,7 +424,7 @@ const CourseCardDetails = () => {
                   {/* What You'll Learn */}
                   {course.whatYouWillLearn?.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-base font-bold text-gray-800 mb-4">
+                      <h3 className="text-base font-bold text-gray-800 dark:text-white mb-4">
                         What you'll learn
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -433,10 +433,10 @@ const CourseCardDetails = () => {
                           .map((item, idx) => (
                             <div
                               key={idx}
-                              className="flex items-start gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:-translate-y-1 transition-transform"
+                              className="flex items-start gap-3 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:-translate-y-1 transition-transform"
                             >
-                              <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                              <span className="text-sm font-semibold text-gray-800">
+                              <CheckCircle2 className="h-5 w-5 text-blue-500 dark:text-white shrink-0 mt-0.5" />
+                              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                                 {item}
                               </span>
                             </div>
@@ -448,16 +448,16 @@ const CourseCardDetails = () => {
                   {/* Requirements */}
                   {course.requirements?.length > 0 && (
                     <div>
-                      <h3 className="text-base font-bold text-gray-800 mb-3">
+                      <h3 className="text-base font-bold text-gray-800 dark:text-white mb-3">
                         Requirements / Prerequisites
                       </h3>
                       <ul className="space-y-2">
                         {course.requirements.filter(Boolean).map((req, idx) => (
                           <li
                             key={idx}
-                            className="flex items-start gap-3 text-sm text-gray-700"
+                            className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300"
                           >
-                            <span className="text-blue-500 font-bold mt-0.5">
+                            <span className="text-blue-500 dark:text-white font-bold mt-0.5">
                               →
                             </span>
                             {req}
@@ -473,7 +473,7 @@ const CourseCardDetails = () => {
             {activeTab === "Curriculum" && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-gray-900">
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white">
                     Course Curriculum
                   </h2>
                   <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
@@ -488,17 +488,17 @@ const CourseCardDetails = () => {
                       ([sectionName, lectures], sIndex) => (
                         <div
                           key={sectionName}
-                          className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
+                          className="border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm transition-all hover:shadow-md"
                         >
                           <div
                             onClick={() => toggleSection(sectionName)}
-                            className="flex items-center justify-between p-5 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors"
+                            className="flex items-center justify-between p-5 bg-gray-50/50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <ChevronDown
                                 className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${openSections[sectionName] ? "" : "-rotate-90"}`}
                               />
-                              <h3 className="font-bold text-gray-900">
+                              <h3 className="font-bold text-gray-900 dark:text-white">
                                 {sectionName}
                               </h3>
                             </div>
@@ -526,7 +526,7 @@ const CourseCardDetails = () => {
                                     className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
                                       lecture.isPreviewFree ||
                                       (!isLocked && (isEnrolled || isCreator))
-                                        ? "hover:bg-blue-50 cursor-pointer"
+                                        ? "hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer"
                                         : "opacity-80 cursor-not-allowed"
                                     }`}
                                     onClick={() => {
@@ -552,12 +552,12 @@ const CourseCardDetails = () => {
                                       ) : isCompleted ? (
                                         <CheckCircle2 className="h-5 w-5 text-green-500" />
                                       ) : (
-                                        <PlayCircle className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
+                                        <PlayCircle className="h-5 w-5 text-blue-500 dark:text-white group-hover:scale-110 transition-transform" />
                                       )}
                                       <span
                                         className={`text-sm font-bold transition-colors ${
                                           lecture.isPreviewFree || !isLocked
-                                            ? "text-gray-900 group-hover:text-blue-600"
+                                            ? "text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-white"
                                             : "text-gray-400"
                                         }`}
                                       >
@@ -574,7 +574,7 @@ const CourseCardDetails = () => {
                                         isEnrolled ||
                                         isCreator) &&
                                         !isLocked && (
-                                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b-2 border-blue-600">
+                                          <span className="text-[10px] font-black text-blue-600 dark:text-white uppercase tracking-widest border-b-2 border-blue-600 dark:border-white">
                                             {isEnrolled || isCreator
                                               ? "Play"
                                               : "Preview"}
@@ -603,7 +603,7 @@ const CourseCardDetails = () => {
                                       key={quiz._id}
                                       className={`flex items-center justify-between p-4 rounded-xl transition-colors group ${
                                         !isLocked && (isEnrolled || isCreator)
-                                          ? "hover:bg-indigo-50 cursor-pointer"
+                                          ? "hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer"
                                           : "opacity-80 cursor-not-allowed"
                                       }`}
                                       onClick={() => {
@@ -623,14 +623,14 @@ const CourseCardDetails = () => {
                                         {isLocked ? (
                                           <Lock className="h-4 w-4 text-gray-400" />
                                         ) : isPassed ? (
-                                          <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                                          <CheckCircle2 className="h-5 w-5 text-indigo-500 dark:text-white" />
                                         ) : (
-                                          <FileText className="h-5 w-5 text-indigo-400" />
+                                          <FileText className="h-5 w-5 text-indigo-400 dark:text-white" />
                                         )}
                                         <span
                                           className={`text-sm font-bold transition-colors ${
                                             !isLocked
-                                              ? "text-gray-900 group-hover:text-indigo-600"
+                                              ? "text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-white"
                                               : "text-gray-400"
                                           }`}
                                         >
@@ -639,12 +639,12 @@ const CourseCardDetails = () => {
                                       </div>
                                       <div className="flex items-center gap-4">
                                         {isPassed ? (
-                                          <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">
+                                          <span className="text-[9px] font-black text-indigo-600 dark:text-white uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
                                             Passed
                                           </span>
                                         ) : (
                                           !isLocked && (
-                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-600">
+                                            <span className="text-[10px] font-black text-indigo-600 dark:text-white uppercase tracking-widest border-b-2 border-indigo-600 dark:border-white">
                                               Start
                                             </span>
                                           )
@@ -667,17 +667,17 @@ const CourseCardDetails = () => {
                 <h2 className="text-2xl font-black text-gray-900">
                   Instructor
                 </h2>
-                <div className="flex flex-col md:flex-row gap-8 items-start bg-blue-50/30 p-8 rounded-3xl border border-blue-100/50">
+                <div className="flex flex-col md:flex-row gap-8 items-start bg-blue-50/30 dark:bg-blue-900/10 p-8 rounded-3xl border border-blue-100/50 dark:border-blue-900/30">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-100 flex items-center justify-center">
-                      {course.creator?.profilePicture ? (
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      {(course.creator?.profilePicture || course.creator?.photoUrl) ? (
                         <img
-                          src={course.creator.profilePicture}
+                          src={course.creator.profilePicture || course.creator.photoUrl}
                           alt={course.creator.name}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Users className="h-10 w-10 text-gray-300" />
+                        <Users className="h-10 w-10 text-gray-300 dark:text-gray-600" />
                       )}
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1.5 rounded-full shadow-lg">
@@ -685,10 +685,10 @@ const CourseCardDetails = () => {
                     </div>
                   </div>
                   <div className="space-y-3 flex-1">
-                    <h3 className="text-xl font-black text-gray-900">
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white">
                       {course.creator?.name || "Instructor"}
                     </h3>
-                    <p className="text-blue-600 text-sm font-bold">
+                    <p className="text-blue-600 dark:text-white text-sm font-bold">
                       {course.creator?.bio ||
                         "Expert Educator & Industry Professional"}
                     </p>
@@ -708,16 +708,26 @@ const CourseCardDetails = () => {
                         </span>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-sm leading-relaxed max-w-2xl">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed max-w-2xl">
                       {course.creator?.description ||
                         `${course.creator?.name || "The instructor"} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.`}
                     </p>
                     <Button
                       variant="link"
-                      className="text-blue-600 font-black p-0 h-auto hover:text-blue-800 transition-colors"
-                      onClick={() =>
-                        navigate(`/instructor/${course.creator?._id}`)
-                      }
+                      className="text-blue-600 dark:text-white font-black p-0 h-auto hover:text-blue-800 transition-colors"
+                      onClick={() => {
+                        const instructorId =
+                          course.creator?._id ||
+                          course.creator?.id ||
+                          (typeof course.creator === "string"
+                            ? course.creator
+                            : null);
+                        if (instructorId) {
+                          navigate(`/instructor/${instructorId}`);
+                        } else {
+                          toast.error("Instructor information not available");
+                        }
+                      }}
                     >
                       View Full Profile{" "}
                       <ChevronRight className="h-4 w-4 ml-1" />
@@ -730,17 +740,17 @@ const CourseCardDetails = () => {
             {activeTab === "Reviews" && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-gray-900">Reviews</h2>
-                  <span className="text-sm font-bold text-gray-500">
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white">Reviews</h2>
+                  <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
                     {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
                   </span>
                 </div>
 
                 {/* Rating Summary */}
                 {totalReviews > 0 && (
-                  <div className="flex flex-col md:flex-row gap-8 items-start bg-yellow-50/30 p-8 rounded-3xl border border-yellow-100/50">
+                  <div className="flex flex-col md:flex-row gap-8 items-start bg-yellow-50/30 dark:bg-yellow-900/10 p-8 rounded-3xl border border-yellow-100/50 dark:border-yellow-800/50">
                     <div className="text-center space-y-2">
-                      <div className="text-5xl font-black text-gray-900">
+                      <div className="text-5xl font-black text-gray-900 dark:text-white">
                         {averageRating}
                       </div>
                       <StarRating rating={averageRating} size="h-5 w-5" />
@@ -751,7 +761,7 @@ const CourseCardDetails = () => {
                     <div className="flex-1 space-y-2 w-full">
                       {[5, 4, 3, 2, 1].map((star) => (
                         <div key={star} className="flex items-center gap-3">
-                          <span className="text-sm font-bold text-gray-600 w-3">
+                          <span className="text-sm font-bold text-gray-600 dark:text-gray-400 w-3">
                             {star}
                           </span>
                           <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
@@ -774,8 +784,8 @@ const CourseCardDetails = () => {
 
                 {/* Submit Review Form (only for enrolled students) */}
                 {isEnrolled && (
-                  <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 space-y-4">
-                    <h3 className="font-bold text-gray-900">Write a Review</h3>
+                  <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white">Write a Review</h3>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -805,7 +815,7 @@ const CourseCardDetails = () => {
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       placeholder="Share your experience with this course..."
-                      className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
+                      className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm dark:text-gray-200 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
                       rows={3}
                     />
                     <Button
@@ -844,7 +854,7 @@ const CourseCardDetails = () => {
                     reviews.map((review) => (
                       <div
                         key={review._id}
-                        className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-3 transition-all hover:shadow-md"
+                        className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-3 transition-all hover:shadow-md"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
@@ -860,7 +870,7 @@ const CourseCardDetails = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-900 text-sm">
+                              <p className="font-bold text-gray-900 dark:text-white text-sm">
                                 {review.userId?.name || "Anonymous"}
                               </p>
                               <div className="flex items-center gap-2">
@@ -887,7 +897,7 @@ const CourseCardDetails = () => {
                           )}
                         </div>
                         {review.comment && (
-                          <p className="text-gray-600 text-sm leading-relaxed">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                             {review.comment}
                           </p>
                         )}
@@ -903,12 +913,12 @@ const CourseCardDetails = () => {
         {/* RIGHT SIDEBAR (Pricing & Sticky) */}
         <div className="lg:col-span-4 lg:relative">
           <div className="lg:sticky lg:top-32 space-y-6">
-            <div className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 p-8 space-y-8 transition-transform hover:-translate-y-1">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-gray-700 p-8 space-y-8 transition-transform hover:-translate-y-1">
               {/* Price section - only show for non-enrolled users */}
               {!isEnrolled && !isCreator && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl font-black text-gray-900 tracking-tight">
+                    <span className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
                       ৳{course.price}
                     </span>
                     {course.discount > 0 && (
@@ -930,7 +940,7 @@ const CourseCardDetails = () => {
 
               {/* Enrolled user greeting */}
               {isEnrolled && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-4">
+                <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-2xl p-5 space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-green-700 font-black text-sm">
                       <CheckCircle2 className="h-5 w-5" />
@@ -987,8 +997,8 @@ const CourseCardDetails = () => {
                 )}
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-gray-100">
-                <h4 className="font-black text-gray-900 text-sm">
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <h4 className="font-black text-gray-900 dark:text-white text-sm">
                   This course includes:
                 </h4>
                 <div className="grid grid-cols-1 gap-4">
@@ -1004,7 +1014,7 @@ const CourseCardDetails = () => {
                   ].map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 text-xs font-bold text-gray-600"
+                      className="flex items-center gap-3 text-xs font-bold text-gray-600 dark:text-gray-400"
                     >
                       <item.icon className="h-4 w-4 text-blue-500" />
                       <span>{item.text}</span>
@@ -1014,8 +1024,8 @@ const CourseCardDetails = () => {
               </div>
 
               {!isEnrolled && (
-                <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
+                <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700">
+                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest">
                     <Share2 className="h-4 w-4" /> Share
                   </button>
                   <button
@@ -1038,7 +1048,7 @@ const CourseCardDetails = () => {
                     />
                     {isWishlisted ? "Saved" : "Save"}
                   </button>
-                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
+                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest">
                     <Gift className="h-4 w-4" /> Gift
                   </button>
                 </div>
@@ -1046,15 +1056,15 @@ const CourseCardDetails = () => {
             </div>
 
             {!isEnrolled && !isCreator && (
-              <div className="flex bg-gray-100/50 rounded-2xl p-2 border border-gray-200">
+              <div className="flex bg-gray-100/50 dark:bg-gray-700/50 rounded-2xl p-2 border border-gray-200 dark:border-gray-700">
                 <input
                   type="text"
                   placeholder="Enter Coupon Code"
-                  className="bg-transparent border-0 flex-1 px-4 text-sm font-bold placeholder:text-gray-400 focus:ring-0"
+                  className="bg-transparent border-0 flex-1 px-4 text-sm font-bold dark:text-white placeholder:text-gray-400 focus:ring-0"
                 />
                 <Button
                   variant="ghost"
-                  className="text-blue-600 font-black text-xs hover:bg-white rounded-xl shadow-sm transition-all"
+                  className="text-blue-600 dark:text-white font-black text-xs hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-sm transition-all"
                 >
                   Apply
                 </Button>
