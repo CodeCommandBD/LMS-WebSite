@@ -1,5 +1,7 @@
 import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import Points from "../models/points.model.js";
+import { createNotification } from "./notification.controller.js";
 
 // --- ADMIN CONTROLLERS ---
 
@@ -190,7 +192,8 @@ export const submitQuizAttempt = async (req, res) => {
     });
 
     const score = (correctCount / quiz.questions.length) * 100;
-    const isPassed = score >= 60; // Standard 60% passing mark
+    const passingMark = quiz.passingMark || 60; // Use model value or default to 60
+    const isPassed = score >= passingMark;
 
     const attempt = await QuizAttempt.create({
       userId,
@@ -199,6 +202,24 @@ export const submitQuizAttempt = async (req, res) => {
       score,
       isPassed: isPassed,
     });
+
+    if (isPassed) {
+      await Points.findOneAndUpdate(
+        { userId },
+        { 
+          $inc: { totalPoints: 50 }, 
+          $push: { history: { points: 50, reason: `Passed Quiz: ${quiz.title}` } } 
+        },
+        { upsert: true }
+      );
+
+      await createNotification(
+        userId,
+        "Quiz Passed!",
+        `Well done! You passed the quiz "${quiz.title}" with a score of ${score.toFixed(1)}%.`,
+        "success"
+      );
+    }
 
     return res.status(200).json({
       success: true,
