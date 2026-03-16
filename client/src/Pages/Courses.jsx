@@ -1,6 +1,6 @@
 import React from "react";
 import CourseCard from "@/components/CourseCard";
-import CourseSkeleton from "@/components/CourseSkeleton";
+import { CoursesGridSkeleton } from "@/components/SkeletonLoaders";
 import { usePublishedCourses } from "@/hooks/usePublishedCourses";
 import { Loader2 } from "lucide-react";
 
@@ -9,13 +9,9 @@ const Courses = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-100 pt-20">
+      <div className="bg-gray-50 dark:bg-gray-900 pt-20">
         <div className="min-h-screen max-w-7xl mx-auto py-10 px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <CourseSkeleton key={i} />
-            ))}
-          </div>
+          <CoursesGridSkeleton count={6} />
         </div>
       </div>
     );
@@ -32,13 +28,13 @@ const Courses = () => {
   }
 
   return (
-    <div className="bg-gray-100 pt-20">
+    <div className="bg-gray-50 dark:bg-gray-900 pt-20 transition-colors duration-300">
       <div className="min-h-screen max-w-7xl mx-auto py-10">
         <div className="px-4">
-          <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">
+          <h1 className="text-4xl font-bold text-center text-gray-900 dark:text-white mb-4">
             Explore Our Courses
           </h1>
-          <p className="text-center mb-12 text-gray-600">
+          <p className="text-center mb-12 text-gray-600 dark:text-gray-400">
             Discover a wide range of courses taught by expert instructors.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -47,7 +43,7 @@ const Courses = () => {
             ))}
           </div>
           {courses?.length === 0 && (
-            <p className="text-center text-gray-600 mt-10">
+            <p className="text-center text-gray-600 dark:text-gray-400 mt-10">
               No courses available at the moment.
             </p>
           )}
