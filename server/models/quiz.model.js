@@ -20,6 +20,7 @@ const quizSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String },
     questions: [questionSchema],
+    passingMark: { type: Number, default: 60 },
   },
   { timestamps: true },
 );
