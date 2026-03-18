@@ -21,14 +21,14 @@ const InstructorProfile = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["instructorProfile", id],
     queryFn: () => getInstructorProfileService(id),
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
   });
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <p className="text-gray-500 font-medium animate-pulse">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-900">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-white mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">
           Loading instructor profile...
         </p>
       </div>
@@ -37,9 +37,9 @@ const InstructorProfile = () => {
 
   if (error || !data?.instructor) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <div className="bg-red-50 p-8 rounded-2xl border border-red-100 text-center max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-900">
+        <div className="bg-red-50 dark:bg-red-900/10 p-8 rounded-2xl border border-red-100 dark:border-red-900/30 text-center max-w-md">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Instructor not found
           </h2>
           <p className="text-red-600 mb-6">
@@ -49,7 +49,7 @@ const InstructorProfile = () => {
           <Button
             onClick={() => navigate(-1)}
             variant="outline"
-            className="border-red-200 text-red-700 hover:bg-red-50"
+            className="border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
           >
             Go Back
           </Button>
@@ -61,20 +61,20 @@ const InstructorProfile = () => {
   const { instructor, courses } = data;
 
   return (
-    <div className="bg-white min-h-screen pt-20">
+    <div className="bg-white dark:bg-slate-950 min-h-screen pt-20 transition-colors">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold text-sm mb-8 transition-colors"
+          className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-white font-bold text-sm mb-8 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
         {/* Instructor Header */}
-        <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
+         <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
           <div className="relative">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-gray-100 flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               {instructor.profilePicture ? (
                 <img
                   src={instructor.profilePicture}
@@ -82,7 +82,7 @@ const InstructorProfile = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Users className="h-16 w-16 text-gray-300" />
+                <Users className="h-16 w-16 text-gray-300 dark:text-gray-600" />
               )}
             </div>
             <div className="absolute -bottom-2 -right-2 bg-blue-600 p-2 rounded-full shadow-lg">
@@ -92,50 +92,49 @@ const InstructorProfile = () => {
 
           <div className="flex-1 space-y-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white tracking-tight">
                 {instructor.name}
               </h1>
-              <p className="text-blue-600 font-bold mt-1">
+              <p className="text-blue-600 dark:text-white font-bold mt-1">
                 {instructor.bio || "Instructor"}
               </p>
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap gap-6">
-              <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-100">
+             <div className="flex flex-wrap gap-6">
+              <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/10 px-4 py-2 rounded-xl border border-yellow-100 dark:border-yellow-900/30">
                 <Star className="h-5 w-5 text-yellow-500 fill-current" />
                 <div>
-                  <span className="font-black text-gray-900">
+                  <span className="font-black text-gray-900 dark:text-white">
                     {instructor.averageRating || "N/A"}
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                     ({instructor.totalReviews} reviews)
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
-                <Users className="h-5 w-5 text-blue-500" />
+              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/10 px-4 py-2 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                <Users className="h-5 w-5 text-blue-500 dark:text-white" />
                 <div>
-                  <span className="font-black text-gray-900">
+                  <span className="font-black text-gray-900 dark:text-white">
                     {instructor.totalStudents}
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">students</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">students</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-xl border border-purple-100">
-                <BookOpen className="h-5 w-5 text-purple-500" />
+              <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/10 px-4 py-2 rounded-xl border border-purple-100 dark:border-purple-900/30">
+                <BookOpen className="h-5 w-5 text-purple-500 dark:text-white" />
                 <div>
-                  <span className="font-black text-gray-900">
+                  <span className="font-black text-gray-900 dark:text-white">
                     {instructor.totalCourses}
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">courses</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">courses</span>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
             {instructor.description && (
-              <p className="text-gray-600 leading-relaxed max-w-3xl">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed max-w-3xl">
                 {instructor.description}
               </p>
             )}
@@ -144,7 +143,7 @@ const InstructorProfile = () => {
 
         {/* Instructor's Courses */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-black text-gray-900">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white">
             Courses by {instructor.name}
           </h2>
 
@@ -159,7 +158,7 @@ const InstructorProfile = () => {
                 <div
                   key={course._id}
                   onClick={() => navigate(`/courseDetails/${course._id}`)}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group"
                 >
                   <div className="aspect-video overflow-hidden bg-gray-100">
                     {course.courseThumbnail ? (
@@ -175,26 +174,26 @@ const InstructorProfile = () => {
                     )}
                   </div>
                   <div className="p-5 space-y-3">
-                    <Badge className="bg-blue-100 text-blue-700 border-0 font-bold text-[10px] uppercase">
+                    <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0 font-bold text-[10px] uppercase">
                       {course.category}
                     </Badge>
-                    <h3 className="font-black text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-black text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {course.courseTitle}
                     </h3>
                     <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-1.5 text-gray-500">
+                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                         <Users className="h-3.5 w-3.5" />
                         <span className="font-medium">
                           {course.enrolledStudents?.length || 0}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-gray-500">
+                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                         <BookOpen className="h-3.5 w-3.5" />
                         <span className="font-medium">
                           {course.lectures?.length || 0} lectures
                         </span>
                       </div>
-                      <span className="font-black text-gray-900">
+                      <span className="font-black text-gray-900 dark:text-white">
                         ৳{course.price}
                       </span>
                     </div>
