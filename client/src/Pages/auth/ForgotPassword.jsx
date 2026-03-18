@@ -39,7 +39,7 @@ const ForgotPassword = () => {
           {!isSent ? (
             <>
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl mb-4 text-blue-600 dark:text-blue-400">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl mb-4 text-blue-600 dark:text-white">
                   <Mail className="w-8 h-8" />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -100,7 +100,7 @@ const ForgotPassword = () => {
                 </span>
                 .
               </p>
-              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30">
+              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-700 dark:text-slate-200 border border-blue-100 dark:border-blue-900/30">
                 💡 For development, check the server console logs for the reset
                 link!
               </div>
