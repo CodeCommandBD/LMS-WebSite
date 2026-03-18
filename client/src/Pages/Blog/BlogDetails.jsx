@@ -159,12 +159,12 @@ const CommentSection = ({ blogId, user, navigate }) => {
                       {c.userId?.name}
                     </span>
                     {c.userId?.role === "admin" && (
-                      <span className="text-[10px] font-black text-purple-500 bg-purple-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                      <span className="text-[10px] font-black text-purple-500 dark:text-white bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded uppercase tracking-wider">
                         Admin
                       </span>
                     )}
                     {c.userId?.role === "teacher" && (
-                      <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                      <span className="text-[10px] font-black text-blue-500 dark:text-white bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded uppercase tracking-wider">
                         Teacher
                       </span>
                     )}
@@ -307,7 +307,7 @@ const BlogDetails = () => {
   });
 
   return (
-    <div className="bg-[#F4F4F9] text-slate-900 transition-colors duration-300 font-sans min-h-screen w-full flex-col overflow-x-hidden pt-24 pb-20">
+    <div className="bg-[#F4F4F9] dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 font-sans min-h-screen w-full flex-col overflow-x-hidden pt-24 pb-20">
       <SEO
         title={blog.title}
         description={
@@ -340,7 +340,7 @@ const BlogDetails = () => {
               </>
             )}
           </nav>
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-slate-900 mb-6 font-display">
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white mb-6 font-display">
             {blog.title}
           </h1>
           <div className="flex items-center justify-center gap-4">
@@ -354,7 +354,7 @@ const BlogDetails = () => {
               />
             </div>
             <div className="text-left">
-              <p className="font-bold text-slate-900">
+              <p className="font-bold text-slate-900 dark:text-white">
                 {blog.author?.name || "Admin"}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -365,7 +365,7 @@ const BlogDetails = () => {
         </div>
 
         {/* Top Banner Ad */}
-        <div className="mx-auto mb-12 max-w-4xl overflow-hidden rounded-lg bg-white border-slate-200 shadow-sm flex items-center justify-center min-h-[90px]">
+        <div className="mx-auto mb-12 max-w-4xl overflow-hidden rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-center min-h-[90px]">
           <AdSense slotId="blog-details-top" format="horizontal" />
         </div>
 
@@ -421,12 +421,12 @@ const BlogDetails = () => {
             />
 
             <div
-              className="prose prose-lg dark:prose-invert max-w-none text-slate-700 leading-relaxed font-sans prose-headings:font-display prose-headings:!text-slate-900 prose-a:!text-[#4ECCA3] prose-img:rounded-2xl prose-blockquote:border-l-4 prose-blockquote:border-[#4ECCA3] prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:!text-slate-500 prose-blockquote:!bg-[#4ECCA3]/5 prose-blockquote:py-2 prose-blockquote:rounded-r-lg [&_*]:!text-inherit [&_*]:!bg-transparent [&_*]:!font-inherit"
+              className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed font-sans prose-headings:font-display prose-headings:text-slate-900! dark:prose-headings:text-white! prose-a:text-[#4ECCA3]! prose-img:rounded-2xl prose-blockquote:border-l-4 prose-blockquote:border-[#4ECCA3] prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-slate-500! dark:prose-blockquote:text-slate-400! prose-blockquote:bg-[#4ECCA3]/5! prose-blockquote:py-2 prose-blockquote:rounded-r-lg **:text-inherit! **:bg-transparent! **:font-inherit!"
               dangerouslySetInnerHTML={{ __html: blog.content }}
             />
 
             {/* In-feed Ad Simulation or Real Ad */}
-            <div className="my-10 overflow-hidden rounded-lg bg-white border-slate-200 shadow-sm flex items-center justify-center min-h-[250px]">
+            <div className="my-10 overflow-hidden rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-center min-h-[250px]">
               <AdSense slotId="blog-details-infeed" format="fluid" />
             </div>
 
@@ -448,8 +448,8 @@ const BlogDetails = () => {
           {/* Right Sidebar: Popular Posts & Skyscrapers Ad */}
           <aside className="w-full lg:w-80 flex flex-col gap-10 shrink-0">
             {/* Popular Posts */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-6 text-lg font-bold text-slate-900 font-display">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <h3 className="mb-6 text-lg font-bold text-slate-900 dark:text-white font-display">
                 Popular Posts
               </h3>
               <div className="flex flex-col gap-6">
@@ -471,7 +471,7 @@ const BlogDetails = () => {
                         />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold leading-snug group-hover:text-purple-600 transition-colors line-clamp-2">
+                        <h4 className="text-sm font-bold leading-snug text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors line-clamp-2">
                           {popBlog.title}
                         </h4>
                         <p className="text-xs text-slate-500 mt-1">
@@ -494,7 +494,7 @@ const BlogDetails = () => {
             </div>
 
             {/* Vertical Sky-scraper Ad */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-center">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm flex flex-col items-center">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 Advertisement
               </p>
@@ -511,7 +511,7 @@ const BlogDetails = () => {
         {/* Related Posts Section */}
         <section className="mt-24 border-t border-slate-200 dark:border-slate-800 pt-16">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-bold text-slate-900 font-display">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white font-display">
               Related Posts
             </h2>
             <Link
@@ -540,7 +540,7 @@ const BlogDetails = () => {
                       }
                     />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors mb-2 font-display line-clamp-2">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors mb-2 font-display line-clamp-2">
                     {relBlog.title}
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2">
