@@ -86,7 +86,7 @@ const BlogPage = () => {
   }, [selectedCategory, searchQuery]);
 
   return (
-    <div className="bg-[#F4F4F9] min-h-screen font-sans pb-20 pt-24">
+    <div className="bg-[#F4F4F9] dark:bg-slate-950 min-h-screen font-sans pb-20 pt-24 transition-colors duration-300">
       <SEO
         title="The EduHub Blog"
         description="Latest insights, tutorials, and success stories from the EduHub community."
@@ -94,13 +94,13 @@ const BlogPage = () => {
       {/* Hero Search & Filter Section */}
       <section className="px-6 lg:px-20 mb-12 flex flex-col md:flex-row justify-between items-center gap-6 max-w-7xl mx-auto">
         <div className="w-full md:w-auto">
-          <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-2 font-display">
+          <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-2 font-display">
             The{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600">
               EduHub
             </span>
           </h1>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             Discover the latest strategies, tutorials, and insights.
           </p>
         </div>
@@ -112,7 +112,7 @@ const BlogPage = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search articles..."
-            className="w-full bg-white border border-slate-200 rounded-full py-3 px-6 pl-12 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4ECCA3] focus:ring-1 focus:ring-[#4ECCA3] transition-colors shadow-sm"
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full py-3 px-6 pl-12 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#4ECCA3] focus:ring-1 focus:ring-[#4ECCA3] transition-colors shadow-sm"
           />
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         </div>
@@ -149,7 +149,7 @@ const BlogPage = () => {
               className={`shrink-0 px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                 selectedCategory === cat._id
                   ? "bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-md border-transparent"
-                  : "bg-white text-slate-500 border border-slate-200 hover:border-purple-500 hover:text-purple-600 shadow-sm"
+                  : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-purple-500 hover:text-purple-600 shadow-sm"
               }`}
             >
               {cat.name}
@@ -180,7 +180,7 @@ const BlogPage = () => {
               </h2>
             </div>
 
-            <div className="group relative overflow-hidden rounded-[2rem] bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col lg:flex-row min-h-[400px]">
+            <div className="group relative overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col lg:flex-row min-h-[400px]">
               {/* Image Side */}
               <div className="relative w-full lg:w-1/2 p-4 lg:p-6 pb-0 lg:pr-0">
                 <div className="relative h-64 lg:h-full w-full overflow-hidden rounded-[1.5rem]">
@@ -220,7 +220,7 @@ const BlogPage = () => {
                 </div>
 
                 <Link to={`/blog/${featuredBlog.slug || featuredBlog._id}`}>
-                  <h3 className="text-3xl lg:text-[2.5rem] font-bold text-slate-900 leading-[1.1] mb-6 hover:text-[#4ECCA3] transition-colors font-display tracking-tight">
+                  <h3 className="text-3xl lg:text-[2.5rem] font-bold text-slate-900 dark:text-white leading-[1.1] mb-6 hover:text-[#4ECCA3] transition-colors font-display tracking-tight">
                     {featuredBlog.title}
                   </h3>
                 </Link>
@@ -276,10 +276,10 @@ const BlogPage = () => {
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <button className="p-2.5 rounded-lg bg-white text-slate-900 border border-slate-200 shadow-sm hover:border-[#4ECCA3] hover:text-[#4ECCA3] transition-colors">
+            <button className="p-2.5 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-sm hover:border-[#4ECCA3] hover:text-[#4ECCA3] transition-colors">
               <LayoutGrid className="w-4 h-4" />
             </button>
-            <button className="p-2.5 rounded-lg bg-transparent text-slate-400 border border-transparent hover:text-slate-900 transition-colors">
+            <button className="p-2.5 rounded-lg bg-transparent text-slate-400 dark:text-slate-500 border border-transparent hover:text-slate-900 dark:hover:text-white transition-colors">
               <Grid className="w-4 h-4" />
             </button>
           </div>
@@ -294,7 +294,7 @@ const BlogPage = () => {
 
         {/* No Blogs Found */}
         {!loading && blogs.length === 0 && !featuredBlog && (
-          <div className="text-center py-24 bg-white rounded-3xl border border-slate-100 mt-8 shadow-sm">
+          <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 mt-8 shadow-sm">
             <div className="w-16 h-16 bg-[#4ECCA3]/10 text-[#4ECCA3] rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-6 h-6" />
             </div>
