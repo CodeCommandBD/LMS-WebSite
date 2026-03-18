@@ -53,7 +53,7 @@ const Wishlist = () => {
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-pink-500/20 rounded-full blur-3xl animate-pulse" />
             <div className="relative bg-white dark:bg-gray-800 p-10 rounded-full shadow-2xl border border-pink-50 dark:border-pink-900/30">
-              <Heart className="w-20 h-20 text-pink-200 dark:text-pink-900" />
+              <Heart className="w-20 h-20 text-pink-200 dark:text-white" />
               <div className="absolute top-4 right-4 bg-pink-500 p-2 rounded-full text-white shadow-lg animate-bounce">
                 <Sparkles className="w-5 h-5" />
               </div>
