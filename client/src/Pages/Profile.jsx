@@ -1,6 +1,6 @@
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { useEffect } from "react";
 import {
   Loader2,
   GraduationCap,
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileInfo } from "@/components/ProfileInfo";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
+import { ProfileSkeleton } from "@/components/SkeletonLoaders";
 import { logoutUser } from "@/services/authApi";
 import { clearUser } from "@/store/slices/authSlice";
 import { useMutation } from "@tanstack/react-query";
@@ -51,8 +52,8 @@ const Profile = () => {
   // Loading state
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      <div className="pt-32">
+        <ProfileSkeleton />
       </div>
     );
   }
@@ -89,7 +90,7 @@ const Profile = () => {
                     alt={user.name}
                     className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-500"
                   />
-                  <AvatarFallback className="text-3xl font-black bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+                  <AvatarFallback className="text-3xl font-black bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-white">
                     {user.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -101,7 +102,7 @@ const Profile = () => {
             <div className="space-y-1">
               <h1 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                 {user.name}
-                <span className="text-xs font-bold px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg uppercase tracking-wider">
+                <span className="text-xs font-bold px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-white rounded-lg uppercase tracking-wider">
                   {user.role}
                 </span>
               </h1>
