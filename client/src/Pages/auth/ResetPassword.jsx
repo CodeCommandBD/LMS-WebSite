@@ -57,7 +57,7 @@ const ResetPassword = () => {
           {!isSuccess ? (
             <>
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl mb-4 text-purple-600 dark:text-purple-400">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl mb-4 text-purple-600 dark:text-white">
                   <Lock className="w-8 h-8" />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
