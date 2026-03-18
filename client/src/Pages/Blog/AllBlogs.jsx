@@ -214,9 +214,9 @@ const AllBlogs = () => {
                       }
                     />
                   </Link>
-                  <div className="p-6 flex flex-col flex-grow">
+                  <div className="p-6 flex flex-col grow">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded">
+                      <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-white text-xs font-bold uppercase tracking-wider rounded">
                         {blog.category?.name || "General"}
                       </span>
                       <span className="text-slate-400 text-xs flex items-center gap-1">
