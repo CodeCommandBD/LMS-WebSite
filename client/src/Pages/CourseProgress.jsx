@@ -41,6 +41,7 @@ import AboutTab from "@/components/CourseProgress/AboutTab";
 import CurriculumTab from "@/components/CourseProgress/CurriculumTab";
 import InstructorTab from "@/components/CourseProgress/InstructorTab";
 import ReviewsTab from "@/components/CourseProgress/ReviewsTab";
+import NotesTab from "@/components/CourseProgress/NotesTab";
 
 const CourseProgress = () => {
   const { id } = useParams();
@@ -196,30 +197,7 @@ const CourseProgress = () => {
     return "unlocked";
   };
 
-  const handleDownloadNotes = () => {
-    if (!currentLecture) return;
-
-    const notesContent = `Course: ${course?.courseTitle || "Course"}
-Lecture: ${currentLecture.lectureTitle}
-=========================================
-
-Description:
-${course?.description?.replace(/<[^>]*>?/gm, "") || "No description available."}
-
-Instructor: ${course?.creator?.name || "Instructor"}
-    `;
-
-    const blob = new Blob([notesContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${currentLecture.lectureTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_notes.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Notes downloaded successfully!");
-  };
+  // NOTE: Download is now handled inside NotesTab.jsx (real per-lecture notes)
 
   const handleNextMilestone = () => {
     const currentSectionName = currentLecture?.sectionName || "Course Content";
@@ -290,7 +268,7 @@ Instructor: ${course?.creator?.name || "Instructor"}
     updateProgressMutation.mutate(lectureId || currentLecture?._id);
   };
 
-  const tabs = ["About", "Curriculum", "Instructor", "Reviews"];
+  const tabs = ["About", "Curriculum", "Notes", "Instructor", "Reviews"];
   const averageRating = reviewsData?.averageRating || 0;
   const totalReviews = reviewsData?.totalReviews || 0;
   const reviews = reviewsData?.reviews || [];
@@ -433,12 +411,7 @@ Instructor: ${course?.creator?.name || "Instructor"}
               </div>
             )}
 
-            {/* Video Overlay Info */}
-            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-              <Badge className="bg-black/60 backdrop-blur-md border-white/20 text-[10px] font-bold px-3 py-1.5 rounded-lg">
-                1080p • Auto
-              </Badge>
-            </div>
+
           </div>
 
           {/* Navigation Tabs */}
@@ -475,7 +448,7 @@ Instructor: ${course?.creator?.name || "Instructor"}
                 handleToggleComplete={handleToggleComplete}
                 updateProgressMutation={updateProgressMutation}
                 setIsQAOpen={setIsQAOpen}
-                handleDownloadNotes={handleDownloadNotes}
+                setActiveTab={setActiveTab}
                 isCourseCompleted={isCourseCompleted}
                 setIsCertificateOpen={setIsCertificateOpen}
               />
@@ -493,6 +466,10 @@ Instructor: ${course?.creator?.name || "Instructor"}
                 setCurrentLecture={setCurrentLecture}
                 getSectionStatus={getSectionStatus}
               />
+            )}
+
+            {activeTab === "Notes" && (
+              <NotesTab courseId={id} currentLecture={currentLecture} />
             )}
 
             {activeTab === "Instructor" && (
@@ -550,6 +527,7 @@ Instructor: ${course?.creator?.name || "Instructor"}
         isOpen={isQAOpen}
         onOpenChange={setIsQAOpen}
         currentLecture={currentLecture}
+        courseId={id}
       />
 
       {/* CERTIFICATE MODAL */}
