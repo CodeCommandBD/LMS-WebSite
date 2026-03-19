@@ -133,6 +133,8 @@ const SearchPage = () => {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="newest">Newest First</option>
+            <option value="most-popular">Most Popular</option>
+            <option value="top-rated">Top Rated</option>
             <option value="price-low">Price: Low to High</option>
             <option value="price-high">Price: High to Low</option>
             <option value="oldest">Oldest First</option>
