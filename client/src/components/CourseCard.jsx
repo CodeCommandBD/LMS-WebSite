@@ -1,9 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Star } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Star, LogOut, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCourseReviewsService } from "@/services/courseApi";
+import api from "@/lib/api";
+import toast from "react-hot-toast";
 
 import { useSelector } from "react-redux";
 
@@ -30,6 +32,28 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
 
   const rating = reviewsData?.averageRating || 0;
   const totalReviews = reviewsData?.totalReviews || 0;
+  const queryClient = useQueryClient();
+
+  // Unenroll mutation
+  const unenrollMutation = useMutation({
+    mutationFn: () => api.post(`/purchase/unenroll/${course._id || course.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["enrolledCourses"]);
+      queryClient.invalidateQueries(["courseDetails", course._id || course.id]);
+      toast.success("Successfully unenrolled");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to unenroll");
+    },
+  });
+
+  const handleUnenroll = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to leave this course? Your progress will be deleted.")) {
+      unenrollMutation.mutate();
+    }
+  };
 
   return (
     <div
@@ -95,6 +119,27 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
                 {course.creator?.name || "Unknown Instructor"}
               </span>
             </div>
+
+            {/* Leave Course Button (only for enrolled students) */}
+            {isEnrolled && (
+              <button
+                onClick={handleUnenroll}
+                disabled={unenrollMutation.isPending}
+                className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all flex items-center gap-1 group/btn"
+                title="Leave Course"
+              >
+                {unenrollMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-0 group-hover/btn:opacity-100 transition-opacity">
+                      Leave
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </Link>
