@@ -16,8 +16,9 @@ import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import { ProfileSkeleton } from "@/components/SkeletonLoaders";
 import { logoutUser } from "@/services/authApi";
+import { getEnrolledCourses } from "@/services/authApi";
 import { clearUser } from "@/store/slices/authSlice";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const Profile = () => {
@@ -37,6 +38,19 @@ const Profile = () => {
       toast.error(error.message || "Logout failed. Please try again.");
     },
   });
+
+  // Fetch real learning stats
+  const { data: learningData } = useQuery({
+    queryKey: ["enrolledCourses"],
+    queryFn: getEnrolledCourses,
+    enabled: !!user,
+  });
+
+  const enrolledCount = learningData?.courses?.length || 0;
+  const completedCount =
+    learningData?.progress?.filter((p) => p.isCompleted).length || 0;
+  const progressPct =
+    enrolledCount > 0 ? Math.round((completedCount / enrolledCount) * 100) : 0;
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -175,15 +189,33 @@ const Profile = () => {
                 Complete courses to earn certificates.
               </p>
               <div className="space-y-4">
+                {/* Stat: Enrolled */}
                 <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
                   <span className="text-[10px] font-bold uppercase tracking-widest block mb-1">
-                    Total Progress
+                    Enrolled Courses
+                  </span>
+                  <span className="text-2xl font-black">{enrolledCount}</span>
+                </div>
+                {/* Stat: Completed */}
+                <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest block mb-1">
+                    Completed
+                  </span>
+                  <span className="text-2xl font-black">{completedCount}</span>
+                </div>
+                {/* Overall Progress Bar */}
+                <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest block mb-2">
+                    Overall Progress
                   </span>
                   <div className="flex items-center gap-3">
                     <div className="h-2 flex-1 bg-white/20 rounded-full overflow-hidden">
-                      <div className="h-full bg-white rounded-full w-[15%]" />
+                      <div
+                        className="h-full bg-white rounded-full transition-all duration-700"
+                        style={{ width: `${progressPct}%` }}
+                      />
                     </div>
-                    <span className="font-bold">15%</span>
+                    <span className="font-bold text-sm">{progressPct}%</span>
                   </div>
                 </div>
               </div>
