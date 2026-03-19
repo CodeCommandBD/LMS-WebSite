@@ -20,7 +20,7 @@ const AboutTab = ({
   handleToggleComplete,
   updateProgressMutation,
   setIsQAOpen,
-  handleDownloadNotes,
+  setActiveTab,
   isCourseCompleted,
   setIsCertificateOpen,
 }) => {
@@ -95,11 +95,10 @@ const AboutTab = ({
             </Button>
             <Button
               variant="outline"
-              onClick={handleDownloadNotes}
+              onClick={() => setActiveTab("Notes")}
               className="bg-white/5 border-white/10 hover:bg-white/10 hover:text-white text-white text-xs font-black px-6 h-12 rounded-xl"
             >
-              <FileText className="h-4 w-4 mr-2 text-green-400" /> Download
-              Notes
+              <FileText className="h-4 w-4 mr-2 text-green-400" /> My Notes
             </Button>
             {isCourseCompleted && (
               <Button
