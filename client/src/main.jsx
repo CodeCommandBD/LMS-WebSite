@@ -60,6 +60,8 @@ const AllBlogs = lazy(() => import("./Pages/Blog/AllBlogs"));
 const AdminBlogs = lazy(() => import("./Pages/admin/AdminBlogs"));
 const AdminCreateBlog = lazy(() => import("./Pages/admin/AdminCreateBlog"));
 const AdminAdSense = lazy(() => import("./Pages/admin/AdminAdSense"));
+const Leaderboard = lazy(() => import("./Pages/Leaderboard"));
+const VerifyCertificate = lazy(() => import("./Pages/VerifyCertificate"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -109,6 +111,14 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: <SearchPage />,
+      },
+      {
+        path: "/leaderboard",
+        element: <Leaderboard />,
+      },
+      {
+        path: "/verify-certificate/:id",
+        element: <VerifyCertificate />,
       },
       {
         path: "/login",
