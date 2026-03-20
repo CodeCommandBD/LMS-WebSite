@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Certificate from "../models/certificate.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
 import Course from "../models/course.model.js";
@@ -53,6 +54,44 @@ export const getOrCreateCertificate = async (req, res) => {
     });
   } catch (error) {
     console.error("Certificate error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/v1/certificates/verify/:id
+ * Publicly verify a certificate by its unique certificateId (8-char code) or _id.
+ */
+export const verifyCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Search by either the 8-char short code or the Mongo ObjectId
+    const certificate = await Certificate.findOne({
+      $or: [
+        { certificateId: id.toUpperCase() },
+        { _id: mongoose.isValidObjectId(id) ? id : null },
+      ].filter((q) => q._id !== null),
+    })
+      .populate("userId", "name profilePicture")
+      .populate("courseId", "courseTitle creator")
+      .populate({
+        path: "courseId",
+        populate: { path: "creator", select: "name" },
+      });
+
+    if (!certificate) {
+      return res.status(404).json({
+        success: false,
+        message: "Certificate not found or invalid ID.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      certificate,
+    });
+  } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
