@@ -20,6 +20,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { Sun, Moon } from "lucide-react";
 import { Switch } from "./ui/switch";
 import api from "@/lib/api";
+import { socket } from "@/lib/socket";
 
 // Notification API helpers
 const notifApi = {
@@ -48,7 +49,7 @@ const NotificationBell = () => {
     queryKey: ["notifications"],
     queryFn: notifApi.getAll,
     enabled: !!user,
-    refetchInterval: 60000, // Poll every 60s
+    // refetchInterval: 60000, // REMOVED POLLING!
   });
 
   const notifications = data?.notifications || [];
@@ -74,6 +75,35 @@ const NotificationBell = () => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // 🔌 Socket.io Real-time Logic
+  useEffect(() => {
+    if (user) {
+      // 1. Connect and Join Room
+      if (!socket.connected) socket.connect();
+      socket.emit("join", user._id);
+
+      // 2. Listen for Events
+      const handleNewNotification = (notification) => {
+        // Invalidate query to refetch data
+        queryClient.invalidateQueries(["notifications"]);
+        
+        // Show a little toast for extra UX
+        toast.success(`New notification: ${notification.title}`, {
+           icon: '🔔',
+           duration: 4000
+        });
+      };
+
+      socket.on("new-notification", handleNewNotification);
+
+      return () => {
+        socket.off("new-notification", handleNewNotification);
+      };
+    } else {
+      socket.disconnect();
+    }
+  }, [user, queryClient]);
 
   if (!user) return null;
 

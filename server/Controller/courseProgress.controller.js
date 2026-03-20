@@ -5,6 +5,7 @@ import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import Points from "../models/points.model.js";
 import { createNotification } from "./notification.controller.js";
+import { sendCourseCompletionEmail } from "../utils/email.js";
 
 // 1. Get User Course Progress
 export const getUserCourseProgress = async (req, res) => {
@@ -131,12 +132,19 @@ export const updateLectureProgress = async (req, res) => {
       progress.isCompleted = allLecturesDone && allQuizzesPassed;
       
       if (progress.isCompleted) {
+        // 1. Create in-app notification
         await createNotification(
           userId,
           "Course Completed!",
           `Congratulations! You have completed "${course.courseTitle}".`,
           "achievement",
           `/certificate/${courseId}`
+        );
+
+        // 2. Send professional completion email
+        const certUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/verify-certificate/${courseId}`; // Simplified for now, or based on actual cert logic
+        sendCourseCompletionEmail(user.email, user.name, course.courseTitle, certUrl).catch(err => 
+          console.error("Completion email failed:", err.message)
         );
       }
     }
