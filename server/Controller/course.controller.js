@@ -2,8 +2,11 @@ import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import Lecture from "../models/lecture.model.js";
 import Quiz from "../models/quiz.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
-import fs from "fs";
+import Review from "../models/review.model.js";
+import Purchase from "../models/purchase.model.js";
+import Certificate from "../models/certificate.model.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -187,7 +190,7 @@ export const getCourseById = async (req, res) => {
   }
 };
 
-// delete course
+// delete course (with full cascade cleanup)
 export const deleteCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -199,16 +202,55 @@ export const deleteCourse = async (req, res) => {
         .json({ success: false, message: "Course not found" });
     }
 
-    // Check if the user is the creator
-    if (course.creator.toString() !== req.user.id) {
+    // Admin can delete any course; creator can delete their own
+    if (
+      req.user.role !== "admin" &&
+      course.creator.toString() !== req.user.id
+    ) {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
+    // 1. Delete all lecture videos from Cloudinary
+    const lectures = await Lecture.find({ course: courseId });
+    for (const lecture of lectures) {
+      if (lecture.publicId) {
+        await deleteFromCloudinary(lecture.publicId);
+      }
+    }
+
+    // 2. Delete all lectures
+    await Lecture.deleteMany({ course: courseId });
+
+    // 3. Delete all quizzes and their attempts
+    const quizzes = await Quiz.find({ courseId });
+    const quizIds = quizzes.map((q) => q._id);
+    await QuizAttempt.deleteMany({ quizId: { $in: quizIds } });
+    await Quiz.deleteMany({ courseId });
+
+    // 4. Delete course progress records
+    await CourseProgress.deleteMany({ courseId });
+
+    // 5. Delete reviews
+    await Review.deleteMany({ courseId });
+
+    // 6. Delete purchases
+    await Purchase.deleteMany({ courseId });
+
+    // 7. Delete certificates
+    await Certificate.deleteMany({ courseId });
+
+    // 8. Remove course from all users' enrolledCourses and wishlists
+    await User.updateMany(
+      { $or: [{ enrolledCourses: courseId }, { wishlist: courseId }] },
+      { $pull: { enrolledCourses: courseId, wishlist: courseId } },
+    );
+
+    // 9. Delete the course itself
     await Course.findByIdAndDelete(courseId);
 
     return res
       .status(200)
-      .json({ success: true, message: "Course deleted successfully" });
+      .json({ success: true, message: "Course and all related data deleted successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -412,15 +454,25 @@ export const publishCourse = async (req, res) => {
       });
     }
 
-    // 3. Validation: Prevent publishing if no lectures exist
-    if (
-      !course.isPublished &&
-      (!course.lectures || course.lectures.length === 0)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Course must have at least one lecture before publishing",
-      });
+    // 3. Validation when publishing (not when unpublishing)
+    if (!course.isPublished) {
+      const missing = [];
+      if (!course.courseTitle?.trim()) missing.push("Course title");
+      if (!course.subTitle?.trim()) missing.push("Subtitle");
+      if (!course.description?.trim()) missing.push("Description");
+      if (!course.courseThumbnail) missing.push("Thumbnail image");
+      if (course.price === undefined || course.price === null)
+        missing.push("Price (can be 0 for free)");
+      if (!course.lectures || course.lectures.length === 0)
+        missing.push("At least one lecture");
+
+      if (missing.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Please complete the following before publishing: ${missing.join(", ")}.`,
+          missingFields: missing,
+        });
+      }
     }
 
     // 4. Toggle publish status and sync 'status' field
@@ -493,7 +545,7 @@ export const getPublishedCourses = async (req, res) => {
       if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
     }
 
-    // 2. Build Sort Options
+    // 2. Build Sort Options (standard sort for simple cases)
     let sortOptions = { createdAt: -1 }; // default newest
     if (sort === "price-low") sortOptions = { price: 1 };
     if (sort === "price-high") sortOptions = { price: -1 };
@@ -503,6 +555,59 @@ export const getPublishedCourses = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     // 4. Execute Query
+    // For most-popular and top-rated, use aggregation pipeline to sort by computed field
+    if (sort === "most-popular" || sort === "top-rated") {
+      const aggregation = [
+        { $match: query },
+        {
+          $addFields: {
+            enrolledCount: { $size: { $ifNull: ["$enrolledStudents", []] } },
+          },
+        },
+        { $sort: sort === "most-popular" ? { enrolledCount: -1 } : { averageRating: -1, enrolledCount: -1 } },
+        {
+          $facet: {
+            courses: [
+              { $skip: skip },
+              { $limit: Number(limit) },
+              {
+                $lookup: {
+                  from: "lectures",
+                  localField: "lectures",
+                  foreignField: "_id",
+                  as: "lectures",
+                  pipeline: [{ $project: { lectureTitle: 1 } }],
+                },
+              },
+              {
+                $lookup: {
+                  from: "users",
+                  localField: "creator",
+                  foreignField: "_id",
+                  as: "creator",
+                  pipeline: [{ $project: { name: 1, profilePicture: 1 } }],
+                },
+              },
+              { $unwind: { path: "$creator", preserveNullAndEmpty: true } },
+            ],
+            total: [{ $count: "count" }],
+          },
+        },
+      ];
+
+      const [result] = await Course.aggregate(aggregation);
+      const courses = result?.courses || [];
+      const totalCourses = result?.total?.[0]?.count || 0;
+
+      return res.status(200).json({
+        success: true,
+        courses,
+        totalCourses,
+        totalPages: Math.ceil(totalCourses / Number(limit)),
+        currentPage: Number(page),
+        message: "Published courses fetched successfully",
+      });
+    }
 
     const [courses, totalCourses] = await Promise.all([
       Course.find(query)
@@ -551,10 +656,6 @@ export const enrollCourse = async (req, res) => {
     // Add course to user's enrolledCourses
     user.enrolledCourses.push(courseId);
     await user.save();
-    fs.appendFileSync(
-      "debug.log",
-      `\n[${new Date().toISOString()}] Free Enroll: user ${userId}, course ${courseId} - SUCCESS`,
-    );
 
     // Add user to course's enrolledStudents
     course.enrolledStudents.push(userId);
