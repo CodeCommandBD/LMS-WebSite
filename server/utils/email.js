@@ -260,3 +260,70 @@ export const sendVerificationEmail = async (to, name, verifyUrl) => {
     text: `Hello ${name},\n\nPlease verify your email by visiting: ${verifyUrl}\n\nThis link expires in 24 hours.`,
   });
 };
+
+/**
+ * Course Completion Email
+ */
+export const sendCourseCompletionEmail = async (to, name, courseTitle, certificateUrl) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .header { background: linear-gradient(135deg, #fbbf24, #d97706); padding: 60px 40px; text-align: center; color: #fff; }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -0.025em; }
+        .header p { margin: 10px 0 0; font-size: 18px; opacity: 0.9; }
+        .body { padding: 48px 40px; color: #1e293b; line-height: 1.8; }
+        .achievement-box { background: #fffbeb; border: 2px solid #fef3c7; border-radius: 20px; padding: 32px; text-align: center; margin: 32px 0; }
+        .achievement-box h2 { margin: 0; color: #92400e; font-size: 20px; font-weight: 800; }
+        .achievement-box p { margin: 8px 0 0; color: #b45309; font-size: 14px; font-weight: 600; }
+        .btn { display: inline-block; padding: 16px 40px; background: #d97706; color: #fff !important; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3); transition: all 0.2s; }
+        .footer { padding: 32px 40px; background: #f8fafc; text-align: center; border-top: 1px solid #f1f5f9; }
+        .footer p { font-size: 12px; color: #94a3b8; margin: 0; }
+        .confetti { font-size: 40px; margin-bottom: 20px; display: block; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <span class="confetti">🏆</span>
+          <h1>Congratulations!</h1>
+          <p>You've mastered a new skill!</p>
+        </div>
+        <div class="body">
+          <p>Incredible work, <strong>${name}</strong>!</p>
+          <p>We are thrilled to confirm that you have successfully completed all requirements for the course:</p>
+          
+          <div class="achievement-box">
+            <h2>${courseTitle}</h2>
+            <p>Official Course Completion</p>
+          </div>
+
+          <p>Your hard work and dedication have paid off. You can now view, download, or share your official certificate of completion and add it to your professional profile.</p>
+          
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${certificateUrl}" class="btn">View My Certificate</a>
+          </div>
+
+          <p>Keep up this amazing momentum. The world is waiting for what you'll build next!</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} EduHub Learning Platform</p>
+          <p>Empowering learners worldwide, one lesson at a time.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendMail({
+    to,
+    subject: `🏆 Congratulations! You've completed "${courseTitle}"`,
+    html,
+    text: `Congratulations ${name}! You've completed "${courseTitle}". View your certificate here: ${certificateUrl}`,
+  });
+};
+
