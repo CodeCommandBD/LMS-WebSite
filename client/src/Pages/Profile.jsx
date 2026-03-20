@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileInfo } from "@/components/ProfileInfo";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
+import PointsWidget from "@/components/PointsWidget";
 import { ProfileSkeleton } from "@/components/SkeletonLoaders";
 import { logoutUser } from "@/services/authApi";
 import { getEnrolledCourses } from "@/services/authApi";
@@ -180,6 +181,7 @@ const Profile = () => {
           </div>
 
           <div className="space-y-8">
+            <PointsWidget />
             <div className="bg-linear-to-br from-indigo-600 to-purple-700 p-8 rounded-[32px] shadow-xl text-white relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
                 <GraduationCap className="w-32 h-32" />
