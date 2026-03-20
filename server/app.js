@@ -21,6 +21,10 @@ import statsRouter from "./Routers/stats.route.js";
 import contactRouter from "./Routers/contact.route.js";
 import certificateRouter from "./Routers/certificate.route.js";
 import notificationRouter from "./Routers/notification.route.js";
+import qaRouter from "./Routers/qa.route.js";
+import notesRouter from "./Routers/notes.route.js";
+import pointsRouter from "./Routers/points.route.js";
+import blogCommentRouter from "./Routers/blogComment.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -154,6 +158,10 @@ app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/contact", contactRouter);
 app.use("/api/v1/certificates", certificateRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/qa", qaRouter);
+app.use("/api/v1/notes", notesRouter);
+app.use("/api/v1/points", pointsRouter);
+app.use("/api/v1/blog-comments", blogCommentRouter);
 
 // Static files & Catch-all route (MUST be at the end)
 // In local dev: serves from client/dist after running the build
