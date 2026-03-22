@@ -3,6 +3,7 @@ import {
   createCheckoutSession,
   stripeWebhook,
   getDashboardStats,
+  unenrollCourse,
 } from "../Controller/purchase.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";
@@ -14,5 +15,8 @@ router.route("/webhook").post(stripeWebhook);
 router
   .route("/stats")
   .get(authenticate, authorize("admin", "teacher"), getDashboardStats);
+
+// Student unenrollment
+router.route("/unenroll/:courseId").post(authenticate, unenrollCourse);
 
 export default router;
