@@ -381,13 +381,36 @@ const Navbar = () => {
                   disabled={logoutMutation.isPending}
                   className="bg-red-500 hover:bg-red-600 text-white cursor-pointer font-semibold transition-all duration-300 shadow-md h-9 px-3"
                 >
-                  <LogOut className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:block">
                     {logoutMutation.isPending ? "..." : "Logout"}
                   </span>
                 </Button>
               </div>
             )}
+            <li className="relative group">
+              <NavLink
+                to="/notes"
+                className={({ isActive }) =>
+                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                  }`
+                }
+              >
+                Notes
+              </NavLink>
+            </li>
+            <li className="relative group">
+              <NavLink
+                to="/qa"
+                className={({ isActive }) =>
+                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                  }`
+                }
+              >
+                Q&A
+              </NavLink>
+            </li>
             <li className="flex items-center gap-2 ml-4">
               {theme === "dark" ? (
                 <Moon className="w-4 h-4 text-white" />
