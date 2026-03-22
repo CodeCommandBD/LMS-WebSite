@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "nodemailer": "^8.0.2",
+    "socket.io": "^4.8.3",
     "uuid": "^13.0.0"
   }
 }
