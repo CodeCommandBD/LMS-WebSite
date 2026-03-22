@@ -3,7 +3,6 @@ import Purchase from "../models/purchase.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
-import fs from "fs";
 import { sendEnrollmentEmail } from "../utils/email.js";
 
 // Helper to get Stripe instance
@@ -149,10 +148,6 @@ export const stripeWebhook = async (req, res) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const { courseId, userId } = session.metadata;
-    fs.appendFileSync(
-      "debug.log",
-      `\n[${new Date().toISOString()}] Webhook session: ${session.id}, course: ${courseId}, user: ${userId}`,
-    );
 
     try {
       console.log("Processing fulfillment for session:", session.id);
@@ -399,3 +394,41 @@ export const getDashboardStats = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * POST /api/v1/purchase/unenroll/:courseId
+ * Allows a student to unenroll from a course. 
+ * Note: Real-world apps might handle Stripe refunds here, but this implementation 
+ * focuses on data cleanup and access removal.
+ */
+export const unenrollCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    // 1. Remove course from User's enrolledCourses
+    await User.findByIdAndUpdate(userId, {
+      $pull: { enrolledCourses: courseId },
+    });
+
+    // 2. Remove user from Course's enrolledStudents
+    await Course.findByIdAndUpdate(courseId, {
+      $pull: { enrolledStudents: userId },
+    });
+
+    // 3. Delete the Purchase record (access record)
+    await Purchase.findOneAndDelete({ userId, courseId });
+
+    // 4. Delete CourseProgress (wipe the slate clean)
+    await CourseProgress.findOneAndDelete({ userId, courseId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully unenrolled from the course.",
+    });
+  } catch (error) {
+    console.error("Unenroll Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
