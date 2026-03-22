@@ -2,6 +2,11 @@ import User from "../models/user.model.js";
 import Course from "../models/course.model.js";
 import Review from "../models/review.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
+import Purchase from "../models/purchase.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
+import Points from "../models/points.model.js";
+import Notification from "../models/notification.model.js";
+import Certificate from "../models/certificate.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
@@ -479,15 +484,33 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// Admin: Get all users
+// Admin: Get all users (paginated + searchable)
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({})
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const { page = 1, limit = 20, search = "", role = "" } = req.query;
+    const query = {};
+    if (search) {
+      const regex = new RegExp(search.trim(), "i");
+      query.$or = [{ name: regex }, { email: regex }];
+    }
+    if (role) query.role = role;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      User.countDocuments(query),
+    ]);
+
     return res.status(200).json({
       success: true,
       users,
+      total,
+      totalPages: Math.ceil(total / Number(limit)),
+      currentPage: Number(page),
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -580,7 +603,7 @@ export const changeUserRole = async (req, res) => {
   }
 };
 
-// Admin: Delete user
+// Admin: Delete user (with cascade cleanup)
 export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -608,11 +631,28 @@ export const deleteUser = async (req, res) => {
       });
     }
 
+    // Cascade: clean up all user-owned documents
+    await Promise.all([
+      Purchase.deleteMany({ userId }),
+      CourseProgress.deleteMany({ userId }),
+      Review.deleteMany({ userId }),
+      QuizAttempt.deleteMany({ userId }),
+      Points.deleteMany({ userId }),
+      Notification.deleteMany({ userId }),
+      Certificate.deleteMany({ userId }),
+    ]);
+
+    // Remove user from enrolled courses and wishlists
+    await Course.updateMany(
+      { $or: [{ enrolledStudents: userId }, { creator: userId }] },
+      { $pull: { enrolledStudents: userId } },
+    );
+
     await User.findByIdAndDelete(userId);
 
     return res.status(200).json({
       success: true,
-      message: `User "${user.name}" has been deleted.`,
+      message: `User "${user.name}" and all related data have been deleted.`,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
