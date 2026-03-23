@@ -89,27 +89,32 @@
 
 We have carefully designed the interface to be responsive, intuitive, and visually stunning. Below are key highlights of the platform.
 
-### 🏠 Course Exploration & Discovery
+### 🏠 Platform Gateway & Discovery
 
 | User Interface | Feature Details |
 | :---: | :--- |
-| <div align="center"><img src="./client/src/assets/LMS%201.webp" width="90%" /></div> | **Dynamic Homepage**<br><br>A visually engaging landing page featuring top-rated courses, category filters, and immediate access to the learning catalog. |
-| <div align="center"><img src="./client/src/assets/LMS%202.webp" width="90%" /></div> | **Course Details & Checkout**<br><br>Detailed course presentation showing curriculum, instructor info, requirements, and secure Stripe checkout integration. |
+| <div align="center"><img src="./client/src/assets/Lms%207%20Home%20page.webp" width="90%" /></div> | **Dynamic Homepage**<br><br>A visually engaging landing page featuring top-rated courses, category filters, and immediate access to the learning catalog. |
+| <div align="center"><img src="./client/src/assets/LMS%205%20All%20Course%20page.webp" width="90%" /></div> | **Course Exploration**<br><br>Advanced course catalog with infinite scrolling, dynamic searching, and comprehensive category filtering. |
+| <div align="center"><img src="./client/src/assets/LMS%204%20course%20Details%20page.webp" width="90%" /></div> | **Course Details & Checkout**<br><br>Detailed presentation showing curriculum, instructor info, requirements, and secure Stripe checkout integration. |
 
-### 🎓 Learning Experience & Assessments
-
-| User Interface | Feature Details |
-| :---: | :--- |
-| <div align="center"><img src="./client/src/assets/LMS%203.webp" width="90%" /></div> | **Immersive Video Player**<br><br>Distraction-free learning environment with progress tracking, built-in Q&A tabs, and personal note-taking capabilities. |
-| <div align="center"><img src="./client/src/assets/LMS%204.webp" width="90%" /></div> | **Interactive Quizzes**<br><br>Dynamic assessment engine that grades students in real-time, enforcing passing marks and awarding leaderboard points. |
-
-### 👤 Dashboards & Gamification
+### 🎓 Learning & Student Experience
 
 | User Interface | Feature Details |
 | :---: | :--- |
-| <div align="center"><img src="./client/src/assets/LMS%205.webp" width="90%" /></div> | **Student Leaderboard**<br><br>A gamified ranking system where students compete based on points earned from completing courses and passing quizzes. |
-| <div align="center"><img src="./client/src/assets/LMS%206.webp" width="90%" /></div> | **Admin Mission Control**<br><br>Comprehensive admin dashboard showing real-time revenue, enrollment stats, user growth, and actionable analytics. |
-| <div align="center"><img src="./client/src/assets/Lms%207.webp" width="90%" /></div> | **Certificate Generation**<br><br>Automatically generates high-quality, verifiable PDF certificates upon 100% course completion. |
+| <div align="center"><img src="./client/src/assets/LMS%202%20student%20Profile%20page.webp" width="90%" /></div> | **Student Profile & Dashboard**<br><br>Centralized learning hub for students to track enrolled courses, view certificates, and manage their points history. |
+
+### 📰 Community & Blog
+
+| User Interface | Feature Details |
+| :---: | :--- |
+| <div align="center"><img src="./client/src/assets/LMS%206%20All%20Blog%20page.webp" width="90%" /></div> | **Community Blog Hub**<br><br>A space for instructors to share knowledge and for students to read articles related to their tech stacks. |
+| <div align="center"><img src="./client/src/assets/LMS%203%20Blog%20Details%20page.webp" width="90%" /></div> | **Article & Interactions**<br><br>Immersive reading experience featuring rich-text formatting, comment sections, and social sharing capabilities. |
+
+### 👮 Platform Administration
+
+| User Interface | Feature Details |
+| :---: | :--- |
+| <div align="center"><img src="./client/src/assets/LMS%201%20Dashboard%20Home.webp" width="90%" /></div> | **Admin Mission Control**<br><br>Comprehensive admin dashboard showing real-time revenue, enrollment stats, user growth, and actionable analytics. |
 
 
 ---
