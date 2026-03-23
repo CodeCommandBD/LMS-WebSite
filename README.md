@@ -40,7 +40,6 @@
 - [🚀 Getting Started](#-getting-started)
 - [🔐 Environment Configuration](#-environment-configuration)
 - [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
 
 ---
 
@@ -332,9 +331,6 @@ Contributions are always welcome! Feel free to open issues or submit Pull Reques
 5. Open a Pull Request
 
 ---
-
-## 📄 License
-This project is licensed under the ISC License. 
 
 ---
 
