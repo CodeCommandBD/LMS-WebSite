@@ -60,8 +60,11 @@ const AllBlogs = lazy(() => import("./Pages/Blog/AllBlogs"));
 const AdminBlogs = lazy(() => import("./Pages/admin/AdminBlogs"));
 const AdminCreateBlog = lazy(() => import("./Pages/admin/AdminCreateBlog"));
 const AdminAdSense = lazy(() => import("./Pages/admin/AdminAdSense"));
+const AdminNotifications = lazy(() => import("./Pages/admin/AdminNotifications"));
 const Leaderboard = lazy(() => import("./Pages/Leaderboard"));
 const VerifyCertificate = lazy(() => import("./Pages/VerifyCertificate"));
+const Notes = lazy(() => import("./Pages/Notes"));
+const QAPage = lazy(() => import("./Pages/QAPage"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -212,6 +215,22 @@ const router = createBrowserRouter([
         path: "/instructor/:id",
         element: <InstructorProfile />,
       },
+      {
+        path: "/notes",
+        element: (
+          <ProtectedRoute>
+            <Notes />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/qa",
+        element: (
+          <ProtectedRoute>
+            <QAPage />
+          </ProtectedRoute>
+        ),
+      },
       // Admin Routes
       {
         path: "/admin",
@@ -292,6 +311,10 @@ const router = createBrowserRouter([
           {
             path: "adsense",
             element: <AdminAdSense />,
+          },
+          {
+            path: "notifications",
+            element: <AdminNotifications />,
           },
         ],
       },
