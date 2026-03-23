@@ -63,3 +63,44 @@ export const saveNotes = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 3. Get ALL notes for the logged-in user (grouped by course)
+export const getAllMyNotes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const notes = await Notes.find({ userId, content: { $ne: "" } })
+      .populate("courseId", "courseTitle thumbnail")
+      .populate("lectureId", "lectureTitle")
+      .sort({ updatedAt: -1 });
+
+    // Group notes by course
+    const grouped = {};
+    notes.forEach((note) => {
+      const cId = note.courseId?._id?.toString();
+      if (!cId) return;
+      if (!grouped[cId]) {
+        grouped[cId] = {
+          courseId: cId,
+          courseTitle: note.courseId?.courseTitle || "Unknown Course",
+          thumbnail: note.courseId?.thumbnail || "",
+          notes: [],
+        };
+      }
+      grouped[cId].notes.push({
+        _id: note._id,
+        lectureId: note.lectureId?._id,
+        lectureTitle: note.lectureId?.lectureTitle || "Unknown Lecture",
+        content: note.content,
+        updatedAt: note.updatedAt,
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      courses: Object.values(grouped),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

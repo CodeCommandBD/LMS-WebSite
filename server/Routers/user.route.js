@@ -16,6 +16,7 @@ import {
   deleteUser,
   verifyEmail,
   resendVerification,
+  changePassword,
 } from "../Controller/user.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";
@@ -48,5 +49,8 @@ router.put(
   uploadProfilePicture.single("profilePicture"),
   updateProfile,
 );
+
+// Change Password
+router.post("/change-password", authenticate, changePassword);
 
 export default router;

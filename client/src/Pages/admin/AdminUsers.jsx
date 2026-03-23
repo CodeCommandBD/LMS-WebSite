@@ -97,6 +97,8 @@ const AdminUsers = () => {
     return matchSearch && matchRole;
   });
 
+  const isCurrentUserAdmin = currentUser?.role?.toLowerCase() === "admin";
+
   const ROLE_COLORS = {
     admin: "bg-rose-500/10 text-rose-400",
     teacher: "bg-emerald-500/10 text-emerald-400",
@@ -252,7 +254,7 @@ const AdminUsers = () => {
                       </div>
                     </td>
                     <td className="p-5">
-                      {isSelf || isAdmin ? (
+                      {isSelf || isAdmin || !isCurrentUserAdmin ? (
                         <Badge
                           className={`${ROLE_COLORS[user.role]} border-0 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider`}
                         >
@@ -296,7 +298,7 @@ const AdminUsers = () => {
                       </div>
                     </td>
                     <td className="p-5 text-right pr-8">
-                      {!isSelf && !isAdmin && (
+                      {!isSelf && !isAdmin && isCurrentUserAdmin && (
                         <div className="flex items-center justify-end gap-2">
                           {/* Ban / Unban */}
                           <button

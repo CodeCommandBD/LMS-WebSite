@@ -6,9 +6,13 @@ import {
   replyToQuestion,
   toggleResolvedStatus,
   deleteQuestion,
+  getAllMyQuestions,
 } from "../Controller/qa.controller.js";
 
 const router = express.Router();
+
+// Get ALL questions posted by the logged-in user
+router.get("/me", isAuthenticated, getAllMyQuestions);
 
 // Get Q&A for a specific lecture
 router.get("/:courseId/:lectureId", isAuthenticated, getLectureQA);

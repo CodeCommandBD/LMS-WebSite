@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Linkedin, Twitter, Github, Globe } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,12 @@ import toast from "react-hot-toast";
 export const ProfileForm = ({ user, onSuccess, isLoading }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [socialLinks, setSocialLinks] = useState({
+    linkedin: user?.socialLinks?.linkedin || "",
+    twitter: user?.socialLinks?.twitter || "",
+    github: user?.socialLinks?.github || "",
+    website: user?.socialLinks?.website || "",
+  });
 
   const {
     register,
@@ -28,15 +34,11 @@ export const ProfileForm = ({ user, onSuccess, isLoading }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {  // 5MB
+      if (file.size > 5 * 1024 * 1024) {
         toast.error("File size must be less than 5MB");
         return;
       }
-
-      // Store the actual file
       setSelectedFile(file);
-
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
@@ -44,31 +46,33 @@ export const ProfileForm = ({ user, onSuccess, isLoading }) => {
   };
 
   const onSubmit = (data) => {
-    // Create FormData to handle file upload
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("email", data.email);
     formData.append("bio", data.bio || "");
-
+    // Send social links as JSON string (multipart can't send nested objects)
+    formData.append("socialLinks", JSON.stringify(socialLinks));
     if (selectedFile) {
       formData.append("profilePicture", selectedFile);
     }
-
     onSuccess(formData);
   };
 
+  const socialInputs = [
+    { key: "linkedin", label: "LinkedIn", icon: Linkedin, placeholder: "https://linkedin.com/in/username" },
+    { key: "twitter", label: "Twitter / X", icon: Twitter, placeholder: "https://twitter.com/username" },
+    { key: "github", label: "GitHub", icon: Github, placeholder: "https://github.com/username" },
+    { key: "website", label: "Website", icon: Globe, placeholder: "https://yourwebsite.com" },
+  ];
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
       {/* Profile Picture */}
       <div className="space-y-2">
         <Label htmlFor="profilePicture">Profile Picture</Label>
         {imagePreview && (
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-500 mx-auto">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
+            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
           </div>
         )}
         <Input
@@ -76,66 +80,63 @@ export const ProfileForm = ({ user, onSuccess, isLoading }) => {
           id="profilePicture"
           accept="image/*"
           onChange={handleFileChange}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          className="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 h-11 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
         />
       </div>
 
       {/* Name */}
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
-        <Input
-          type="text"
-          id="name"
-          {...register("name")}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+        <Input type="text" id="name" {...register("name")}
+          className="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 h-11 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
         />
-        {errors.name && (
-          <p className="text-red-500 text-sm">{errors.name.message}</p>
-        )}
+        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
       </div>
 
       {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          type="email"
-          id="email"
-          {...register("email")}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+        <Input type="email" id="email" {...register("email")}
+          className="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 h-11 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
         />
-        {errors.email && (
-          <p className="text-red-500 text-sm">{errors.email.message}</p>
-        )}
+        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
       </div>
 
       {/* Bio */}
       <div className="space-y-2">
         <Label htmlFor="bio">Bio</Label>
-        <Input
-          type="text"
-          id="bio"
-          {...register("bio")}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+        <Input type="text" id="bio" {...register("bio")}
+          className="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 h-11 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
         />
-        {errors.bio && (
-          <p className="text-red-500 text-sm">{errors.bio.message}</p>
-        )}
+        {errors.bio && <p className="text-red-500 text-sm">{errors.bio.message}</p>}
       </div>
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        disabled={isLoading}
+      {/* Social Links */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Social Links</p>
+        <div className="space-y-3">
+          {socialInputs.map(({ key, label, icon: Icon, placeholder }) => (
+            <div key={key} className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-gray-400 shrink-0" />
+              <Input
+                type="url"
+                placeholder={placeholder}
+                value={socialLinks[key]}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, [key]: e.target.value }))}
+                className="flex-1 border-gray-200 dark:border-gray-700 rounded-xl px-4 h-10 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white text-sm"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <Button type="submit" disabled={isLoading}
         className="bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-all duration-300 hover:scale-105 shadow-md w-full"
       >
         {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Saving...
-          </>
-        ) : (
-          "Save Changes"
-        )}
+          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>
+        ) : "Save Changes"}
       </Button>
     </form>
   );

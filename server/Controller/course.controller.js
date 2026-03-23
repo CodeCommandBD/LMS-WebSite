@@ -585,7 +585,7 @@ export const getPublishedCourses = async (req, res) => {
                   localField: "creator",
                   foreignField: "_id",
                   as: "creator",
-                  pipeline: [{ $project: { name: 1, profilePicture: 1 } }],
+                  pipeline: [{ $project: { _id: 1, name: 1, profilePicture: 1, bio: 1, description: 1, role: 1 } }],
                 },
               },
               { $unwind: { path: "$creator", preserveNullAndEmpty: true } },
@@ -612,7 +612,7 @@ export const getPublishedCourses = async (req, res) => {
     const [courses, totalCourses] = await Promise.all([
       Course.find(query)
         .populate("lectures", "lectureTitle")
-        .populate("creator", "name profilePicture")
+        .populate("creator", "_id name profilePicture bio description role")
         .sort(sortOptions)
         .skip(skip)
         .limit(Number(limit)),

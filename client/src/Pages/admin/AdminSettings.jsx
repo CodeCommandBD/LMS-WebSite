@@ -6,17 +6,21 @@ import {
   Bell,
   Lock,
   Globe,
-  Palette,
   Camera,
   Loader2,
   Save,
   CheckCircle2,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateProfile } from "@/services/authApi";
+import api from "@/lib/api";
 import { setUser } from "@/store/slices/authSlice";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 const AdminSettings = () => {
   const { user } = useSelector((state) => state.auth);
@@ -48,10 +52,29 @@ const AdminSettings = () => {
     updateProfileMutation.mutate(formData);
   };
 
+  // Change Password state
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data) => api.post("/users/change-password", data).then((r) => r.data),
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+      setPwForm({ current: "", newPw: "", confirm: "" });
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || "Failed to change password"),
+  });
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (pwForm.newPw !== pwForm.confirm) return toast.error("Passwords do not match");
+    if (pwForm.newPw.length < 6) return toast.error("New password must be at least 6 characters");
+    changePasswordMutation.mutate({ currentPassword: pwForm.current, newPassword: pwForm.newPw });
+  };
+
   const tabs = [
     { name: "Profile", icon: User },
     { name: "Security", icon: Lock },
-    { name: "Notifications", icon: Bell },
     { name: "Platform", icon: Globe },
   ];
 
@@ -189,18 +212,92 @@ const AdminSettings = () => {
             </div>
           )}
 
-          {activeTab !== "Profile" && (
-            <div className="p-20 text-center space-y-4 animate-in fade-in duration-500">
-              <div className="bg-blue-600/10 p-4 rounded-full w-fit mx-auto">
-                <Globe className="w-10 h-10 text-blue-600" />
+          {activeTab === "Security" && (
+            <div className="p-8 lg:p-12 space-y-8 animate-in slide-in-from-right-4 duration-500">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-amber-500/10 p-3 rounded-xl">
+                  <ShieldCheck className="w-6 h-6 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Change Password</h3>
+                  <p className="text-gray-500 text-sm">Update your admin account password</p>
+                </div>
               </div>
-              <h3 className="text-xl font-black text-white">
-                Under Development
-              </h3>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto font-medium">
-                {activeTab} settings are currently being fine-tuned to provide
-                the best admin experience.
-              </p>
+              <form onSubmit={handlePasswordSubmit} className="space-y-5 max-w-md">
+                {[
+                  { label: "Current Password", key: "current" },
+                  { label: "New Password", key: "newPw" },
+                  { label: "Confirm New Password", key: "confirm" },
+                ].map(({ label, key }) => (
+                  <div key={key} className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{label}</label>
+                    <div className="relative">
+                      <input
+                        type={showPw[key] ? "text" : "password"}
+                        value={pwForm[key]}
+                        onChange={(e) => setPwForm({ ...pwForm, [key]: e.target.value })}
+                        required
+                        className="w-full bg-[#1e293b]/50 border border-gray-800 rounded-xl py-3 px-4 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all font-bold"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw({ ...showPw, [key]: !showPw[key] })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                      >
+                        {showPw[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={changePasswordMutation.isPending}
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm px-8 py-3.5 rounded-2xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {changePasswordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                    Update Password
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {activeTab === "Platform" && (
+            <div className="p-8 lg:p-12 space-y-8 animate-in slide-in-from-right-4 duration-500">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-emerald-500/10 p-3 rounded-xl">
+                  <Globe className="w-6 h-6 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Platform Info</h3>
+                  <p className="text-gray-500 text-sm">Current environment details</p>
+                </div>
+              </div>
+              <div className="space-y-4 max-w-lg">
+                {[
+                  { label: "Platform", value: "LMS EduHub" },
+                  { label: "Frontend", value: "React + Vite" },
+                  { label: "Backend", value: "Node.js + Express" },
+                  { label: "Database", value: "MongoDB + Mongoose" },
+                  { label: "Storage", value: "Cloudinary" },
+                  { label: "Auth", value: "JWT (httpOnly cookies)" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between bg-[#1e293b]/30 border border-gray-800 rounded-xl px-5 py-3">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</span>
+                    <span className="text-sm font-bold text-white">{value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2">
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center gap-2 bg-[#1e293b]/50 border border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white font-bold text-sm px-5 py-2.5 rounded-2xl transition-all"
+                >
+                  Go to Full Profile Settings
+                </Link>
+              </div>
             </div>
           )}
         </div>

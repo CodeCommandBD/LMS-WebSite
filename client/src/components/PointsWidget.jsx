@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, History, Award, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const fetchMyPoints = () => api.get("/points/me").then((r) => r.data);
 

@@ -99,7 +99,7 @@ export const loginUser = async (req, res) => {
     if (user.role !== role) {
       return res.status(401).json({
         success: false,
-        message: `Incorrect role selected. This email is registered as a ${user.role}.`,
+        message: "Incorrect email or password",
       });
     }
 
@@ -108,6 +108,14 @@ export const loginUser = async (req, res) => {
       return res
         .status(401)
         .json({ success: false, message: "Incorrect email or password" });
+    }
+
+    // Block banned users
+    if (user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended. Please contact support.",
+      });
     }
 
     // Block unverified users
@@ -179,6 +187,7 @@ export const getCurrentUser = async (req, res) => {
         email: user.email,
         role: user.role,
         bio: user.bio,
+        socialLinks: user.socialLinks,
         photoUrl: user.profilePicture
           ? user.profilePicture.startsWith("http")
             ? user.profilePicture
@@ -209,7 +218,7 @@ export const logoutUser = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name, email, bio } = req.body;
+    const { name, email, bio, socialLinks } = req.body;
     const userId = req.user.id; // From auth middleware
 
     // Validation
@@ -235,6 +244,18 @@ export const updateProfile = async (req, res) => {
       email,
       bio: bio || "",
     };
+
+    // Handle socialLinks (partial update — only update keys that are provided)
+    let parsedSocialLinks = socialLinks;
+    if (typeof socialLinks === "string") {
+      try { parsedSocialLinks = JSON.parse(socialLinks); } catch { parsedSocialLinks = null; }
+    }
+    if (parsedSocialLinks && typeof parsedSocialLinks === "object") {
+      updateData["socialLinks.linkedin"] = parsedSocialLinks.linkedin || "";
+      updateData["socialLinks.twitter"] = parsedSocialLinks.twitter || "";
+      updateData["socialLinks.github"] = parsedSocialLinks.github || "";
+      updateData["socialLinks.website"] = parsedSocialLinks.website || "";
+    }
 
     // If profile picture is uploaded, add it to update data
     if (req.file) {
@@ -279,6 +300,7 @@ export const updateProfile = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         bio: updatedUser.bio,
+        socialLinks: updatedUser.socialLinks,
         photoUrl: updatedUser.profilePicture
           ? updatedUser.profilePicture.startsWith("http")
             ? updatedUser.profilePicture
@@ -296,7 +318,7 @@ export const getEnrolledCourses = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate({
       path: "enrolledCourses",
-      populate: { path: "creator", select: "name profilePicture" },
+      populate: { path: "creator", select: "_id name profilePicture bio description role" },
     });
 
     if (!user) {
@@ -323,7 +345,7 @@ export const getWishlistCourses = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate({
       path: "wishlist",
-      populate: { path: "creator", select: "name profilePicture" },
+      populate: { path: "creator", select: "_id name profilePicture bio description role" },
     });
 
     if (!user) {
@@ -388,6 +410,7 @@ export const getInstructorProfile = async (req, res) => {
         bio: instructor.bio,
         description: instructor.description,
         profilePicture: instructor.profilePicture,
+        socialLinks: instructor.socialLinks,
         totalCourses: courses.length,
         totalStudents,
         averageRating,
@@ -407,9 +430,10 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "No user found with that email",
+      // Return 200 to prevent user enumeration (don't reveal if email exists)
+      return res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
       });
     }
 
@@ -453,6 +477,14 @@ export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
+
+    // Validate minimum password length
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long.",
+      });
+    }
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -782,6 +814,54 @@ export const resendVerification = async (req, res) => {
       success: true,
       message:
         "A new verification link has been sent. Please check your inbox.",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/v1/users/change-password
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required.",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect.",
+      });
+    }
+
+    // Hash and save new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

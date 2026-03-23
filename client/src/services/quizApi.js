@@ -40,6 +40,6 @@ export const submitQuizAttemptService = async (quizId, answers) => {
 
 // 7. Delete quiz
 export const deleteQuizService = async (quizId) => {
-  const response = await api.delete(`/quiz/delete/${quizId}`);
+  const response = await api.delete(`/quiz/${quizId}`);
   return response.data;
 };

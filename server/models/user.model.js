@@ -5,6 +5,8 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
+      maxlength: [100, "Name cannot exceed 100 characters"],
     },
     email: {
       type: String,
@@ -18,10 +20,18 @@ const userSchema = new mongoose.Schema(
     description: {
       type: String,
       default: "",
+      maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
     bio: {
       type: String,
       default: "",
+      maxlength: [500, "Bio cannot exceed 500 characters"],
+    },
+    socialLinks: {
+      linkedin: { type: String, default: "" },
+      twitter: { type: String, default: "" },
+      github: { type: String, default: "" },
+      website: { type: String, default: "" },
     },
     role: {
       type: String,

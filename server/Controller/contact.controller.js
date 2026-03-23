@@ -1,8 +1,9 @@
 import { sendMail } from "../utils/email.js";
+import Contact from "../models/contact.model.js";
 
 /**
  * Handle contact form submissions.
- * Sends an email to the admin + an auto-reply to the sender.
+ * Saves to DB + Sends an email to the admin + an auto-reply to the sender.
  */
 export const submitContactForm = async (req, res) => {
   try {
@@ -22,6 +23,9 @@ export const submitContactForm = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid email address." });
     }
+
+    // Save to database
+    await Contact.create({ name, email, subject, message });
 
     const adminEmail = process.env.EMAIL_USER;
 
@@ -51,12 +55,12 @@ export const submitContactForm = async (req, res) => {
       </div></body></html>
     `;
 
-    await sendMail({
+    sendMail({
       to: adminEmail,
       subject: `📬 Contact Form: ${subject}`,
       html: adminHtml,
       text: `New contact from ${name} (${email})\n\nSubject: ${subject}\n\nMessage:\n${message}`,
-    });
+    }).catch((e) => console.error("Admin email failed:", e.message));
 
     // 2. Send auto-reply to the user
     const replyHtml = `
@@ -79,18 +83,18 @@ export const submitContactForm = async (req, res) => {
             <strong>Your message:</strong>
             <p style="white-space:pre-wrap;margin-top:8px;color:#374151">${message}</p>
           </div>
-          <p>If you have an urgent inquiry, please check our <a href="${process.env.CLIENT_URL}/blogs" style="color:#2563eb">help articles</a> or try again.</p>
+          <p>If you have an urgent inquiry, please check our <a href="${process.env.CLIENT_URL}/blogs" style="color:#2563eb">help articles</a>.</p>
         </div>
         <div class="footer"><p>© ${new Date().getFullYear()} LMS Platform. All rights reserved.</p></div>
       </div></body></html>
     `;
 
-    await sendMail({
+    sendMail({
       to: email,
       subject: "✅ We received your message — LMS Platform",
       html: replyHtml,
       text: `Hello ${name},\n\nThank you for contacting us! We'll reply within 24–48 hours.\n\nYour message: "${message}"`,
-    });
+    }).catch((e) => console.error("Auto-reply email failed:", e.message));
 
     return res.status(200).json({
       success: true,
@@ -103,5 +107,26 @@ export const submitContactForm = async (req, res) => {
       success: false,
       message: "Failed to send message. Please try again later.",
     });
+  }
+};
+
+// Admin: Get all contact messages (sorted newest first)
+export const getContacts = async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, contacts });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Mark a contact message as read
+export const markContactRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Contact.findByIdAndUpdate(id, { isRead: true });
+    return res.status(200).json({ success: true, message: "Marked as read" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

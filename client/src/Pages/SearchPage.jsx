@@ -31,6 +31,16 @@ const SearchPage = () => {
   );
   const [sort, setSort] = useState(searchParams.get("sort") || "newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [localQuery, setLocalQuery] = useState(query);
+
+  const handleNewSearch = (e) => {
+    e.preventDefault();
+    if (!localQuery.trim()) return;
+    const current = new URLSearchParams(searchParams);
+    current.set("q", localQuery.trim());
+    current.set("page", "1");
+    setSearchParams(current);
+  };
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: [
@@ -112,6 +122,22 @@ const SearchPage = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             {data?.courses?.length || 0} courses found
           </p>
+          {/* Inline new search */}
+          <form onSubmit={handleNewSearch} className="flex items-center gap-2 mt-4 max-w-md">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={localQuery}
+                onChange={(e) => setLocalQuery(e.target.value)}
+                placeholder="Search new topic..."
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-full py-2 pl-10 pr-4 text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+              />
+            </div>
+            <Button type="submit" size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 text-white px-4">
+              Go
+            </Button>
+          </form>
         </div>
 
         <div className="flex items-center gap-3">

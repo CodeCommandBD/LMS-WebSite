@@ -44,6 +44,7 @@ const AdminQuizManager = () => {
   const [questions, setQuestions] = useState([]);
   const [quizTitle, setQuizTitle] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
+  const [passingMark, setPassingMark] = useState(60);
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
     quizId: null,
@@ -82,6 +83,7 @@ const AdminQuizManager = () => {
     if (quiz) {
       setQuizTitle(quiz.title || "");
       setQuizDescription(quiz.description || "");
+      setPassingMark(quiz.passingMark || 60);
       setSelectedSection(quiz.sectionName || "");
       setQuestions(
         (quiz.questions || []).map((q) => ({
@@ -162,6 +164,7 @@ const AdminQuizManager = () => {
       sectionName: selectedSection,
       title: quizTitle,
       description: quizDescription,
+      passingMark,
       questions,
     };
 
@@ -338,6 +341,24 @@ const AdminQuizManager = () => {
                     placeholder="Provide instructions for the quiz..."
                     className="bg-[#0f172a] border-gray-800 rounded-xl min-h-[80px] focus:ring-blue-500/50 text-white"
                   />
+                </div>
+
+                {/* Passing Mark */}
+                <div className="space-y-2">
+                  <Label className="text-gray-400 text-xs font-bold uppercase tracking-widest pl-1">
+                    Passing Mark (%)
+                  </Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={passingMark}
+                    onChange={(e) => setPassingMark(Number(e.target.value))}
+                    className="bg-[#0f172a] border-gray-800 rounded-xl h-12 focus:ring-blue-500/50 text-white w-32"
+                  />
+                  <p className="text-[10px] text-gray-500 pl-1">
+                    Minimum score percentage required to pass and earn points.
+                  </p>
                 </div>
 
                 {/* Questions */}

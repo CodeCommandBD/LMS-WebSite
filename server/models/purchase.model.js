@@ -18,8 +18,12 @@ const purchaseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed"],
+      enum: ["pending", "completed", "failed", "unenrolled"],
       default: "pending",
+    },
+    unenrolledAt: {
+      type: Date,
+      default: null,
     },
     paymentId: {
       type: String,

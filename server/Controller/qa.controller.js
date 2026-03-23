@@ -185,3 +185,40 @@ export const deleteQuestion = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 6. Get ALL questions posted by the logged-in user (across all courses)
+export const getAllMyQuestions = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const questions = await QA.find({ userId })
+      .populate("courseId", "courseTitle thumbnail")
+      .populate("lectureId", "lectureTitle")
+      .populate("userId", "name photoUrl role")
+      .populate("replies.userId", "name photoUrl role")
+      .sort({ createdAt: -1 });
+
+    // Group by course
+    const grouped = {};
+    questions.forEach((q) => {
+      const cId = q.courseId?._id?.toString();
+      if (!cId) return;
+      if (!grouped[cId]) {
+        grouped[cId] = {
+          courseId: cId,
+          courseTitle: q.courseId?.courseTitle || "Unknown Course",
+          thumbnail: q.courseId?.thumbnail || "",
+          questions: [],
+        };
+      }
+      grouped[cId].questions.push(q);
+    });
+
+    return res.status(200).json({
+      success: true,
+      courses: Object.values(grouped),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
