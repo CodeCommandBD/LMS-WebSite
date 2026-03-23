@@ -710,28 +710,25 @@ const CourseCardDetails = () => {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed max-w-2xl">
                       {course.creator?.description ||
-                        `${course.creator?.name || "The instructor"} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.`}
+                        (course.creator ? `${course.creator.name} is a dedicated educator with a passion for sharing knowledge and helping students achieve their goals.` : "Instructor information is currently unavailable.")}
                     </p>
-                    <Button
-                      variant="link"
-                      className="text-blue-600 dark:text-white font-black p-0 h-auto hover:text-blue-800 transition-colors"
-                      onClick={() => {
-                        const instructorId =
-                          course.creator?._id ||
-                          course.creator?.id ||
-                          (typeof course.creator === "string"
-                            ? course.creator
-                            : null);
-                        if (instructorId) {
-                          navigate(`/instructor/${instructorId}`);
-                        } else {
-                          toast.error("Instructor information not available");
-                        }
-                      }}
-                    >
-                      View Full Profile{" "}
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    {course.creator && (
+                      <Button
+                        variant="link"
+                        className="text-blue-600 dark:text-white font-black p-0 h-auto hover:text-blue-800 transition-colors"
+                        onClick={() => {
+                          const instructorId = course.creator._id || course.creator.id;
+                          if (instructorId) {
+                            navigate(`/instructor/${instructorId}`);
+                          } else {
+                            toast.error("Instructor profile ID missing");
+                          }
+                        }}
+                      >
+                        View Full Profile{" "}
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

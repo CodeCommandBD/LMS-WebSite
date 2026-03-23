@@ -10,6 +10,10 @@ import {
   Award,
   ArrowLeft,
   MessageSquare,
+  Linkedin,
+  Twitter,
+  Github,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -137,6 +141,36 @@ const InstructorProfile = () => {
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed max-w-3xl">
                 {instructor.description}
               </p>
+            )}
+
+            {/* Social Links */}
+            {instructor.socialLinks && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {instructor.socialLinks.linkedin && (
+                  <a href={instructor.socialLinks.linkedin} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 hover:bg-blue-100 transition-colors text-sm font-medium">
+                    <Linkedin className="w-3.5 h-3.5" /> LinkedIn
+                  </a>
+                )}
+                {instructor.socialLinks.twitter && (
+                  <a href={instructor.socialLinks.twitter} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 hover:bg-sky-100 transition-colors text-sm font-medium">
+                    <Twitter className="w-3.5 h-3.5" /> Twitter
+                  </a>
+                )}
+                {instructor.socialLinks.github && (
+                  <a href={instructor.socialLinks.github} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-200 transition-colors text-sm font-medium">
+                    <Github className="w-3.5 h-3.5" /> GitHub
+                  </a>
+                )}
+                {instructor.socialLinks.website && (
+                  <a href={instructor.socialLinks.website} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30 hover:bg-purple-100 transition-colors text-sm font-medium">
+                    <Globe className="w-3.5 h-3.5" /> Website
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>

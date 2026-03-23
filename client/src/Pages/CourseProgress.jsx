@@ -127,6 +127,19 @@ const CourseProgress = () => {
   const course = courseData?.course;
   const lectures = course?.lectures || [];
 
+  // 🔒 Enrollment Guard — redirect if user is not enrolled
+  useEffect(() => {
+    if (course && user) {
+      const isEnrolled = course.enrolledStudents?.some(
+        (sid) => sid.toString() === user._id?.toString()
+      );
+      if (!isEnrolled) {
+        toast.error("You must enroll in this course to access it.");
+        navigate(`/courseDetails/${id}`, { replace: true });
+      }
+    }
+  }, [course, user, id, navigate]);
+
   const groupedLectures = lectures.reduce((acc, lecture) => {
     const section = lecture.sectionName || "Course Content";
     if (!acc[section]) {
@@ -517,7 +530,7 @@ const CourseProgress = () => {
 
       {/* QUIZ PLAYER OVERLAY */}
       {showQuiz && activeQuiz && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-6 bg-[#0f172a]/95 backdrop-blur-xl animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-999 flex items-center justify-center p-6 bg-[#0f172a]/95 backdrop-blur-xl animate-in fade-in duration-300">
           <QuizPlayer quiz={activeQuiz} onComplete={handleQuizComplete} />
         </div>
       )}

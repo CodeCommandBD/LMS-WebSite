@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -6,13 +6,14 @@ import {
   GraduationCap,
   Heart,
   User as UserIcon,
-  Settings,
+  KeyRound,
   ChevronRight,
   LogOut,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileInfo } from "@/components/ProfileInfo";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import { Button } from "@/components/ui/button";
 import PointsWidget from "@/components/PointsWidget";
 import { ProfileSkeleton } from "@/components/SkeletonLoaders";
@@ -26,6 +27,7 @@ const Profile = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -95,7 +97,7 @@ const Profile = () => {
 
         {/* Profile Header Card */}
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-[40px] shadow-2xl border border-white dark:border-gray-700/30 overflow-hidden mb-8">
-          <div className="h-32 bg-linear-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+          <div className="h-32 bg-linear-to-r from-blue-600 to-purple-600 relative">
             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
             <div className="absolute -bottom-16 left-8 translate-y-2">
               <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl backdrop-blur-sm bg-opacity-80">
@@ -128,10 +130,11 @@ const Profile = () => {
                 <EditProfileDialog user={user} />
                 <Button
                   variant="outline"
+                  onClick={() => setShowChangePassword(true)}
                   className="rounded-xl border-gray-200 dark:border-gray-700 h-11 px-6"
                 >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  Change Password
                 </Button>
                 <Button
                   variant="outline"
@@ -225,6 +228,12 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </div>
   );
 };

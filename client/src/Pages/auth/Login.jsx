@@ -66,9 +66,13 @@ const Login = () => {
         return;
       }
 
-      const errorMessage = error.message?.toLowerCase() || "";
+      // Use backend error message if available, otherwise fallback
+      const backendMessage = error.response?.data?.message;
+      const errorMessage = (backendMessage || error.message || "").toLowerCase();
 
-      if (errorMessage.includes("email") || errorMessage.includes("password")) {
+      if (backendMessage) {
+        toast.error(backendMessage);
+      } else if (errorMessage.includes("email") || errorMessage.includes("password")) {
         toast.error("Incorrect email or password.");
       } else if (
         errorMessage.includes("network") ||
@@ -78,7 +82,7 @@ const Login = () => {
           "Network error. Please check your connection and try again.",
         );
       } else {
-        toast.error(error.message || "Login failed. Please try again.");
+        toast.error("Login failed. Please try again.");
       }
     },
   });
@@ -174,6 +178,16 @@ const Login = () => {
                       />
                       <Label htmlFor="teacher" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
                         Teacher
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2 cursor-pointer group">
+                      <RadioGroupItem
+                        value="admin"
+                        id="admin"
+                        className="border-white/20 text-purple-500 focus:ring-purple-500"
+                      />
+                      <Label htmlFor="admin" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
+                        Admin
                       </Label>
                     </div>
                   </RadioGroup>

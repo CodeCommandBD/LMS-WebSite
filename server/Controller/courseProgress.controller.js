@@ -131,18 +131,29 @@ export const updateLectureProgress = async (req, res) => {
 
       progress.isCompleted = allLecturesDone && allQuizzesPassed;
       
-      if (progress.isCompleted) {
-        // 1. Create in-app notification
+      if (progress.isCompleted && !progress.completionBonusAwarded) {
+        // 1. Award 100 bonus points (one-time)
+        await Points.findOneAndUpdate(
+          { userId },
+          {
+            $inc: { totalPoints: 100 },
+            $push: { history: { points: 100, reason: `Completed course: "${course.courseTitle}"` } },
+          },
+          { upsert: true }
+        );
+        progress.completionBonusAwarded = true;
+
+        // 2. Create in-app notification
         await createNotification(
           userId,
-          "Course Completed!",
-          `Congratulations! You have completed "${course.courseTitle}".`,
-          "achievement",
+          "Course Completed! 🎉",
+          `Congratulations! You completed "${course.courseTitle}" and earned 100 bonus points!`,
+          "success",
           `/certificate/${courseId}`
         );
 
-        // 2. Send professional completion email
-        const certUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/verify-certificate/${courseId}`; // Simplified for now, or based on actual cert logic
+        // 3. Send professional completion email
+        const certUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/certificate/${courseId}`;
         sendCourseCompletionEmail(user.email, user.name, course.courseTitle, certUrl).catch(err => 
           console.error("Completion email failed:", err.message)
         );

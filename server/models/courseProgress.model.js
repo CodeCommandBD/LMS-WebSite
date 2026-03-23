@@ -22,6 +22,10 @@ const courseProgressSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    completionBonusAwarded: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

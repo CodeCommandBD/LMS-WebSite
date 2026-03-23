@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 import {
   Plus,
   Search,
@@ -9,54 +10,53 @@ import {
   Loader2,
   Newspaper,
   ExternalLink,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+const getAllBlogs = () => api.get("/blogs?status=all").then((r) => r.data);
+const deleteBlogFn = (id) => api.delete(`/blogs/${id}`).then((r) => r.data);
+const togglePublishFn = ({ id, currentStatus }) =>
+  api.patch(`/blogs/${id}`, { status: currentStatus === "published" ? "draft" : "published" }).then((r) => r.data);
+
 const AdminBlogs = () => {
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const fetchBlogs = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL || ""}/api/v1/blogs?status=all`,
-      ); // Allow admin to see drafts
-      if (response.data.success) {
-        setBlogs(response.data.blogs);
-      }
-    } catch (error) {
-      toast.error("Failed to fetch blogs");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading } = useQuery({
+    queryKey: ["adminBlogs"],
+    queryFn: getAllBlogs,
+  });
 
-  useEffect(() => {
-    fetchBlogs();
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: deleteBlogFn,
+    onSuccess: () => {
+      toast.success("Blog deleted successfully");
+      setConfirmDelete(null);
+      queryClient.invalidateQueries(["adminBlogs"]);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || "Failed to delete blog"),
+  });
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this blog?")) {
-      try {
-        const response = await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL || ""}/api/v1/blogs/${id}`,
-          { withCredentials: true },
-        );
-        if (response.data.success) {
-          toast.success("Blog deleted successfully");
-          fetchBlogs();
-        }
-      } catch (error) {
-        toast.error("Failed to delete blog");
-      }
-    }
-  };
+  const toggleMutation = useMutation({
+    mutationFn: togglePublishFn,
+    onSuccess: (data) => {
+      toast.success(data.message || "Status updated");
+      queryClient.invalidateQueries(["adminBlogs"]);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || "Failed to update status"),
+  });
 
-  const filteredBlogs = blogs.filter((blog) =>
-    blog.title.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const blogs = data?.blogs || [];
+
+  const filtered = blogs.filter((b) => {
+    const matchSearch = b.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = statusFilter === "all" || b.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -69,7 +69,7 @@ const AdminBlogs = () => {
             Blog Management
           </h1>
           <p className="text-gray-400 mt-1 text-sm font-medium">
-            Create, edit and manage your knowledge hub articles
+            Create, edit, and manage knowledge hub articles
           </p>
         </div>
         <Link
@@ -81,7 +81,22 @@ const AdminBlogs = () => {
         </Link>
       </div>
 
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Total", value: blogs.length, color: "text-white" },
+          { label: "Published", value: blogs.filter((b) => b.status === "published").length, color: "text-emerald-400" },
+          { label: "Draft", value: blogs.filter((b) => b.status === "draft").length, color: "text-amber-400" },
+        ].map((s) => (
+          <div key={s.label} className="bg-[#1e293b]/30 border border-gray-800 rounded-2xl p-4 text-center">
+            <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-[#1e293b]/20 border border-gray-800 rounded-[32px] overflow-hidden">
+        {/* Filters */}
         <div className="p-6 border-b border-gray-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
@@ -90,12 +105,23 @@ const AdminBlogs = () => {
               placeholder="Search by title..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#1e293b]/50 border border-gray-800 rounded-xl py-2.5 pl-11 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all text-sm font-medium"
+              className="w-full bg-[#1e293b]/50 border border-gray-800 rounded-xl py-2.5 pl-11 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all text-sm"
             />
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-bold text-white">{filteredBlogs.length}</span>{" "}
-            Articles Total
+          <div className="flex gap-2">
+            {["all", "published", "draft"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                  statusFilter === s
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "bg-[#1e293b]/50 text-gray-400 border border-gray-800 hover:border-gray-700"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -103,66 +129,47 @@ const AdminBlogs = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-800/50">
-                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                  Article
-                </th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                  Category
-                </th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                  Stats
-                </th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">
-                  Actions
-                </th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Article</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Category</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Views</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/30">
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-20 text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
-                      Fetching articles...
-                    </p>
+                    <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto" />
                   </td>
                 </tr>
-              ) : filteredBlogs.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-20 text-center text-gray-500 font-bold"
-                  >
+                  <td colSpan="5" className="px-6 py-20 text-center text-gray-500 font-bold">
                     No articles found.
                   </td>
                 </tr>
               ) : (
-                filteredBlogs.map((blog) => (
-                  <tr
-                    key={blog._id}
-                    className="hover:bg-gray-800/20 transition-colors group"
-                  >
+                filtered.map((blog) => (
+                  <tr key={blog._id} className="hover:bg-gray-800/20 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <img
-                          src={blog.thumbnail}
-                          className="w-12 h-12 rounded-lg object-cover ring-2 ring-gray-800 group-hover:ring-blue-600/30 transition-all"
-                          alt=""
-                        />
+                        {blog.thumbnail && (
+                          <img
+                            src={blog.thumbnail}
+                            className="w-12 h-12 rounded-lg object-cover ring-2 ring-gray-800 group-hover:ring-blue-600/30 transition-all shrink-0"
+                            alt=""
+                          />
+                        )}
                         <div>
-                          <p className="text-white font-bold text-sm tracking-tight line-clamp-1">
-                            {blog.title}
-                          </p>
-                          <p className="text-gray-500 text-[10px] font-medium flex items-center gap-1 mt-1">
+                          <p className="text-white font-bold text-sm line-clamp-1">{blog.title}</p>
+                          <p className="text-gray-500 text-[10px] font-medium flex items-center gap-2 mt-1">
                             {new Date(blog.createdAt).toLocaleDateString()}
                             <Link
                               to={`/blog/${blog.slug || blog._id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                              className="text-blue-500 hover:underline inline-flex items-center gap-0.5"
                             >
                               Visit <ExternalLink className="w-2.5 h-2.5" />
                             </Link>
@@ -172,15 +179,11 @@ const AdminBlogs = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className="bg-gray-800/50 text-gray-300 text-[10px] font-black px-2.5 py-1 rounded-md border border-gray-700">
-                        {blog.category?.name || "N/A"}
+                        {blog.category?.name || "Uncategorized"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-white font-bold text-xs">
-                          {blog.views || 0} views
-                        </span>
-                      </div>
+                      <span className="text-white font-bold text-xs">{blog.views || 0}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -190,26 +193,61 @@ const AdminBlogs = () => {
                             : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                         }`}
                       >
-                        <div
-                          className={`w-1.5 h-1.5 rounded-full ${blog.status === "published" ? "bg-emerald-500" : "bg-amber-500"}`}
-                        />
+                        <div className={`w-1.5 h-1.5 rounded-full ${blog.status === "published" ? "bg-emerald-500" : "bg-amber-500"}`} />
                         {blog.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Publish / Unpublish toggle */}
+                        <button
+                          onClick={() => toggleMutation.mutate({ id: blog._id, currentStatus: blog.status })}
+                          disabled={toggleMutation.isPending}
+                          title={blog.status === "published" ? "Unpublish" : "Publish"}
+                          className={`p-2 rounded-lg transition-all ${
+                            blog.status === "published"
+                              ? "bg-amber-600/10 text-amber-500 hover:bg-amber-600 hover:text-white"
+                              : "bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600 hover:text-white"
+                          }`}
+                        >
+                          {blog.status === "published" ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                        {/* Edit */}
                         <Link
                           to={`/admin/blogs/${blog._id}`}
                           className="p-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
-                        <button
-                          onClick={() => handleDelete(blog._id)}
-                          className="p-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Delete with confirm */}
+                        {confirmDelete === blog._id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => deleteMutation.mutate(blog._id)}
+                              disabled={deleteMutation.isPending}
+                              className="text-[10px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-wider py-1.5 px-3 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 transition-colors"
+                            >
+                              {deleteMutation.isPending ? "..." : "Confirm"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="text-[10px] font-black text-gray-400 uppercase tracking-wider py-1.5 px-2 rounded-xl border border-gray-700 hover:bg-gray-800 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDelete(blog._id)}
+                            className="p-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

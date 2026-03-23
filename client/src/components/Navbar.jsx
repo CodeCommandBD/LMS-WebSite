@@ -6,6 +6,12 @@ import {
   BellRing,
   CheckCheck,
   X,
+  Menu,
+  User,
+  FileText,
+  MessageSquare,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, NavLink } from "react-router-dom";
@@ -44,6 +50,7 @@ const NotificationBell = () => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data } = useQuery({
     queryKey: ["notifications"],
@@ -176,7 +183,7 @@ const NotificationBell = () => {
                     if (!n.isRead) markReadMutation.mutate(n._id);
                     if (n.link) {
                       setOpen(false);
-                      window.location.href = n.link;
+                      navigate(n.link);
                     }
                   }}
                   className={`px-4 py-3 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/5 ${
@@ -226,6 +233,31 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setIsProfileOpen(false);
+  };
+
+  const toggleProfile = () => setIsProfileOpen(!isProfileOpen);
+
+  // Close profile dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -253,180 +285,355 @@ const Navbar = () => {
   };
 
   return (
-    <div className="z-50 w-full fixed top-0 backdrop-blur-md bg-linear-to-r from-indigo-600/90 via-purple-600/90 to-pink-600/90 shadow-lg border-b border-white/20">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-8">
-        {/* Logo */}
-        <div className="flex items-center gap-2 group shrink-0">
-          <Link
-            to="/"
-            className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
+    <>
+      <header className="z-50 w-full fixed top-0 backdrop-blur-md bg-linear-to-r from-indigo-600/90 via-purple-600/90 to-pink-600/90 shadow-lg border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-8">
+          {/* Logo */}
+          <div className="flex items-center gap-2 group shrink-0">
+            <Link
+              to="/"
+              className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
+            >
+              <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm border border-white/30 shadow-lg group-hover:bg-white/30 transition-all duration-300">
+                <GraduationCap className="w-8 h-8 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-white tracking-tight hidden md:block">
+                EduHub
+              </span>
+            </Link>
+          </div>
+
+          {/* Search Bar */}
+          <form
+            onSubmit={handleSearch}
+            className="flex-1 max-w-lg relative group hidden sm:block"
           >
-            <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm border border-white/30 shadow-lg group-hover:bg-white/30 transition-all duration-300">
-              <GraduationCap className="w-8 h-8 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white tracking-tight hidden md:block">
-              EduHub
-            </span>
-          </Link>
-        </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all duration-300"
+            />
+          </form>
 
-        {/* Search Bar */}
-        <form
-          onSubmit={handleSearch}
-          className="flex-1 max-w-lg relative group hidden sm:block"
-        >
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 group-focus-within:text-white transition-colors" />
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all duration-300"
-          />
-        </form>
-
-        {/* Menu */}
-        <nav className="shrink-0">
-          <ul className="flex items-center gap-2 md:gap-6">
-            <li className="relative group hidden lg:block">
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Home
-              </NavLink>
-            </li>
-            <li className="relative group">
-              <NavLink
-                to="/blog"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Blog
-              </NavLink>
-            </li>
-            <li className="relative group">
-              <NavLink
-                to="/courses"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Courses
-              </NavLink>
-            </li>
-            <li className="relative group">
-              <NavLink
-                to="/leaderboard"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Leaderboard
-              </NavLink>
-            </li>
-            {!user ? (
-              <div className="flex items-center gap-2 md:gap-3 ml-2 md:ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-white font-semibold cursor-pointer bg-white/20 hover:bg-white/30 border-white/30 backdrop-blur-sm transition-all duration-300 shadow-md h-9"
-                >
-                  <Link to="/login">Login</Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-purple-600 font-semibold cursor-pointer bg-white hover:bg-gray-100 border-0 transition-all duration-300 shadow-lg h-9 hidden md:flex"
-                >
-                  <Link to="/signup">Sign Up</Link>
-                </Button>
-              </div>
+          {/* Menu Toggle (Mobile) */}
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all duration-300"
+            aria-label="Toggle Menu"
+          >
+            {isMenuOpen ? (
+              <X className="w-6 h-6 animate-in spin-in-90 duration-300" />
             ) : (
-              <div className="flex items-center gap-3 md:gap-4 ml-2 md:ml-4">
-                {["admin", "teacher"].includes(user?.role?.toLowerCase()) && (
-                  <Link
-                    to="/admin"
-                    className="text-white font-medium hover:text-white/80 transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 hidden md:block"
-                  >
-                    Admin
-                  </Link>
-                )}
-                {/* 🔔 Notification Bell */}
-                <NotificationBell />
-                <Link to="/profile">
-                  <Avatar className="h-9 w-9 ring-2 ring-white/50 hover:ring-white transition-all duration-300">
-                    <AvatarImage
-                      src={user?.photoUrl || "https://github.com/shadcn.png"}
-                    />
-                    <AvatarFallback>
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-                <Button
-                  onClick={handleLogout}
-                  size="sm"
-                  disabled={logoutMutation.isPending}
-                  className="bg-red-500 hover:bg-red-600 text-white cursor-pointer font-semibold transition-all duration-300 shadow-md h-9 px-3"
-                >
-                  <span className="hidden md:block">
-                    {logoutMutation.isPending ? "..." : "Logout"}
-                  </span>
-                </Button>
-              </div>
+              <Menu className="w-6 h-6 animate-in zoom-in-50 duration-300" />
             )}
-            <li className="relative group">
-              <NavLink
-                to="/notes"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Notes
-              </NavLink>
-            </li>
-            <li className="relative group">
-              <NavLink
-                to="/qa"
-                className={({ isActive }) =>
-                  `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
-                    isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
-                  }`
-                }
-              >
-                Q&A
-              </NavLink>
-            </li>
-            <li className="flex items-center gap-2 ml-4">
-              {theme === "dark" ? (
-                <Moon className="w-4 h-4 text-white" />
+          </button>
+
+          {/* Desktop Menu */}
+          <nav className="shrink-0 hidden lg:block">
+            <ul className="flex items-center gap-2 lg:gap-4 xl:gap-6">
+              <li className="relative group">
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                      isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                    }`
+                  }
+                >
+                  Home
+                </NavLink>
+              </li>
+              <li className="relative group">
+                <NavLink
+                  to="/blog"
+                  className={({ isActive }) =>
+                    `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                      isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                    }`
+                  }
+                >
+                  Blog
+                </NavLink>
+              </li>
+              <li className="relative group">
+                <NavLink
+                  to="/courses"
+                  className={({ isActive }) =>
+                    `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                      isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                    }`
+                  }
+                >
+                  Courses
+                </NavLink>
+              </li>
+              <li className="relative group">
+                <NavLink
+                  to="/leaderboard"
+                  className={({ isActive }) =>
+                    `text-white font-medium transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white/10 ${
+                      isActive ? "bg-white/20 shadow-md" : "hover:text-white/80"
+                    }`
+                  }
+                >
+                  Leaderboard
+                </NavLink>
+              </li>
+              {!user ? (
+                <div className="flex items-center gap-2 md:gap-3 ml-2 md:ml-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-white font-semibold cursor-pointer bg-white/20 hover:bg-white/30 border-white/30 backdrop-blur-sm transition-all duration-300 shadow-md h-9"
+                  >
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-purple-600 font-semibold cursor-pointer bg-white hover:bg-gray-100 border-0 transition-all duration-300 shadow-lg h-9 hidden md:flex"
+                  >
+                    <Link to="/signup">Sign Up</Link>
+                  </Button>
+                </div>
               ) : (
-                <Sun className="w-4 h-4 text-white" />
+                <div className="flex items-center gap-3 md:gap-4 ml-2 md:ml-4">
+                  {/* 🔔 Notification Bell */}
+                  <NotificationBell />
+
+                  {/* 👤 Profile Dropdown */}
+                  <div className="relative" ref={profileDropdownRef}>
+                    <button
+                      onClick={toggleProfile}
+                      className="flex items-center gap-2 p-1 rounded-full hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <Avatar className="h-9 w-9 ring-2 ring-white/30 group-hover:ring-white transition-all duration-300">
+                        <AvatarImage
+                          src={user?.photoUrl || "https://github.com/shadcn.png"}
+                        />
+                        <AvatarFallback className="bg-white/20 text-white">
+                          {user?.name?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <ChevronDown
+                        className={`w-4 h-4 text-white/70 transition-transform duration-300 ${
+                          isProfileOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {isProfileOpen && (
+                      <div className="absolute right-0 mt-3 w-64 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-60 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {/* User Header */}
+                        <div className="px-5 py-4 border-b border-white/10 mb-2">
+                          <p className="text-sm font-bold text-white truncate">
+                            {user?.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">
+                            {user?.email}
+                          </p>
+                        </div>
+
+                        {/* Links */}
+                        <div className="px-2 space-y-1">
+                          <Link
+                            to="/profile"
+                            onClick={closeMenu}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all font-medium text-sm"
+                          >
+                            <User className="w-4 h-4 text-blue-400" />
+                            My Profile
+                          </Link>
+                          {["admin", "teacher"].includes(
+                            user?.role?.toLowerCase()
+                          ) && (
+                            <Link
+                              to="/admin"
+                              onClick={closeMenu}
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all font-medium text-sm"
+                            >
+                              <Settings className="w-4 h-4 text-purple-400" />
+                              Admin Dashboard
+                            </Link>
+                          )}
+                          <Link
+                            to="/notes"
+                            onClick={closeMenu}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all font-medium text-sm"
+                          >
+                            <FileText className="w-4 h-4 text-amber-400" />
+                            Notes
+                          </Link>
+                          <Link
+                            to="/qa"
+                            onClick={closeMenu}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all font-medium text-sm"
+                          >
+                            <MessageSquare className="w-4 h-4 text-emerald-400" />
+                            Q&A
+                          </Link>
+                        </div>
+
+                        <div className="h-px bg-white/10 my-2" />
+
+                        {/* Theme Toggle in Dropdown */}
+                        <div className="px-5 py-2 flex items-center justify-between">
+                          <div className="flex items-center gap-3 text-white/80">
+                            {theme === "dark" ? (
+                              <Moon className="w-4 h-4" />
+                            ) : (
+                              <Sun className="w-4 h-4" />
+                            )}
+                            <span className="text-sm font-medium">Theme</span>
+                          </div>
+                          <Switch
+                            checked={theme === "dark"}
+                            onCheckedChange={toggleTheme}
+                            className="data-[state=checked]:bg-blue-600 scale-75"
+                          />
+                        </div>
+
+                        <div className="h-px bg-white/10 my-2" />
+
+                        {/* Logout */}
+                        <div className="px-2 pb-1">
+                          <button
+                            onClick={() => {
+                              handleLogout();
+                              closeMenu();
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all font-bold text-sm"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`lg:hidden fixed inset-0 top-[70px] bg-indigo-900/95 backdrop-blur-xl transition-all duration-500 z-40 overflow-y-auto ${
+          isMenuOpen
+            ? "translate-x-0 opacity-100"
+            : "translate-x-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="p-6 flex flex-col gap-6">
+          {/* Mobile Search */}
+          <form onSubmit={handleSearch} className="sm:hidden relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+            />
+          </form>
+
+          {/* Nav Links */}
+          <nav className="flex flex-col gap-2">
+            {[
+              { to: "/", label: "Home" },
+              { to: "/blog", label: "Blog" },
+              { to: "/courses", label: "Courses" },
+              { to: "/leaderboard", label: "Leaderboard" },
+              { to: "/notes", label: "Notes" },
+              { to: "/qa", label: "Q&A" },
+            ].map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `text-lg font-semibold py-3 px-4 rounded-xl transition-all ${
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="h-px bg-white/10 my-2" />
+
+          {/* User Actions / Theme */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between px-4 py-2 bg-white/5 rounded-xl">
+              <span className="text-white font-medium flex items-center gap-2">
+                {theme === "dark" ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5" />
+                )}
+                Theme
+              </span>
               <Switch
                 checked={theme === "dark"}
                 onCheckedChange={toggleTheme}
                 className="data-[state=checked]:bg-blue-600"
               />
-            </li>
-          </ul>
-        </nav>
+            </div>
+
+            {!user ? (
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="flex items-center justify-center bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-all border border-white/20"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={closeMenu}
+                  className="flex items-center justify-center bg-white text-indigo-600 font-bold py-3 rounded-xl shadow-lg transition-all"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {["admin", "teacher"].includes(user?.role?.toLowerCase()) && (
+                  <Link
+                    to="/admin"
+                    onClick={closeMenu}
+                    className="flex items-center gap-3 text-white font-semibold p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    closeMenu();
+                  }}
+                  className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl shadow-xl transition-all"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

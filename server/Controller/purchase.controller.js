@@ -3,6 +3,8 @@ import Purchase from "../models/purchase.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
+import Review from "../models/review.model.js";
+import Contact from "../models/contact.model.js";
 import { sendEnrollmentEmail } from "../utils/email.js";
 
 // Helper to get Stripe instance
@@ -375,18 +377,97 @@ export const getDashboardStats = async (req, res) => {
       }))
       .sort((a, b) => b.value - a.value);
 
+    // --- NEW: Admin Management Stats ---
+    const draftCoursesCount = await Course.countDocuments({
+      ...courseQuery,
+      isPublished: false,
+    });
+    const bannedUsersCount = await User.countDocuments({ isBanned: true });
+    const unreadMessagesCount = await Contact.countDocuments({ isRead: false });
+
+    // --- NEW: Recent Reviews ---
+    const recentReviews = await Review.find()
+      .limit(5)
+      .sort({ createdAt: -1 })
+      .populate("userId", "name profilePicture")
+      .populate("courseId", "courseTitle");
+
+    // --- NEW: Recent Contacts ---
+    const recentContacts = await Contact.find()
+      .limit(5)
+      .sort({ createdAt: -1 });
+
+    // --- NEW: Monthly Results (Last 12 Months) ---
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const monthlyPurchases = await Purchase.find({
+      ...purchaseQuery,
+      status: "completed",
+      createdAt: { $gte: twelveMonthsAgo },
+    }).select("createdAt amount");
+
+    const monthlyStudents = await User.find({
+      role: "student",
+      createdAt: { $gte: twelveMonthsAgo },
+    }).select("createdAt");
+
+    const monthlyMap = {};
+    for (let i = 0; i < 12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      const key = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      monthlyMap[key] = { name: key, revenue: 0, students: 0 };
+    }
+
+    monthlyPurchases.forEach((p) => {
+      const key = new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      if (monthlyMap[key]) monthlyMap[key].revenue += p.amount;
+    });
+
+    monthlyStudents.forEach((s) => {
+      const key = new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      if (monthlyMap[key]) monthlyMap[key].students += 1;
+    });
+
+    const monthlyData = Object.values(monthlyMap);
+
+    // --- NEW: Additional Metrics ---
+    const totalUnenrollments = await Purchase.countDocuments({
+      ...purchaseQuery,
+      status: "unenrolled",
+    });
+    const avgOrderValue = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
+
+    // --- REFINED: Top 10 Course Stats ---
+    const topCourseStats = courseStats
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
     return res.status(200).json({
       success: true,
       stats: {
         totalRevenue,
         totalSales,
-        courseStats,
+        avgOrderValue,
+        totalUnenrollments,
+        courseStats: topCourseStats,
         totalStudents,
         activeCourses,
         completionRate,
         engagementData,
+        monthlyData,
         recentActivity,
         categoryEnrollment,
+        adminStats: {
+          draftCoursesCount,
+          bannedUsersCount,
+          unreadMessagesCount,
+        },
+        recentReviews,
+        recentContacts,
       },
     });
   } catch (error) {
@@ -397,9 +478,7 @@ export const getDashboardStats = async (req, res) => {
 
 /**
  * POST /api/v1/purchase/unenroll/:courseId
- * Allows a student to unenroll from a course. 
- * Note: Real-world apps might handle Stripe refunds here, but this implementation 
- * focuses on data cleanup and access removal.
+ * Soft-delete unenroll: marks the purchase as 'unenrolled' to preserve payment history.
  */
 export const unenrollCourse = async (req, res) => {
   try {
@@ -416,10 +495,16 @@ export const unenrollCourse = async (req, res) => {
       $pull: { enrolledStudents: userId },
     });
 
-    // 3. Delete the Purchase record (access record)
-    await Purchase.findOneAndDelete({ userId, courseId });
+    // 3. Soft-delete: Mark purchase as 'unenrolled' (preserves payment history)
+    await Purchase.findOneAndUpdate(
+      { userId, courseId, status: "completed" },
+      {
+        status: "unenrolled",
+        unenrolledAt: new Date(),
+      }
+    );
 
-    // 4. Delete CourseProgress (wipe the slate clean)
+    // 4. Delete CourseProgress (reset progress data)
     await CourseProgress.findOneAndDelete({ userId, courseId });
 
     return res.status(200).json({
@@ -431,4 +516,3 @@ export const unenrollCourse = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
