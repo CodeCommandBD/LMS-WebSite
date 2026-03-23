@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Newspaper,
   CircleDollarSign,
+  Bell,
 } from "lucide-react";
 import React from "react";
 import { toggleSidebar } from "@/store/slices/uiSlice";
@@ -46,6 +47,7 @@ const AdminSideBar = () => {
     { icon: Users, label: "Users", path: "/admin/users" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
     { icon: Newspaper, label: "Blogs", path: "/admin/blogs" },
+    { icon: Bell, label: "Notifications", path: "/admin/notifications" },
   ];
 
   const supportItems = [
