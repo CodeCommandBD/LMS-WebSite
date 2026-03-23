@@ -13,11 +13,11 @@
 ### Next-Generation E-Learning Experience
 
 <div align="center">
-  <a href="#">
-    <img src="https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge" alt="Production Ready" />
+  <a href="https://lms-eduhub.vercel.app/">
+    <img src="https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Deployed on Vercel" />
   </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/🚀_Live_Demo-Coming_Soon-7c3aed?style=for-the-badge" alt="Live Demo" />
+  <a href="https://lms-eduhub.vercel.app/">
+    <img src="https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-7c3aed?style=for-the-badge" alt="Live Demo" />
   </a>
 </div>
 
@@ -121,7 +121,9 @@ We have carefully designed the interface to be responsive, intuitive, and visual
 
 ## 📊 System Architecture
 
-Our platform uses a distinct separation of concerns, ensuring high performance and ease of maintenance.
+Our platform uses a distinct separation of concerns, ensuring high performance and ease of maintenance. Below are the detailed flows of our core systems.
+
+### 1. High-Level Data Flow
 
 ```mermaid
 graph TB
@@ -137,6 +139,45 @@ graph TB
 
     External[External Services<br/>Stripe, Cloudinary, NodeMailer]
     API --> External
+```
+
+### 2. Course Purchase & Enrollment Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Server
+    participant Stripe
+    participant DB
+
+    User->>Frontend: Clicks "Buy Course"
+    Frontend->>Server: POST /purchase/checkout
+    Server->>Stripe: Create Stripe Checkout Session
+    Stripe-->>Server: Return Session URL
+    Server-->>Frontend: Send Session URL
+    Frontend->>User: Redirect to Stripe
+    User->>Stripe: Complete Payment
+    Stripe->>Server: Webhook (checkout.session.completed)
+    Server->>DB: Add Course to User's Enrolled List
+    Server->>DB: Record Purchase Analytics
+    Server-->>Frontend: Payment Success Confirmed
+    Frontend->>User: Show Success & Unlock Course
+```
+
+### 3. Gamification & Gamified Learning Flow
+
+```mermaid
+graph TD
+    A[Student Takes Quiz] -->|Scores Passed| B(Grade Evaluated)
+    B -->|Passed| C{Is 100%?}
+    C -->|Yes| D[Award Full Points]
+    C -->|No| E[Award Partial Points]
+    D --> F[Update User Document]
+    E --> F
+    F --> G[Generate Point History Record]
+    G --> H[Update Student Leaderboard]
+    H --> I[Socket.io Broadcast to Leaderboard Clients]
 ```
 
 ---
