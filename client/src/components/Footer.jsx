@@ -5,7 +5,7 @@ import { GraduationCap, Mail, Phone, MapPin } from "lucide-react";
 const Footer = () => {
   return (
     <div className="bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-t border-white/20">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-6 py-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 px-6 py-12">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm border border-white/30 shadow-lg">
