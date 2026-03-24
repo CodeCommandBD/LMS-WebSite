@@ -81,6 +81,13 @@ const CourseCardDetails = () => {
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
 
+  // New states for dynamic features
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [giftEmail, setGiftEmail] = useState("");
+  const [isGifting, setIsGifting] = useState(false);
+
   const { course, isLoading, isError, error } = useCourseDetails();
   const { data: statusData } = useQuery({
     queryKey: ["courseStatus", id],
@@ -188,6 +195,57 @@ const CourseCardDetails = () => {
       setSelectedPreviewVideo(lecture);
       setIsPreviewModalOpen(true);
     }
+  };
+
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Course link copied to clipboard!", {
+        icon: "🔗",
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
+    });
+  };
+
+  const handleApplyCoupon = () => {
+    const codes = {
+      WELCOME10: 10,
+      EDUBEST20: 20,
+      FREE100: 100,
+    };
+
+    const discount = codes[couponInput.toUpperCase()];
+    if (discount) {
+      setAppliedDiscount(discount);
+      toast.success(`Coupon Applied! You got ${discount}% off.`, {
+        icon: "🎉",
+      });
+    } else {
+      toast.error("Invalid Coupon Code");
+      setAppliedDiscount(0);
+    }
+  };
+
+  const handleSendGift = () => {
+    if (!giftEmail || !giftEmail.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setIsGifting(true);
+    // Mocking a backend call
+    setTimeout(() => {
+      setIsGifting(false);
+      setIsGiftModalOpen(false);
+      setGiftEmail("");
+      toast.success(`Course gifted to ${giftEmail} successfully!`, {
+        icon: "🎁",
+        duration: 4000,
+      });
+    }, 1500);
   };
 
   const groupedLectures = course?.lectures?.reduce((acc, lecture) => {
@@ -916,9 +974,14 @@ const CourseCardDetails = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
-                      ৳{course.price}
+                      ৳
+                      {appliedDiscount > 0
+                        ? Math.round(
+                            course.price * (1 - appliedDiscount / 100),
+                          )
+                        : course.price}
                     </span>
-                    {course.discount > 0 && (
+                    {(course.discount > 0 || appliedDiscount > 0) && (
                       <>
                         <span className="text-lg text-gray-400 line-through font-medium">
                           ৳
@@ -927,11 +990,16 @@ const CourseCardDetails = () => {
                           )}
                         </span>
                         <Badge className="bg-green-100 text-green-700 border-0 font-bold px-2 py-0.5">
-                          {course.discount}% OFF
+                          {course.discount + appliedDiscount}% OFF
                         </Badge>
                       </>
                     )}
                   </div>
+                  {appliedDiscount > 0 && (
+                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-1 rounded inline-block">
+                      Extra {appliedDiscount}% coupon applied!
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1022,7 +1090,10 @@ const CourseCardDetails = () => {
 
               {!isEnrolled && (
                 <div className="flex items-center justify-between pt-6 border-t border-gray-100 dark:border-gray-700">
-                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest">
+                  <button
+                    onClick={handleShare}
+                    className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest"
+                  >
                     <Share2 className="h-4 w-4" /> Share
                   </button>
                   <button
@@ -1045,7 +1116,10 @@ const CourseCardDetails = () => {
                     />
                     {isWishlisted ? "Saved" : "Save"}
                   </button>
-                  <button className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest">
+                  <button
+                    onClick={() => setIsGiftModalOpen(true)}
+                    className="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-blue-600 dark:hover:text-white transition-colors uppercase tracking-widest"
+                  >
                     <Gift className="h-4 w-4" /> Gift
                   </button>
                 </div>
@@ -1057,10 +1131,13 @@ const CourseCardDetails = () => {
                 <input
                   type="text"
                   placeholder="Enter Coupon Code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
                   className="bg-transparent border-0 flex-1 px-4 text-sm font-bold dark:text-white placeholder:text-gray-400 focus:ring-0"
                 />
                 <Button
                   variant="ghost"
+                  onClick={handleApplyCoupon}
                   className="text-blue-600 dark:text-white font-black text-xs hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-sm transition-all"
                 >
                   Apply
@@ -1125,6 +1202,55 @@ const CourseCardDetails = () => {
                 </p>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gift Course Modal */}
+      <Dialog open={isGiftModalOpen} onOpenChange={setIsGiftModalOpen}>
+        <DialogContent className="max-w-md p-8 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-2xl">
+          <DialogHeader>
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Gift className="h-8 w-8 text-blue-600 dark:text-white" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+              Gift this course
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 pt-4">
+            <p className="text-gray-500 text-center text-sm font-medium">
+              Enter the recipient's email address below. They will receive a
+              notification to join the course.
+            </p>
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-widest text-gray-400">
+                Recipient Email
+              </label>
+              <input
+                type="email"
+                placeholder="name@example.com"
+                value={giftEmail}
+                onChange={(e) => setGiftEmail(e.target.value)}
+                className="w-full h-12 px-4 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
+              />
+            </div>
+            <Button
+              onClick={handleSendGift}
+              disabled={isGifting || !giftEmail}
+              className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95"
+            >
+              {isGifting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Sending Gift...
+                </>
+              ) : (
+                "Send Gift"
+              )}
+            </Button>
+            <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-tighter">
+              A secure enrollment link will be sent to the recipient.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
