@@ -115,8 +115,11 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
                   {course.creator?.name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 truncate max-w-[120px]">
-                {course.creator?.name || "Unknown Instructor"}
+              <span 
+                className="text-xs font-semibold text-gray-600 dark:text-gray-400 truncate max-w-[120px]"
+                title={course.creator?.name || "Expert Instructor"}
+              >
+                {course.creator?.name || "Expert Instructor"}
               </span>
             </div>
 
