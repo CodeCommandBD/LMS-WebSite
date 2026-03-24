@@ -524,7 +524,7 @@ const Navbar = () => {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`lg:hidden fixed inset-0 top-[70px] bg-indigo-900/95 backdrop-blur-xl transition-all duration-500 z-40 overflow-y-auto ${
+        className={`lg:hidden fixed inset-0 top-[70px] bg-slate-950 backdrop-blur-xl transition-all duration-500 z-100 overflow-y-auto ${
           isMenuOpen
             ? "translate-x-0 opacity-100"
             : "translate-x-full opacity-0 pointer-events-none"
@@ -591,7 +591,7 @@ const Navbar = () => {
             </div>
 
             {!user ? (
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 mt-2">
                 <Link
                   to="/login"
                   onClick={closeMenu}
