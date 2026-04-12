@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /courses
+Allow: /blog
+Disallow: /admin
+Disallow: /profile
+Disallow: /course-progress
+
+Sitemap: https://yourlms.com/sitemap.xml
