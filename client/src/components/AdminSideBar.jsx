@@ -13,6 +13,7 @@ import {
   Newspaper,
   CircleDollarSign,
   Bell,
+  Tag,
 } from "lucide-react";
 import React from "react";
 import { toggleSidebar } from "@/store/slices/uiSlice";
@@ -47,6 +48,7 @@ const AdminSideBar = () => {
     { icon: Users, label: "Users", path: "/admin/users" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
     { icon: Newspaper, label: "Blogs", path: "/admin/blogs" },
+    { icon: Tag, label: "Coupons", path: "/admin/coupons" },
     { icon: Bell, label: "Notifications", path: "/admin/notifications" },
   ];
 
