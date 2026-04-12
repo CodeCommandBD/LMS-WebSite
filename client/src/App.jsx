@@ -5,10 +5,18 @@ import Footer from "./components/Footer";
 import { useAuthInit } from "./hooks/useAuthInit";
 import { useAdSenseInit } from "./hooks/useAdSenseInit";
 import { Loader2 } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { fetchPlatformSettings } from "./store/slices/settingsSlice";
+import { useEffect } from "react";
 
 const App = () => {
   const { isLoading } = useAuthInit();
   useAdSenseInit();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchPlatformSettings());
+  }, [dispatch]);
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith("/admin");
   const isCourseProgressPath = location.pathname.startsWith("/course-progress");
