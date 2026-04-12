@@ -59,12 +59,17 @@ const BlogDetails = lazy(() => import("./Pages/Blog/BlogDetails"));
 const AllBlogs = lazy(() => import("./Pages/Blog/AllBlogs"));
 const AdminBlogs = lazy(() => import("./Pages/admin/AdminBlogs"));
 const AdminCreateBlog = lazy(() => import("./Pages/admin/AdminCreateBlog"));
+const AdminCoupons = lazy(() => import("./Pages/admin/AdminCoupons"));
 const AdminAdSense = lazy(() => import("./Pages/admin/AdminAdSense"));
 const AdminNotifications = lazy(() => import("./Pages/admin/AdminNotifications"));
 const Leaderboard = lazy(() => import("./Pages/Leaderboard"));
 const VerifyCertificate = lazy(() => import("./Pages/VerifyCertificate"));
 const Notes = lazy(() => import("./Pages/Notes"));
+const CartItems = lazy(() => import("./Pages/Cart"));
 const QAPage = lazy(() => import("./Pages/QAPage"));
+const StudentManagement = lazy(() => import("./Pages/teacher/StudentManagement"));
+const ForumHome = lazy(() => import("./Pages/Forum/ForumHome"));
+const ForumPostDetails = lazy(() => import("./Pages/Forum/PostDetails"));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -196,6 +201,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "/cart",
+        element: (
+          <ProtectedRoute>
+            <CartItems />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/wishlist",
         element: (
           <ProtectedRoute>
@@ -228,6 +241,22 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <QAPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/forum",
+        element: (
+          <ProtectedRoute>
+            <ForumHome />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/forum/post/:postId",
+        element: (
+          <ProtectedRoute>
+            <ForumPostDetails />
           </ProtectedRoute>
         ),
       },
@@ -313,8 +342,16 @@ const router = createBrowserRouter([
             element: <AdminAdSense />,
           },
           {
+            path: "coupons",
+            element: <AdminCoupons />,
+          },
+          {
             path: "notifications",
             element: <AdminNotifications />,
+          },
+          {
+            path: "courses/:id/students",
+            element: <StudentManagement />,
           },
         ],
       },
