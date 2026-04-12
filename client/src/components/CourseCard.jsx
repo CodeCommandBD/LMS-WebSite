@@ -1,13 +1,15 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Star, LogOut, Loader2 } from "lucide-react";
+import { Star, LogOut, Loader2, ShoppingCart, Check } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCourseReviewsService } from "@/services/courseApi";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 
 import { useSelector } from "react-redux";
+import { useCart } from "@/hooks/useCart";
+import { Button } from "./ui/button";
 
 /**
  * CourseCard Component
@@ -16,6 +18,7 @@ import { useSelector } from "react-redux";
  */
 const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
   const { user } = useSelector((state) => state.auth);
+  const { cartItems, addToCart, isAdding } = useCart();
 
   // Check enrollment from prop or Redux state
   const isEnrolled =
@@ -23,6 +26,8 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
     (user?.enrolledCourses &&
       (user.enrolledCourses.includes(course._id) ||
         user.enrolledCourses.some((c) => (c._id || c) === course._id)));
+
+  const isInCart = cartItems.some((item) => item.courseId?._id === (course._id || course.id));
   const { data: reviewsData } = useQuery({
     queryKey: ["courseReviews", course._id || course.id],
     queryFn: () => getCourseReviewsService(course._id || course.id),
@@ -123,7 +128,7 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
               </span>
             </div>
 
-            {/* Leave Course Button (only for enrolled students) */}
+             {/* Leave Course Button (only for enrolled students) */}
             {isEnrolled && (
               <button
                 onClick={handleUnenroll}
@@ -142,6 +147,34 @@ const CourseCard = ({ course, isEnrolled: isEnrolledProp }) => {
                   </>
                 )}
               </button>
+            )}
+
+            {/* Add to Cart Button (only for NOT enrolled students) */}
+            {!isEnrolled && user && (
+              <Button
+                variant={isInCart ? "outline" : "default"}
+                size="sm"
+                className="rounded-xl h-8 text-[10px] font-black uppercase tracking-tight gap-1"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!isInCart) addToCart(course._id || course.id);
+                  else navigate("/cart");
+                }}
+                disabled={isAdding}
+              >
+                {isInCart ? (
+                   <>
+                     <Check className="w-3 h-3" />
+                     In Cart
+                   </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-3 h-3" />
+                    Add
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>
