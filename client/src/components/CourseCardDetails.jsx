@@ -47,6 +47,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import toast from "react-hot-toast";
+import SEO from "@/components/SEO";
 
 // Helper: render star icons for a given rating
 const StarRating = ({ rating, size = "h-4 w-4" }) => {
@@ -343,9 +344,42 @@ const CourseCardDetails = () => {
   if (!course) return null;
 
   const tabs = ["About", "Curriculum", "Instructor", "Reviews"];
+  const { siteName } = useSelector((state) => state.settings);
+
+  const courseSchema = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": course.courseTitle,
+    "description": course.subTitle || course.description?.substring(0, 160),
+    "provider": {
+      "@type": "Organization",
+      "name": siteName,
+      "sameAs": window.location.origin
+    },
+    "image": [course.courseThumbnail],
+    "offers": [
+      {
+        "@type": "Offer",
+        "category": "Paid",
+        "price": course.price,
+        "priceCurrency": "BDT"
+      }
+    ],
+    "aggregateRating": totalReviews > 0 ? {
+      "@type": "AggregateRating",
+      "ratingValue": averageRating,
+      "reviewCount": totalReviews
+    } : undefined
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen pt-20 transition-colors duration-300">
+      <SEO 
+        title={course.courseTitle} 
+        description={course.subTitle || course.description?.substring(0, 160)}
+        image={course.courseThumbnail}
+        schema={courseSchema}
+      />
       {/* 1. BREADCRUMBS */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
         <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
