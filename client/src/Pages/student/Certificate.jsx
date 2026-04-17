@@ -16,10 +16,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { QRCodeCanvas } from "qrcode.react";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
+import { useState } from "react";
 
 const Certificate = () => {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["certificate", courseId],
@@ -30,7 +35,7 @@ const Certificate = () => {
 
   // Share using Web Share API (or fallback to copy link)
   const handleShare = async () => {
-    const shareUrl = window.location.href;
+    const shareUrl = `${window.location.origin}/verify-certificate/${certificate?.certificateId || certificate?._id}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -44,6 +49,56 @@ const Certificate = () => {
     } else {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Certificate link copied to clipboard!");
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      if (isGenerating) return;
+      setIsGenerating(true);
+
+      const element = document.getElementById("certificate-frame");
+      if (!element) {
+        toast.error("Certificate element not found!");
+        setIsGenerating(false);
+        return;
+      }
+
+      toast.loading("Generating High-Quality PDF...");
+
+      const certWidth = 1131;
+      const certHeight = 800;
+
+      const dataUrl = await toPng(element, {
+        quality: 1,
+        pixelRatio: 2,
+        width: certWidth,
+        height: certHeight,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+          width: `${certWidth}px`,
+          height: `${certHeight}px`,
+        },
+      });
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: [certWidth, certHeight],
+      });
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, certWidth, certHeight);
+      pdf.save(`Certificate_${certificate?.userId?.name?.replace(/\s+/g, "_") || "Student"}.pdf`);
+
+      toast.dismiss();
+      toast.success("Success! Your certificate is downloaded.");
+      setIsGenerating(false);
+    } catch (error) {
+      console.error("PDF Export Error:", error);
+      toast.dismiss();
+      toast.error("Failed to generate PDF.");
+      setIsGenerating(false);
     }
   };
 
@@ -94,7 +149,11 @@ const Certificate = () => {
           Back to My Learning
         </Link>
 
-        <div className="bg-white dark:bg-gray-900 rounded-[40px] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 relative">
+        <div 
+          id="certificate-frame"
+          className="bg-white dark:bg-gray-900 rounded-[40px] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 relative"
+          style={{ width: "100%", maxWidth: "1131px", minHeight: "800px" }}
+        >
           {/* Decorative Background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
@@ -177,18 +236,32 @@ const Certificate = () => {
                 </span>
               </div>
             </div>
+
+            {/* QR Code Verification */}
+            <div className="absolute bottom-12 right-12 flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+               <QRCodeCanvas 
+                value={`${window.location.origin}/verify-certificate/${certificate?.certificateId || certificate?._id}`} 
+                size={80}
+                level="H"
+                bgOpacity={0}
+                fgColor="currentColor"
+                className="text-gray-900 dark:text-white"
+               />
+               <span className="text-[9px] font-black uppercase tracking-tighter text-gray-400">Scan to Verify</span>
+            </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4">
           <Button
-            onClick={() => window.print()}
+            onClick={handleDownloadPDF}
+            disabled={isGenerating}
             size="lg"
             className="rounded-full px-8 py-6 bg-blue-600 hover:bg-blue-700 font-bold shadow-xl shadow-blue-500/25 flex items-center gap-2 w-full md:w-auto"
           >
-            <Download className="w-5 h-5" />
-            Download PDF
+            {isGenerating ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />}
+            {isGenerating ? "Generating..." : "Download High-Quality PDF"}
           </Button>
           <Button
             onClick={handleShare}

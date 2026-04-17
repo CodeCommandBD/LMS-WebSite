@@ -29,6 +29,13 @@ const purchaseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    expiryDate: {
+      type: Date,
+    },
+    couponCode: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

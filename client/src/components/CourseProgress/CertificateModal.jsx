@@ -11,9 +11,21 @@ import { toast } from "react-hot-toast";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import { QRCodeCanvas } from "qrcode.react";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 const CertificateModal = ({ isOpen, onOpenChange, user, course }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const { data: certData } = useQuery({
+    queryKey: ["certificate", course?._id],
+    queryFn: () => api.get(`/certificates/${course?._id}`).then((r) => r.data),
+    enabled: !!course?._id && isOpen,
+  });
+
+  const certificate = certData?.certificate;
+  const verifyUrl = `${window.location.origin}/verify-certificate/${certificate?.certificateId || "pending"}`;
 
   const handlePrintCertificate = async () => {
     try {
@@ -254,6 +266,18 @@ const CertificateModal = ({ isOpen, onOpenChange, user, course }) => {
                     Seal
                   </span>
                 </div>
+              </div>
+
+              {/* QR Code & Verification */}
+              <div className="absolute bottom-10 right-10 flex flex-col items-center gap-1 opacity-80">
+                <QRCodeCanvas 
+                  value={verifyUrl} 
+                  size={60} 
+                  level="H" 
+                  includeMargin={false}
+                  fgColor="#1e293b"
+                />
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Verify Securely</span>
               </div>
             </div>
           </div>

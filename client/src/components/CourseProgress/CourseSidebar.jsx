@@ -75,13 +75,18 @@ const CourseSidebar = ({
                       return (
                         <div
                           key={lecture._id}
-                          onClick={() =>
-                            !isLocked && setCurrentLecture(lecture)
-                          }
+                          onClick={() => {
+                            if (isLocked) return;
+                            if (lecture.isDripLocked) {
+                              toast.error(`This lecture will unlock in ${lecture.availableIn} days.`);
+                              return;
+                            }
+                            setCurrentLecture(lecture);
+                          }}
                           className={`group relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all duration-300 ${
                             isActive
                               ? "bg-blue-600/10 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.05)]"
-                              : isLocked
+                              : isLocked || lecture.isDripLocked
                                 ? "opacity-50 grayscale cursor-not-allowed"
                                 : "hover:bg-white/5 border border-transparent"
                           }`}
@@ -89,12 +94,12 @@ const CourseSidebar = ({
                           <div
                             className="relative shrink-0 mt-0.5"
                             onClick={(e) => {
-                              if (isLocked) return;
+                              if (isLocked || lecture.isDripLocked) return;
                               e.stopPropagation();
                               handleToggleComplete(lecture._id);
                             }}
                           >
-                            {isLocked ? (
+                            {isLocked || lecture.isDripLocked ? (
                               <div className="w-5 h-5 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center">
                                 <Lock className="h-2.5 w-2.5 text-gray-600" />
                               </div>
@@ -127,7 +132,12 @@ const CourseSidebar = ({
                               <span className="text-[9px] text-gray-500 flex items-center gap-1 uppercase tracking-tighter">
                                 <Clock className="h-2.5 w-2.5" /> 10 mins
                               </span>
-                              {lecture.isPreviewFree && (
+                              {lecture.isDripLocked && (
+                                <span className="text-[8px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest">
+                                  Locks for {lecture.availableIn} Days
+                                </span>
+                              )}
+                              {lecture.isPreviewFree && !lecture.isDripLocked && (
                                 <span className="text-[8px] text-blue-400/80 bg-blue-400/5 px-1.5 py-0.5 rounded border border-blue-400/10 uppercase tracking-widest">
                                   Preview
                                 </span>

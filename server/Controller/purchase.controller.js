@@ -17,86 +17,132 @@ const getStripe = () => {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 };
 
+import Coupon from "../models/coupon.model.js";
+
 export const createCheckoutSession = async (req, res) => {
   try {
-    const { courseId } = req.body;
+    const { courseIds, couponCode } = req.body; // Expect array of courseIds now
     const userId = req.user.id;
 
-    const course = await Course.findById(courseId);
-    if (!course) {
-      console.log("Checkout failed: Course not found", courseId);
-      return res
-        .status(404)
-        .json({ success: false, message: "Course not found" });
+    if (!courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No courses selected" });
     }
 
-    // Check if user is already enrolled
+    const courses = await Course.find({ _id: { $in: courseIds } });
+    if (courses.length !== courseIds.length) {
+      return res.status(404).json({ success: false, message: "One or more courses not found" });
+    }
+
+    // Check enrollment for all courses
     const user = await User.findById(userId);
-    if (!user) {
-      console.log("Checkout failed: User not found", userId);
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    const alreadyEnrolled = courses.some(course => 
+      user.enrolledCourses?.some(id => id.toString() === course._id.toString())
+    );
+
+    if (alreadyEnrolled) {
+      return res.status(400).json({ success: false, message: "You are already enrolled in one or more of these courses." });
     }
 
-    if (user.enrolledCourses?.some((id) => id.toString() === courseId)) {
-      console.log("Checkout failed: User already enrolled", {
-        userId,
-        courseId,
-      });
-      return res
-        .status(400)
-        .json({ success: false, message: "Already enrolled" });
+    // Calculate total price
+    const subtotal = courses.reduce((acc, course) => {
+      const discountPct = course.discount || 0;
+      const price = discountPct > 0 
+        ? Math.round(course.price * (1 - discountPct / 100))
+        : course.price;
+      return acc + price;
+    }, 0);
+
+    // Apply Coupon if provided
+    let finalAmount = subtotal;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
+      if (coupon && (new Date() < coupon.expiresAt) && (coupon.usedCount < coupon.usageLimit)) {
+        if (subtotal >= coupon.minPurchaseAmount) {
+          let discount = 0;
+          if (coupon.discountType === "percentage") {
+            discount = (subtotal * coupon.discountAmount) / 100;
+          } else {
+            discount = coupon.discountAmount;
+          }
+          finalAmount = Math.max(0, subtotal - discount);
+          appliedCoupon = coupon;
+        }
+      }
     }
 
     // Create session
     const stripe = getStripe();
-
-    // Calculate effective price (apply discount if set)
-    const discountPct = course.discount || 0;
-    const originalPrice = course.price;
-    const discountedPrice =
-      discountPct > 0
-        ? Math.max(1, Math.round(originalPrice * (1 - discountPct / 100)))
-        : originalPrice;
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
+    
+    // Prepare line items
+    const line_items = courses.map(course => {
+        const discountPct = course.discount || 0;
+        const discountedPrice = discountPct > 0 
+            ? Math.round(course.price * (1 - discountPct / 100))
+            : course.price;
+        
+        // If coupon is applied, we prorate it across items or add it as a separate negative line item?
+        // Stripe Checkout doesn't easily support negative amounts in line_items.
+        // Better: Use Stripe's built-in Coupons if possible, or adjust the unit_amount proportionately.
+        // For simplicity here, we'll apply the coupon discount to the first item (if it covers it) or prorate.
+        // Actually, Stripe has "discounts" parameter for Checkout Sessions. 
+        // But for custom logic, we can just create a "Platform Discount" item.
+        
+        return {
           price_data: {
             currency: "bdt",
             product_data: {
               name: course.courseTitle,
-              description:
-                discountPct > 0
-                  ? `${discountPct}% OFF — Original price: ৳${originalPrice}`
-                  : course.subTitle || "Course enrollment",
+              description: course.subTitle || "Course enrollment",
             },
-            unit_amount: Math.round(discountedPrice * 100), // convert to paisa
+            unit_amount: Math.round(discountedPrice * 100),
           },
           quantity: 1,
-        },
+        };
+    });
+
+    // Add Coupon as a negative line item if applicable (Stripe requires positive amounts, so we use discounts)
+    // To keep it simple and robust, we will create one line item for the "Final Total" if a coupon is used,
+    // OR just use Stripe's native coupon system if we synced them.
+    // For this implementation, we will send the prorated final amount.
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: finalAmount === subtotal ? line_items : [
+        {
+          price_data: {
+            currency: "bdt",
+            product_data: {
+              name: "Course Bundle Checkout",
+              description: `Total for ${courses.length} courses ${couponCode ? `(Coupon ${couponCode} applied)` : ""}`,
+            },
+            unit_amount: Math.round(finalAmount * 100),
+          },
+          quantity: 1,
+        }
       ],
       mode: "payment",
-      success_url: `${process.env.CLIENT_URL}/purchase-success?courseId=${courseId}`,
-      cancel_url: `${process.env.CLIENT_URL}/courseDetails/${courseId}`,
+      success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}/cart`,
       metadata: {
-        courseId: courseId.toString(),
+        courseIds: courseIds.join(","),
         userId: userId.toString(),
+        couponCode: couponCode || "",
       },
     });
 
-    console.log("Stripe session created successfully:", session.id);
-
-    // Create a pending purchase record
-    await Purchase.create({
-      courseId,
-      userId,
-      amount: discountedPrice,
-      status: "pending",
-      paymentId: session.id,
-    });
+    // Create pending purchase records for EACH course
+    for (const cId of courseIds) {
+      await Purchase.create({
+        courseId: cId,
+        userId,
+        amount: finalAmount / courseIds.length, // Prorated amount
+        status: "pending",
+        paymentId: session.id,
+        couponCode: couponCode || "",
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -149,55 +195,61 @@ export const stripeWebhook = async (req, res) => {
   // Handle the event
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const { courseId, userId } = session.metadata;
+    const { courseIds, userId, couponCode } = session.metadata;
+    const courseIdArray = courseIds.split(",");
 
     try {
       console.log("Processing fulfillment for session:", session.id);
-      console.log("Metadata:", { courseId, userId });
 
-      // 1. Update purchase status
-      const updatedPurchase = await Purchase.findOneAndUpdate(
-        { paymentId: session.id },
-        { status: "completed" },
-        { new: true },
-      );
-      console.log("Purchase status updated:", updatedPurchase?.status);
+      // 1. Update purchase status for ALL courses in this session
+      const purchases = await Purchase.find({ paymentId: session.id });
+      
+      // Idempotency check: If first purchase is already completed, skip all
+      if (purchases.length > 0 && purchases[0].status === "completed") {
+        console.log("Session already processed, skipping:", session.id);
+        return res.status(200).json({ received: true });
+      }
+      
+      for (const purchase of purchases) {
+          const course = await Course.findById(purchase.courseId);
+          const accessDays = course?.accessDuration || 365;
+          const expiryDate = new Date();
+          expiryDate.setDate(expiryDate.getDate() + accessDays);
+          
+          purchase.status = "completed";
+          purchase.expiryDate = expiryDate;
+          await purchase.save();
+      }
 
-      // 2. Enroll user in course
+      // 2. Increment Coupon usage count
+      if (couponCode) {
+        await Coupon.findOneAndUpdate({ code: couponCode }, { $inc: { usedCount: 1 } });
+      }
+
+      // 3. Enroll user in ALL courses
       const user = await User.findById(userId);
-      console.log("Found user for enrollment:", user?._id);
-
       if (user) {
-        const isAlreadyEnrolled = user.enrolledCourses.some(
-          (id) => id.toString() === courseId,
-        );
-        if (!isAlreadyEnrolled) {
-          user.enrolledCourses.push(courseId);
-          await user.save();
-          console.log("Successfully enrolled user in course:", courseId);
-        } else {
-          console.log("User already enrolled in course:", courseId);
+        for (const cId of courseIdArray) {
+          if (!user.enrolledCourses.includes(cId)) {
+            user.enrolledCourses.push(cId);
+          }
         }
+        await user.save();
       }
 
-      // 3. Add user to course students
-      const course = await Course.findById(courseId);
-      if (course) {
-        const isAlreadyStudent = course.enrolledStudents.some(
-          (id) => id.toString() === userId,
-        );
-        if (!isAlreadyStudent) {
-          course.enrolledStudents.push(userId);
-          await course.save();
-          console.log("Successfully added user to course student list");
+      // 4. Add user to ALL courses student lists
+      for (const cId of courseIdArray) {
+        await Course.findByIdAndUpdate(cId, {
+          $addToSet: { enrolledStudents: userId }
+        });
+        
+        // Send email for each course (or a consolidated one?)
+        const course = await Course.findById(cId);
+        if (user && course) {
+          sendEnrollmentEmail(user.email, user.name, course.courseTitle).catch(err => 
+            console.error("Enrollment email failed:", err.message)
+          );
         }
-      }
-
-      // 4. Send enrollment confirmation email (non-blocking)
-      if (user && course) {
-        sendEnrollmentEmail(user.email, user.name, course.courseTitle).catch(
-          (err) => console.error("Enrollment email failed:", err.message),
-        );
       }
 
       console.log("Enrollment fulfillment complete for user:", userId);
@@ -271,42 +323,39 @@ export const getDashboardStats = async (req, res) => {
         ? Math.round((completedProgressEntries / totalProgressEntries) * 100)
         : 0;
 
-    // --- NEW: Engagement Data (enrollment trend last 30 days) ---
+    // --- NEW: Engagement & Revenue Trend (last 30 days) ---
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
 
     const recentPurchases = await Purchase.find({
       ...purchaseQuery,
       status: "completed",
       createdAt: { $gte: thirtyDaysAgo },
-    }).select("createdAt");
+    }).select("createdAt amount");
 
-    // Group by date
-    const engagementMap = {};
+    // Initialize map for all 30 days
+    const trendMap = {};
     for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - (29 - i));
-      const key = d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-      });
-      engagementMap[key] = 0;
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        const key = d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+        trendMap[key] = { enrollments: 0, revenue: 0 };
     }
-    recentPurchases.forEach((p) => {
-      const key = new Date(p.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-      });
-      if (engagementMap[key] !== undefined) {
-        engagementMap[key]++;
-      }
+
+    recentPurchases.forEach(p => {
+        const key = new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+        if (trendMap[key]) {
+            trendMap[key].enrollments++;
+            trendMap[key].revenue += p.amount;
+        }
     });
-    const engagementData = Object.entries(engagementMap).map(
-      ([name, value]) => ({
+
+    const trendData = Object.entries(trendMap).map(([name, data]) => ({
         name,
-        value,
-      }),
-    );
+        enrollments: data.enrollments,
+        revenue: data.revenue
+    }));
 
     // --- NEW: Recent Activity (last 5 enrollments) ---
     const recentEnrollments = await Purchase.find({
@@ -377,13 +426,18 @@ export const getDashboardStats = async (req, res) => {
       }))
       .sort((a, b) => b.value - a.value);
 
-    // --- NEW: Admin Management Stats ---
-    const draftCoursesCount = await Course.countDocuments({
-      ...courseQuery,
-      isPublished: false,
-    });
-    const bannedUsersCount = await User.countDocuments({ isBanned: true });
-    const unreadMessagesCount = await Contact.countDocuments({ isRead: false });
+    // --- NEW: Admin-Only Stats (Hide from Teachers) ---
+    let adminStats = {
+      draftCoursesCount: 0,
+      bannedUsersCount: 0,
+      unreadMessagesCount: 0,
+    };
+
+    if (userRole === "admin") {
+      adminStats.draftCoursesCount = await Course.countDocuments({ isPublished: false });
+      adminStats.bannedUsersCount = await User.countDocuments({ isBanned: true });
+      adminStats.unreadMessagesCount = await Contact.countDocuments({ isRead: false });
+    }
 
     // --- NEW: Recent Reviews ---
     const recentReviews = await Review.find()
@@ -457,15 +511,12 @@ export const getDashboardStats = async (req, res) => {
         totalStudents,
         activeCourses,
         completionRate,
-        engagementData,
+        engagementData: trendData, // Backward compatible name
+        revenueTrend: trendData,
         monthlyData,
         recentActivity,
         categoryEnrollment,
-        adminStats: {
-          draftCoursesCount,
-          bannedUsersCount,
-          unreadMessagesCount,
-        },
+        adminStats,
         recentReviews,
         recentContacts,
       },

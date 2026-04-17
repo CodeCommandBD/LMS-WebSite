@@ -28,6 +28,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    courseThumbnailPublicId: {
+      type: String,
+      default: "",
+    },
     language: {
       type: String,
       default: "English",
@@ -76,6 +80,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       enum: ["Published", "Draft"],
       default: "Draft",
+    },
+    accessDuration: {
+      type: Number,
+      default: 365, // Days
     },
   },
   { timestamps: true },

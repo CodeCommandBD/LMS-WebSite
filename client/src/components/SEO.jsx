@@ -6,7 +6,8 @@ const SEO = ({
   description,
   name = "EduHub",
   type = "website",
-  image = "/og-image.png", // Default OG image path
+  image = "/og-image.png",
+  schema,
 }) => {
   const fullTitle = title ? `${title} | ${name}` : `${name} - Premium LMS`;
   const defaultDescription =
@@ -37,6 +38,13 @@ const SEO = ({
         content={description || defaultDescription}
       />
       <meta name="twitter:image" content={image} />
+
+      {/* Structured Data */}
+      {schema && (
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      )}
     </Helmet>
   );
 };

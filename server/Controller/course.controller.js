@@ -141,6 +141,11 @@ export const editCourse = async (req, res) => {
 
     // 3. Upload Thumbnail if exists
     if (file) {
+      // Delete old thumbnail if it exists
+      if (course.courseThumbnailPublicId) {
+        await deleteFromCloudinary(course.courseThumbnailPublicId);
+      }
+      
       const result = await uploadToCloudinary(file.path, "lms/courses");
       if (!result.success) {
         return res
@@ -148,6 +153,12 @@ export const editCourse = async (req, res) => {
           .json({ success: false, message: "Failed to upload thumbnail" });
       }
       updateData.courseThumbnail = result.url;
+      updateData.courseThumbnailPublicId = result.public_id;
+    }
+
+    // price validation
+    if (price && price < 0) {
+       return res.status(400).json({ success: false, message: "Price cannot be negative" });
     }
 
     // 4. Update Course
@@ -216,6 +227,11 @@ export const deleteCourse = async (req, res) => {
       if (lecture.publicId) {
         await deleteFromCloudinary(lecture.publicId);
       }
+    }
+
+    // 2. Delete Course Thumbnail from Cloudinary
+    if (course.courseThumbnailPublicId) {
+      await deleteFromCloudinary(course.courseThumbnailPublicId);
     }
 
     // 2. Delete all lectures
@@ -796,6 +812,52 @@ export const deleteSection = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Section "${sectionName}" and its content deleted successfully`,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// --- INSTRUCTOR STUDENT MANAGEMENT ---
+
+export const getCourseStudents = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    // 1. Authorization Check
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+    if (course.creator.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // 2. Fetch Students
+    const enrolledStudents = await User.find({ _id: { $in: course.enrolledStudents } })
+      .select("name email profilePicture enrolledCourses createdAt")
+      .lean();
+
+    // 3. Fetch progress for each student
+    const totalLectures = course.lectures.length;
+    const studentsWithProgress = await Promise.all(enrolledStudents.map(async (student) => {
+      const progress = await CourseProgress.findOne({ userId: student._id, courseId });
+      const completedCount = progress?.completedLectures?.length || 0;
+      
+      const purchase = await Purchase.findOne({ userId: student._id, courseId, status: "completed" });
+
+      return {
+        ...student,
+        progress: totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0,
+        enrolledAt: purchase ? purchase.createdAt : student.createdAt,
+        expiryDate: purchase?.expiryDate || null,
+        isCompleted: progress?.isCompleted || false
+      };
+    }));
+
+    return res.status(200).json({
+      success: true,
+      students: studentsWithProgress,
+      totalLectures
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

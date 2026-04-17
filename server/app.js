@@ -25,6 +25,9 @@ import qaRouter from "./Routers/qa.route.js";
 import notesRouter from "./Routers/notes.route.js";
 import pointsRouter from "./Routers/points.route.js";
 import blogCommentRouter from "./Routers/blogComment.route.js";
+import cartRouter from "./Routers/cart.route.js";
+import couponRouter from "./Routers/coupon.route.js";
+import forumRouter from "./Routers/forum.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -162,6 +165,9 @@ app.use("/api/v1/qa", qaRouter);
 app.use("/api/v1/notes", notesRouter);
 app.use("/api/v1/points", pointsRouter);
 app.use("/api/v1/blog-comments", blogCommentRouter);
+app.use("/api/v1/cart", cartRouter);
+app.use("/api/v1/coupons", couponRouter);
+app.use("/api/v1/forum", forumRouter);
 
 // Static files & Catch-all route (MUST be at the end)
 // In local dev: serves from client/dist after running the build

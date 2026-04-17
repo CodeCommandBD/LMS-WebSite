@@ -52,8 +52,9 @@ const CurriculumTab = ({
                     const isCompleted = completedLectures.includes(lecture._id);
                     const isActive = currentLecture?._id === lecture._id;
                     const sectionStatus = getSectionStatus(sectionName);
-                    const isLocked =
-                      sectionStatus === "locked" && !isCompleted && !isActive;
+                    const isSequentialLocked = sectionStatus === "locked" && !isCompleted && !isActive;
+                    const isDripLocked = lecture.isDripLocked;
+                    const isLocked = isSequentialLocked || isDripLocked;
 
                     return (
                       <div
@@ -69,7 +70,7 @@ const CurriculumTab = ({
                       >
                         <div className="flex items-center gap-4">
                           {isLocked ? (
-                            <Lock className="h-4 w-4 text-gray-500" />
+                            <Lock className={`h-4 w-4 ${isDripLocked ? "text-amber-500" : "text-gray-500"}`} />
                           ) : isCompleted ? (
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
                           ) : (
@@ -81,15 +82,22 @@ const CurriculumTab = ({
                               }`}
                             />
                           )}
-                          <span
-                            className={`text-sm font-bold ${
-                              isActive
-                                ? "text-white"
-                                : "text-gray-400 group-hover:text-gray-200"
-                            }`}
-                          >
-                            {idx + 1}. {lecture.lectureTitle}
-                          </span>
+                          <div className="flex flex-col">
+                            <span
+                              className={`text-sm font-bold ${
+                                isActive
+                                  ? "text-white"
+                                  : "text-gray-400 group-hover:text-gray-200"
+                              }`}
+                            >
+                              {idx + 1}. {lecture.lectureTitle}
+                            </span>
+                            {isDripLocked && (
+                              <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest mt-0.5">
+                                Scheduled in {lecture.availableIn} days
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {isCompleted && (
                           <Badge className="bg-green-500/10 text-green-500 border-none text-[9px] font-black uppercase tracking-tighter">
