@@ -27,7 +27,7 @@ const Hero = () => {
   const scrollRef = React.useRef(null);
 
   return (
-    <div className="relative min-h-[700px] md:h-[85vh] flex items-center overflow-hidden bg-slate-50 dark:bg-slate-950 pt-20">
+    <div className="relative min-h-[800px] lg:h-[85vh] flex items-center overflow-hidden bg-slate-50 dark:bg-slate-950 pt-32 lg:pt-20">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse"></div>

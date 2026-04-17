@@ -6,4 +6,5 @@ export const editLectureSchema = z.object({
   videoUrl: z.string().optional(),
   isFree: z.boolean().default(false),
   sectionName: z.string().optional(),
+  releaseOffset: z.string().or(z.number()).optional(),
 });

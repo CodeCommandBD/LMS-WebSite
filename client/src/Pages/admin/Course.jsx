@@ -23,6 +23,7 @@ import {
   Loader2,
   GraduationCap,
   BookOpen,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -185,6 +186,16 @@ const Course = () => {
                     </TableCell>
                     <TableCell className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Link to={`/admin/courses/${course._id}/students`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-10 h-10 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 text-gray-400 transition-all cursor-pointer"
+                            title="Manage Students"
+                          >
+                            <Users className="w-4 h-4" />
+                          </Button>
+                        </Link>
                         <Link to={`/admin/courses/${course._id}/quizzes`}>
                           <Button
                             variant="ghost"

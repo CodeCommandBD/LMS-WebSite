@@ -4,6 +4,7 @@ import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import Points from "../models/points.model.js";
+import Purchase from "../models/purchase.model.js";
 import { createNotification } from "./notification.controller.js";
 import { sendCourseCompletionEmail } from "../utils/email.js";
 
@@ -14,31 +15,56 @@ export const getUserCourseProgress = async (req, res) => {
     const userId = req.user.id;
 
     // Enrollment check
-    const user = await User.findById(userId);
-    if (!user.enrolledCourses.includes(courseId)) {
+    const purchase = await Purchase.findOne({ userId, courseId, status: "completed" });
+    
+    if (!purchase) {
       return res.status(403).json({
         success: false,
         message: "Access denied. You are not enrolled in this course.",
       });
     }
 
-    // Find progress entry
-    let progress = await CourseProgress.findOne({ userId, courseId });
-
-    // If no progress exists, return initial empty progress (don't create yet to save DB)
-    if (!progress) {
-      return res.status(200).json({
-        success: true,
-        progress: {
-          completedLectures: [],
-          isCompleted: false,
-        },
+    // Expiry check
+    if (purchase.expiryDate && new Date() > purchase.expiryDate) {
+      return res.status(403).json({
+        success: false,
+        message: "Access expired. Your enrollment duration for this course has ended.",
+        isExpired: true,
       });
     }
+
+    // 1. Find enrollment (Purchase) date
+    const enrollmentDate = purchase ? purchase.createdAt : new Date(0);
+
+    // 2. Find progress entry
+    let progress = await CourseProgress.findOne({ userId, courseId });
+    if (!progress) {
+      progress = { completedLectures: [], isCompleted: false };
+    }
+
+    // 3. Fetch course lectures to calculate drip status
+    const course = await Course.findById(courseId).populate("lectures");
+    const now = new Date();
+    
+    // Day difference helper
+    const getDaysSince = (date) => Math.floor((now - new Date(date)) / (1000 * 60 * 60 * 24));
+    const daysSinceEnrollment = getDaysSince(enrollmentDate);
+
+    // Filter/Tag lectures for frontend
+    const enrichedLectures = course.lectures.map(lecture => {
+        const isLocked = daysSinceEnrollment < (lecture.releaseOffset || 0);
+        return {
+            ...lecture.toObject(),
+            isDripLocked: isLocked,
+            availableIn: Math.max(0, (lecture.releaseOffset || 0) - daysSinceEnrollment)
+        };
+    });
 
     return res.status(200).json({
       success: true,
       progress,
+      enrollmentDate,
+      lectures: enrichedLectures
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

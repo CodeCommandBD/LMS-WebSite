@@ -49,6 +49,7 @@ const EditLecture = () => {
       videoUrl: "",
       isFree: false,
       sectionName: "Course Content",
+      releaseOffset: 0,
     },
   });
 
@@ -82,6 +83,9 @@ const EditLecture = () => {
         if (lecture.sectionName) {
           setValue("sectionName", lecture.sectionName);
         }
+        if (lecture.releaseOffset !== undefined) {
+          setValue("releaseOffset", lecture.releaseOffset);
+        }
       }
     }
   }, [courseData, lectureId, setValue]);
@@ -112,6 +116,9 @@ const EditLecture = () => {
       formData.append("isPreviewFree", data.isFree);
       if (data.sectionName) {
         formData.append("sectionName", data.sectionName);
+      }
+      if (data.releaseOffset !== undefined) {
+        formData.append("releaseOffset", data.releaseOffset);
       }
 
       return editLectureService(
@@ -304,6 +311,29 @@ const EditLecture = () => {
                     onCheckedChange={(checked) => setValue("isFree", checked)}
                     className="data-[state=checked]:bg-green-500"
                   />
+                </div>
+
+                <div className="space-y-4 p-6 bg-[#0f172a] rounded-3xl border border-gray-800 shadow-inner">
+                   <div className="flex items-center justify-between">
+                     <div>
+                        <Label className="text-white font-bold">Drip Schedule (Delay)</Label>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                           Unlock after X days of enrollment
+                        </p>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <Input 
+                           type="number"
+                           className="w-20 bg-gray-950 border-gray-800 text-center font-black text-indigo-500 rounded-xl px-2"
+                           min="0"
+                           {...register("releaseOffset")}
+                        />
+                        <span className="text-[10px] font-black text-gray-600 uppercase">Days</span>
+                     </div>
+                   </div>
+                   <p className="text-[9px] text-gray-600 italic leading-snug">
+                     Set this to 0 for immediate access. Setting it to 1 means the student can watch it the day after they enroll.
+                   </p>
                 </div>
 
                 {uploadProgress > 0 && (

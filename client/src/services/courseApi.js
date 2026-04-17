@@ -189,3 +189,9 @@ export const deleteSectionService = async (courseId, sectionName) => {
   });
   return response.data;
 };
+
+// --- INSTRUCTOR STUDENT MANAGEMENT ---
+export const getCourseStudentsService = async (courseId) => {
+  const response = await api.get(`/courses/${courseId}/students`);
+  return response.data;
+};

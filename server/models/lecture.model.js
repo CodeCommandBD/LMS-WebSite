@@ -24,6 +24,10 @@ const lectureSchema = new mongoose.Schema(
       type: String,
       default: "Course Content",
     },
+    releaseOffset: {
+      type: Number,
+      default: 0, // Days from enrollment
+    },
     createdAt: {
       type: Date,
       default: Date.now,

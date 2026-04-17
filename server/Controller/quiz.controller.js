@@ -77,7 +77,8 @@ export const getQuizForStudent = async (req, res) => {
     const { courseId, sectionName } = req.params;
     const userId = req.user.id;
 
-    const quiz = await Quiz.findOne({ courseId, sectionName });
+    // We MUST hide correctOptionIndex from students
+    const quiz = await Quiz.findOne({ courseId, sectionName }).select("-questions.correctOptionIndex");
 
     if (!quiz) {
       return res.status(200).json({
@@ -118,14 +119,22 @@ export const getCourseQuizzesWithStatus = async (req, res) => {
       quizId: { $in: quizIds },
     });
 
-    // Combine them
+    // Combine them and STRIP correctOptionIndex
     const quizzesWithStatus = quizzes.map((quiz) => {
       const attempt = attempts
         .filter((a) => a.quizId.toString() === quiz._id.toString())
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]; // Latest
 
+      const quizObj = quiz.toObject();
+      if (quizObj.questions) {
+        quizObj.questions = quizObj.questions.map(q => {
+          const { correctOptionIndex, ...rest } = q;
+          return rest;
+        });
+      }
+
       return {
-        ...quiz.toObject(),
+        ...quizObj,
         latestAttempt: attempt || null,
       };
     });
@@ -204,21 +213,38 @@ export const submitQuizAttempt = async (req, res) => {
     });
 
     if (isPassed) {
-      await Points.findOneAndUpdate(
-        { userId },
-        { 
-          $inc: { totalPoints: 50 }, 
-          $push: { history: { points: 50, reason: `Passed Quiz: ${quiz.title}` } } 
-        },
-        { upsert: true }
-      );
-
-      await createNotification(
+      // POINT FARMING PROTECTION: Only award points if this is the FIRST pass
+      const previousSuccessfulAttempt = await QuizAttempt.findOne({
         userId,
-        "Quiz Passed!",
-        `Well done! You passed the quiz "${quiz.title}" with a score of ${score.toFixed(1)}%.`,
-        "success"
-      );
+        quizId,
+        isPassed: true,
+        _id: { $ne: attempt._id } // Exclude current attempt
+      });
+
+      if (!previousSuccessfulAttempt) {
+        await Points.findOneAndUpdate(
+          { userId },
+          { 
+            $inc: { totalPoints: 50 }, 
+            $push: { history: { points: 50, reason: `Passed Quiz: ${quiz.title}` } } 
+          },
+          { upsert: true }
+        );
+
+        await createNotification(
+          userId,
+          "Quiz Passed!",
+          `Well done! You passed the quiz "${quiz.title}" with a score of ${score.toFixed(1)}%.`,
+          "success"
+        );
+      } else {
+        await createNotification(
+          userId,
+          "Quiz Completed",
+          `You completed the quiz "${quiz.title}" again with a score of ${score.toFixed(1)}%. (Points already awarded)`,
+          "info"
+        );
+      }
     }
 
     return res.status(200).json({

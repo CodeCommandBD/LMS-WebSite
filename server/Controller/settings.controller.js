@@ -1,4 +1,5 @@
 import Settings from "../models/settings.model.js";
+import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 // Get Settings by type
 export const getSettings = async (req, res) => {
@@ -26,9 +27,35 @@ export const getSettings = async (req, res) => {
 export const updateSettings = async (req, res) => {
   try {
     const { type } = req.params;
-    const { data } = req.body;
+    let { data } = req.body;
 
-    const settings = await Settings.findOneAndUpdate(
+    // Parse data if it's sent as a string (common in multipart/form-data)
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        // use as is
+      }
+    }
+
+    const settings = await Settings.findOne({ type });
+
+    // Handle File Upload for Branding (Platform logo)
+    if (type === "platform" && req.file) {
+      if (settings?.data?.logoPublicId) {
+        await deleteFromCloudinary(settings.data.logoPublicId);
+      }
+      const result = await uploadToCloudinary(req.file.path, "lms/branding");
+      if (result.success) {
+        data = {
+          ...data,
+          logoUrl: result.url,
+          logoPublicId: result.public_id,
+        };
+      }
+    }
+
+    const updatedSettings = await Settings.findOneAndUpdate(
       { type },
       { data },
       { new: true, upsert: true },

@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   MessageSquare,
   FileText,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,8 @@ import CurriculumTab from "@/components/CourseProgress/CurriculumTab";
 import InstructorTab from "@/components/CourseProgress/InstructorTab";
 import ReviewsTab from "@/components/CourseProgress/ReviewsTab";
 import NotesTab from "@/components/CourseProgress/NotesTab";
+import ForumTab from "@/components/CourseProgress/ForumTab";
+import SEO from "@/components/SEO";
 
 const CourseProgress = () => {
   const { id } = useParams();
@@ -113,6 +116,22 @@ const CourseProgress = () => {
     },
   });
 
+  const isCourseComplete =
+    lectures.length + (quizzesData?.quizzes?.length || 0) > 0 &&
+    completedLectures.length +
+      (quizzesData?.quizzes?.filter((q) => q.latestAttempt?.isPassed).length ||
+        0) >=
+      lectures.length + (quizzesData?.quizzes?.length || 0);
+
+  const progressPercent =
+    lectures.length + (quizzesData?.quizzes?.length || 0) > 0
+      ? ((completedLectures.length +
+          (quizzesData?.quizzes?.filter((q) => q.latestAttempt?.isPassed)
+            .length || 0)) /
+          (lectures.length + (quizzesData?.quizzes?.length || 0))) *
+        100
+      : 0;
+
   const updateProgressMutation = useMutation({
     mutationFn: (lectureId) => updateLectureProgressService(id, lectureId),
     onSuccess: (data) => {
@@ -125,20 +144,9 @@ const CourseProgress = () => {
   });
 
   const course = courseData?.course;
-  const lectures = course?.lectures || [];
-
-  // 🔒 Enrollment Guard — redirect if user is not enrolled
-  useEffect(() => {
-    if (course && user) {
-      const isEnrolled = course.enrolledStudents?.some(
-        (sid) => sid.toString() === user._id?.toString()
-      );
-      if (!isEnrolled) {
-        toast.error("You must enroll in this course to access it.");
-        navigate(`/courseDetails/${id}`, { replace: true });
-      }
-    }
-  }, [course, user, id, navigate]);
+  
+  // Use enriched lectures from progress API (has drip logic) if available, otherwise fallback to course data
+  const lectures = progressData?.lectures || course?.lectures || [];
 
   const groupedLectures = lectures.reduce((acc, lecture) => {
     const section = lecture.sectionName || "Course Content";
@@ -281,7 +289,7 @@ const CourseProgress = () => {
     updateProgressMutation.mutate(lectureId || currentLecture?._id);
   };
 
-  const tabs = ["About", "Curriculum", "Notes", "Instructor", "Reviews"];
+  const tabs = ["About", "Curriculum", "Notes", "Forum", "Instructor", "Reviews"];
   const averageRating = reviewsData?.averageRating || 0;
   const totalReviews = reviewsData?.totalReviews || 0;
   const reviews = reviewsData?.reviews || [];
@@ -316,6 +324,7 @@ const CourseProgress = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0f172a] text-white">
+      <SEO title={`Learning: ${course?.courseTitle || 'Course'}`} />
       {/* 1. TOP NAVIGATION BAR */}
       <header className="h-16 border-b border-white/5 bg-[#1e293b]/50 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="flex items-center gap-4">
@@ -353,28 +362,28 @@ const CourseProgress = () => {
               <div
                 className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500"
                 style={{
-                  width: `${
-                    lectures.length + (quizzesData?.quizzes?.length || 0) > 0
-                      ? ((completedLectures.length +
-                          (quizzesData?.quizzes?.filter(
-                            (q) => q.latestAttempt?.isPassed,
-                          ).length || 0)) /
-                          (lectures.length +
-                            (quizzesData?.quizzes?.length || 0))) *
-                        100
-                      : 0
-                  }%`,
+                  width: `${progressPercent}%`,
                 }}
               />
             </div>
           </div>
-          <Button
-            onClick={handleNextLecture}
-            disabled={lectures.indexOf(currentLecture) === lectures.length - 1}
-            className="bg-blue-600 hover:bg-blue-700 text-xs font-black h-10 px-6 rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Complete & Next
-          </Button>
+          {isCourseComplete ? (
+            <Button
+              onClick={() => setIsCertificateOpen(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-black h-10 px-6 rounded-xl shadow-lg shadow-amber-900/40 animate-bounce"
+            >
+              <Award className="w-4 h-4 mr-2" />
+              Claim Certificate
+            </Button>
+          ) : (
+            <Button
+              onClick={handleNextLecture}
+              disabled={lectures.indexOf(currentLecture) === lectures.length - 1}
+              className="bg-blue-600 hover:bg-blue-700 text-xs font-black h-10 px-6 rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Complete & Next
+            </Button>
+          )}
         </div>
       </header>
 
@@ -483,6 +492,10 @@ const CourseProgress = () => {
 
             {activeTab === "Notes" && (
               <NotesTab courseId={id} currentLecture={currentLecture} />
+            )}
+
+            {activeTab === "Forum" && (
+              <ForumTab courseId={id} user={user} />
             )}
 
             {activeTab === "Instructor" && (

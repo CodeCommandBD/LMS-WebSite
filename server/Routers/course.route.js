@@ -18,6 +18,7 @@ import {
   checkEnrollmentAndWishlist,
   renameSection,
   deleteSection,
+  getCourseStudents,
 } from "../Controller/course.controller.js";
 import {
   uploadCourseThumbnail,
@@ -93,5 +94,7 @@ router.delete(
   authorize("admin", "teacher"),
   deleteSection,
 );
+
+router.get("/:courseId/students", authenticate, authorize("admin", "teacher"), getCourseStudents);
 
 export default router;
