@@ -193,8 +193,6 @@ NODE_ENV=development
 # Database
 MONGO_URL=mongodb+srv://...
 
-# Security
-JWT_SECRET=your_super_secret_key
 
 # Cloudinary (Media)
 CLOUD_NAME=your_cloud_name
@@ -205,15 +203,6 @@ CLOUD_API_SECRET=your_api_secret
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Email (Nodemailer)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-EMAIL_FROM="LMS Platform <noreply@lms.com>"
-
-# Frontend URLs (Comma separated or matched in server config)
-CLIENT_URL=http://localhost:5173
 ```
 
 Create a `.env` file in the **`client` directory**:
