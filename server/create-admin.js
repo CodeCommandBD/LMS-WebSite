@@ -9,7 +9,7 @@ const createAdmin = async () => {
     console.log("Connected to database...");
 
     const email = "shantokumar32@gmail.com";
-    const password = "lol@Admin@";
+    const password = "lol@Admin@11";
     
     // Check if user exists
     let adminUser = await User.findOne({ email });
