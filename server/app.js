@@ -125,6 +125,8 @@ app.use(hpp()); // Protection against HTTP Parameter Pollution attacks
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
   process.env.CLIENT_URL,          // e.g. https://your-app.vercel.app
   process.env.ALLOWED_ORIGIN_2,    // optional second frontend domain
 ].filter(Boolean);
