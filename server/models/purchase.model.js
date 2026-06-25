@@ -40,6 +40,10 @@ const purchaseSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// BUG-020 FIX: Database performance optimizations
+purchaseSchema.index({ userId: 1, courseId: 1 });
+purchaseSchema.index({ paymentId: 1 }, { unique: true });
+
 const Purchase =
   mongoose.models.Purchase || mongoose.model("Purchase", purchaseSchema);
 

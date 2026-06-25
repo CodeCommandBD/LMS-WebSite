@@ -26,9 +26,19 @@ const courseProgressSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // BUG-018 FIX: Track lectures that have already awarded points to prevent farming
+    rewardedLectures: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lecture",
+      }
+    ]
   },
   { timestamps: true },
 );
+
+// BUG-021 FIX: Add unique compound index
+courseProgressSchema.index({ userId: 1, courseId: 1 }, { unique: true });
 
 const CourseProgress =
   mongoose.models.CourseProgress ||

@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      index: true, // BUG-019 FIX: Explicit index
+      lowercase: true,
     },
     password: {
       type: String,
@@ -71,6 +73,10 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// BUG-019 FIX: Optimize queries
+userSchema.index({ emailVerifyToken: 1 });
+userSchema.index({ resetPasswordToken: 1 });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 

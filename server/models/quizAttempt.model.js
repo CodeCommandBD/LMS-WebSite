@@ -26,4 +26,9 @@ const quizAttemptSchema = new mongoose.Schema(
 );
 
 const QuizAttempt = mongoose.model("QuizAttempt", quizAttemptSchema);
+
+// DB-IDX-A FIX: Add compound index for fast per-user per-quiz lookups
+// (used in submitQuizAttempt to check for farming protection)
+quizAttemptSchema.index({ userId: 1, quizId: 1 });
+
 export default QuizAttempt;
