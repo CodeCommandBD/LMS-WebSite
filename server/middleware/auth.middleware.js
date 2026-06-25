@@ -32,9 +32,12 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Attach user data to request
+    // BUG-013 FIX: Use role from DB (user.role), NOT from JWT (decoded.role).
+    // This ensures role changes by an admin take effect immediately,
+    // rather than waiting up to 48h for the old token to expire.
     req.user = {
       id: decoded.id,
-      role: decoded.role,
+      role: user.role,
     };
 
     next();

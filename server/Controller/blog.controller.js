@@ -1,6 +1,7 @@
 import Blog from "../models/blog.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
+import { sendError } from "../utils/errorHandler.js";
 
 // Create Blog
 export const createBlog = async (req, res) => {
@@ -54,7 +55,7 @@ export const createBlog = async (req, res) => {
     });
   } catch (error) {
     console.error("Create Blog Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -95,7 +96,7 @@ export const getAllBlogs = async (req, res) => {
       blogs,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -127,7 +128,7 @@ export const getBlogBySlugOrId = async (req, res) => {
       blog,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -135,10 +136,19 @@ export const getBlogBySlugOrId = async (req, res) => {
 export const updateBlog = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
-
-    if (updateData.tags && !Array.isArray(updateData.tags)) {
-      updateData.tags = updateData.tags.split(",");
+    // BUG-NEW-C FIX: Whitelist allowed fields to prevent mass assignment.
+    // Previously `{ ...req.body }` let attackers overwrite any field including
+    // `author`, `slug`, `views`, and `isFeatured`.
+    const { title, content, excerpt, category, tags, status, isFeatured } = req.body;
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (excerpt !== undefined) updateData.excerpt = excerpt;
+    if (category !== undefined) updateData.category = category;
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured === "true" || isFeatured === true;
+    if (status !== undefined) updateData.status = status;
+    if (tags !== undefined) {
+      updateData.tags = Array.isArray(tags) ? tags : tags.split(",");
     }
 
     if (req.file) {
@@ -149,13 +159,25 @@ export const updateBlog = async (req, res) => {
       }
     }
 
-    const blog = await Blog.findByIdAndUpdate(id, updateData, { new: true });
+    const blog = await Blog.findById(id);
 
     if (!blog) {
       return res
         .status(404)
         .json({ success: false, message: "Blog not found" });
     }
+
+    // BUG-NEW-E FIX: Ensure the user owns the blog or is an admin before updating.
+    if (blog.author.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You can only edit your own blogs.",
+      });
+    }
+
+    // Update the existing blog object
+    Object.assign(blog, updateData);
+    await blog.save();
 
     return res.status(200).json({
       success: true,
@@ -163,7 +185,7 @@ export const updateBlog = async (req, res) => {
       blog,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -171,7 +193,7 @@ export const updateBlog = async (req, res) => {
 export const deleteBlog = async (req, res) => {
   try {
     const { id } = req.params;
-    const blog = await Blog.findByIdAndDelete(id);
+    const blog = await Blog.findById(id);
 
     if (!blog) {
       return res
@@ -179,12 +201,22 @@ export const deleteBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
+    // BUG-NEW-E FIX: Ensure the user owns the blog or is an admin before deleting.
+    if (blog.author.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You can only delete your own blogs.",
+      });
+    }
+
+    await Blog.findByIdAndDelete(id);
+
     return res.status(200).json({
       success: true,
       message: "Blog deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -202,7 +234,7 @@ export const getComments = async (req, res) => {
       .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, comments });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -231,7 +263,7 @@ export const addComment = async (req, res) => {
 
     return res.status(201).json({ success: true, comment: populated });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };
 
@@ -257,6 +289,6 @@ export const deleteComment = async (req, res) => {
     await BlogComment.findByIdAndDelete(commentId);
     return res.status(200).json({ success: true, message: "Comment deleted." });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogController");
   }
 };

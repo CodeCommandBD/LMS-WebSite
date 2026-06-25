@@ -1,5 +1,6 @@
 import Settings from "../models/settings.model.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // Get Settings by type
 export const getSettings = async (req, res) => {
@@ -19,7 +20,7 @@ export const getSettings = async (req, res) => {
       data: settings.data,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "settingsController");
   }
 };
 
@@ -64,9 +65,10 @@ export const updateSettings = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `${type} settings updated successfully`,
-      settings,
+      // BUG-NEW-B FIX: Return the updated settings, not the stale pre-update object.
+      settings: updatedSettings,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "settingsController");
   }
 };

@@ -8,6 +8,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import xssClean from "xss-clean";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
+import { globalErrorMiddleware } from "./utils/errorHandler.js";
 import userRouter from "./Routers/user.route.js";
 import courseRouter from "./Routers/course.route.js";
 import purchaseRouter from "./Routers/purchase.route.js";
@@ -116,24 +117,28 @@ app.use(hpp()); // Protection against HTTP Parameter Pollution attacks
 // CORS configuration — driven by environment variables
 // Development: CLIENT_URL=http://localhost:5173
 // Production: CLIENT_URL=https://your-deployed-frontend.com
+//
+// BUG-007 FIX: Removed wildcard *.vercel.app rule.
+// Previously ANY .vercel.app subdomain was allowed, meaning an attacker
+// could host a malicious site on Vercel and bypass CORS.
+// Now only explicitly listed origins are permitted.
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  process.env.CLIENT_URL,
-].filter(Boolean); // remove undefined/empty values
+  process.env.CLIENT_URL,          // e.g. https://your-app.vercel.app
+  process.env.ALLOWED_ORIGIN_2,    // optional second frontend domain
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g., mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      // Allow localhost, configured CLIENT_URL, and any Vercel domain
-      if (
-        allowedOrigins.includes(origin) ||
-        /^https?:\/\/.*\.vercel\.app$/.test(origin)
-      ) {
+
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       return callback(new Error(`CORS blocked: ${origin} is not allowed`));
     },
     credentials: true,
@@ -177,5 +182,11 @@ app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
+
+// ─── Global Error Handler (MUST be last) ────────────────────────────────────
+// BUG-006 FIX: Catches errors passed via next(error).
+// Handles Mongoose validation, duplicate key, cast errors, and JWT errors
+// with user-friendly messages. In production, never leaks internal details.
+app.use(globalErrorMiddleware);
 
 export default app;

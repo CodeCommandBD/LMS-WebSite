@@ -7,10 +7,15 @@ import CourseProgress from "../models/courseProgress.model.js";
 import Review from "../models/review.model.js";
 import Purchase from "../models/purchase.model.js";
 import Certificate from "../models/certificate.model.js";
+import QA from "../models/qa.model.js";
+import ForumPost from "../models/forumPost.model.js";
+import ForumComment from "../models/forumComment.model.js";
+import Notes from "../models/notes.model.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // Create a new course with title, category, and the logged-in user as creator
 export const createCourse = async (req, res) => {
@@ -34,7 +39,7 @@ export const createCourse = async (req, res) => {
       .status(201)
       .json({ success: true, course, message: "Course created successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "createCourse");
   }
 };
 
@@ -54,7 +59,7 @@ export const getPublicCourses = async (req, res) => {
       message: "Courses fetched successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getPublicCourses");
   }
 };
 
@@ -79,7 +84,7 @@ export const getCreatorCourses = async (req, res) => {
       message: "Courses fetched successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getCreatorCourses");
   }
 };
 
@@ -120,9 +125,16 @@ export const editCourse = async (req, res) => {
     if (subTitle !== undefined) updateData.subTitle = subTitle;
     if (description !== undefined) updateData.description = description;
     if (courseLevel !== undefined) updateData.courseLevel = courseLevel;
-    if (price !== undefined) updateData.price = price;
-    if (discount !== undefined)
+    // BUG-010 FIX: Move validations BEFORE file upload to prevent orphaned files in Cloudinary
+    if (price !== undefined) {
+      if (Number(price) < 0) {
+        return res.status(400).json({ success: false, message: "Price cannot be negative" });
+      }
+      updateData.price = Number(price);
+    }
+    if (discount !== undefined) {
       updateData.discount = Math.min(100, Math.max(0, Number(discount)));
+    }
     if (language !== undefined) updateData.language = language;
     if (previewVideo !== undefined) updateData.previewVideo = previewVideo;
     // Handle array fields sent as JSON strings or actual arrays
@@ -154,11 +166,6 @@ export const editCourse = async (req, res) => {
       }
       updateData.courseThumbnail = result.url;
       updateData.courseThumbnailPublicId = result.public_id;
-    }
-
-    // price validation
-    if (price && price < 0) {
-       return res.status(400).json({ success: false, message: "Price cannot be negative" });
     }
 
     // 4. Update Course
@@ -193,11 +200,24 @@ export const getCourseById = async (req, res) => {
         .json({ success: false, message: "Course not found" });
     }
 
+    // BUG-017 FIX: Hide draft/unpublished courses from non-owners and non-admins.
+    // Previously any user could fetch a draft course by its ID (information leak).
+    const requesterId = req.user?.id;
+    const requesterRole = req.user?.role;
+    const isOwner = course.creator?._id?.toString() === requesterId;
+    const isAdmin = requesterRole === "admin";
+
+    if (!course.isPublished && !isOwner && !isAdmin) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
     return res
       .status(200)
       .json({ success: true, course, message: "Course fetched successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getCourseById");
   }
 };
 
@@ -255,6 +275,19 @@ export const deleteCourse = async (req, res) => {
     // 7. Delete certificates
     await Certificate.deleteMany({ courseId });
 
+    // BUG-NEW-F FIX: Delete QA, Notes, and Forum data associated with the course
+    // Previously these were left orphaned in the database.
+    await QA.deleteMany({ courseId });
+    await Notes.deleteMany({ courseId });
+    
+    // Delete Forum Posts and their associated comments
+    const forumPosts = await ForumPost.find({ courseId });
+    if (forumPosts.length > 0) {
+      const postIds = forumPosts.map((p) => p._id);
+      await ForumComment.deleteMany({ postId: { $in: postIds } });
+      await ForumPost.deleteMany({ courseId });
+    }
+
     // 8. Remove course from all users' enrolledCourses and wishlists
     await User.updateMany(
       { $or: [{ enrolledCourses: courseId }, { wishlist: courseId }] },
@@ -268,7 +301,7 @@ export const deleteCourse = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Course and all related data deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "deleteCourse");
   }
 };
 
@@ -294,6 +327,15 @@ export const createLecture = async (req, res) => {
         .json({ success: false, message: "Course not found" });
     }
 
+    // BUG-003 FIX: Ownership check — only course creator or admin can add lectures.
+    // Previously ANY teacher could add lectures to ANY course (IDOR vulnerability).
+    if (course.creator.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You can only add lectures to your own courses.",
+      });
+    }
+
     // 2. Create Lecture
     const lecture = await Lecture.create({
       lectureTitle,
@@ -312,7 +354,7 @@ export const createLecture = async (req, res) => {
       message: "Lecture created successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "createLecture");
   }
 };
 
@@ -332,7 +374,7 @@ export const getCourseLectures = async (req, res) => {
       .status(200)
       .json({ success: true, course, message: "Course fetched successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getCourseLectures");
   }
 };
 
@@ -343,7 +385,20 @@ export const editLecture = async (req, res) => {
     const { lectureTitle, videoUrl, isPreviewFree, sectionName } = req.body;
     const file = req.file;
 
-    // 1. Check if course and lecture exists
+    // BUG-003 FIX: Verify course ownership BEFORE allowing lecture edits.
+    // Previously there was no ownership check — any teacher could edit any lecture.
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+    if (course.creator.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You can only edit lectures in your own courses.",
+      });
+    }
+
+    // 1. Check if lecture exists
     const lecture = await Lecture.findById(lectureId);
     if (!lecture) {
       return res
@@ -389,8 +444,8 @@ export const editLecture = async (req, res) => {
 
     await lecture.save();
 
-    // 3. Ensure lecture is linked to the course
-    const course = await Course.findById(courseId);
+    // BUG-NEW-A FIX: Remove duplicate course fetch — course was already fetched at the top of editLecture for ownership check.
+    // Ensure lecture is linked to the course using the already-fetched `course` variable.
     if (course && !course.lectures.includes(lecture._id)) {
       course.lectures.push(lecture._id);
       await course.save();
@@ -402,10 +457,7 @@ export const editLecture = async (req, res) => {
       message: "Lecture updated successfully",
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return sendError(res, error, "editLecture");
   }
 };
 
@@ -413,6 +465,18 @@ export const editLecture = async (req, res) => {
 export const deleteLecture = async (req, res) => {
   try {
     const { courseId, lectureId } = req.params;
+
+    // BUG-003 FIX: Verify course ownership before allowing lecture deletion.
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+    if (course.creator.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You can only delete lectures from your own courses.",
+      });
+    }
 
     // 1. Find lecture
     const lecture = await Lecture.findById(lectureId);
@@ -441,10 +505,7 @@ export const deleteLecture = async (req, res) => {
       message: "Lecture deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return sendError(res, error, "deleteLecture");
   }
 };
 
@@ -507,10 +568,7 @@ export const publishCourse = async (req, res) => {
       message,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return sendError(res, error, "publishCourse");
   }
 }; // get published courses with search, filters, and pagination
 export const getPublishedCourses = async (req, res) => {
@@ -645,7 +703,7 @@ export const getPublishedCourses = async (req, res) => {
     });
   } catch (error) {
     console.error("Search API Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "searchCourses");
   }
 };
 
@@ -660,6 +718,17 @@ export const enrollCourse = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Course not found" });
+    }
+
+    // BUG-005 FIX: Block free enrollment on paid courses.
+    // Previously any authenticated user could call this endpoint and enroll
+    // in a paid course for free, bypassing the Stripe payment flow entirely.
+    if (course.price > 0) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This is a paid course. Please complete the purchase to enroll.",
+      });
     }
 
     const user = await User.findById(userId);
@@ -682,7 +751,7 @@ export const enrollCourse = async (req, res) => {
       message: "Enrolled successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "enrollCourse");
   }
 };
 
@@ -709,7 +778,7 @@ export const toggleWishlist = async (req, res) => {
       message: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "toggleWishlist");
   }
 };
 
@@ -737,7 +806,7 @@ export const checkEnrollmentAndWishlist = async (req, res) => {
       progress,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "checkEnrollmentAndWishlist");
   }
 };
 // Rename a section (updates all lectures and quizzes in that section)
@@ -770,7 +839,7 @@ export const renameSection = async (req, res) => {
       message: `Section renamed from "${oldSectionName}" to "${newSectionName}"`,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "renameSection");
   }
 };
 
@@ -814,7 +883,7 @@ export const deleteSection = async (req, res) => {
       message: `Section "${sectionName}" and its content deleted successfully`,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "deleteSection");
   }
 };
 
@@ -860,6 +929,6 @@ export const getCourseStudents = async (req, res) => {
       totalLectures
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getCourseStudents");
   }
 };

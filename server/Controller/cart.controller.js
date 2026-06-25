@@ -1,6 +1,7 @@
 import Cart from "../models/cart.model.js";
 import User from "../models/user.model.js";
 import Course from "../models/course.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get User Cart
 export const getCart = async (req, res) => {
@@ -25,7 +26,7 @@ export const getCart = async (req, res) => {
       cart,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "cartController");
   }
 };
 
@@ -68,7 +69,7 @@ export const addToCart = async (req, res) => {
       cart,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "cartController");
   }
 };
 
@@ -92,7 +93,7 @@ export const removeFromCart = async (req, res) => {
       cart,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "cartController");
   }
 };
 
@@ -107,6 +108,6 @@ export const clearCart = async (req, res) => {
       message: "Cart cleared",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "cartController");
   }
 };

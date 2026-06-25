@@ -1,4 +1,5 @@
 import Coupon from "../models/coupon.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Create Coupon (Admin)
 export const createCoupon = async (req, res) => {
@@ -26,7 +27,7 @@ export const createCoupon = async (req, res) => {
       coupon,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "couponController");
   }
 };
 
@@ -36,7 +37,7 @@ export const getAllCoupons = async (req, res) => {
     const coupons = await Coupon.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, coupons });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "couponController");
   }
 };
 
@@ -44,10 +45,16 @@ export const getAllCoupons = async (req, res) => {
 export const deleteCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    await Coupon.findByIdAndDelete(id);
+    
+    // BUG-014 FIX: Check if coupon exists before claiming it was deleted
+    const coupon = await Coupon.findByIdAndDelete(id);
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: "Coupon not found" });
+    }
+    
     return res.status(200).json({ success: true, message: "Coupon deleted" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "couponController");
   }
 };
 
@@ -95,6 +102,6 @@ export const validateCoupon = async (req, res) => {
       couponCode: coupon.code
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "couponController");
   }
 };

@@ -3,6 +3,7 @@ import Certificate from "../models/certificate.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
 import Course from "../models/course.model.js";
 import User from "../models/user.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 /**
  * GET /api/v1/certificates/:courseId
@@ -54,7 +55,7 @@ export const getOrCreateCertificate = async (req, res) => {
     });
   } catch (error) {
     console.error("Certificate error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "certificateController");
   }
 };
 
@@ -67,11 +68,14 @@ export const verifyCertificate = async (req, res) => {
     const { id } = req.params;
 
     // Search by either the 8-char short code or the Mongo ObjectId
+    // BUG-027 FIX: Cleaner condition logic to prevent bugs
+    const queryList = [{ certificateId: id.toUpperCase() }];
+    if (mongoose.isValidObjectId(id)) {
+      queryList.push({ _id: id });
+    }
+
     const certificate = await Certificate.findOne({
-      $or: [
-        { certificateId: id.toUpperCase() },
-        { _id: mongoose.isValidObjectId(id) ? id : null },
-      ].filter((q) => q._id !== null),
+      $or: queryList,
     })
       .populate("userId", "name profilePicture")
       .populate("courseId", "courseTitle creator")
@@ -92,6 +96,6 @@ export const verifyCertificate = async (req, res) => {
       certificate,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "certificateController");
   }
 };

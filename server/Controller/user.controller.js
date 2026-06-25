@@ -7,6 +7,12 @@ import QuizAttempt from "../models/quizAttempt.model.js";
 import Points from "../models/points.model.js";
 import Notification from "../models/notification.model.js";
 import Certificate from "../models/certificate.model.js";
+import Cart from "../models/cart.model.js";
+import QA from "../models/qa.model.js";
+import ForumPost from "../models/forumPost.model.js";
+import ForumComment from "../models/forumComment.model.js";
+import BlogComment from "../models/blogComment.model.js";
+import Notes from "../models/notes.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
@@ -17,6 +23,7 @@ import {
   sendWelcomeEmail,
   sendVerificationEmail,
 } from "../utils/email.js";
+import { sendError } from "../utils/errorHandler.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -27,9 +34,8 @@ export const registerUser = async (req, res) => {
         .json({ success: false, message: "All fields are required" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    // check if user already exists
+    // BUG-012 FIX: Check if user already exists BEFORE hashing the password.
+    // Hashing is CPU-intensive. Doing it before checking for duplicates allows DoS attacks.
     const user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({
@@ -38,7 +44,16 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const newUser = await User.create({
+    const salt = await bcrypt.genSalt(10);
+    if (role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin registration is not allowed. Please contact support.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({
       name,
       email,
       password: hashedPassword,
@@ -75,7 +90,7 @@ export const registerUser = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -95,13 +110,8 @@ export const loginUser = async (req, res) => {
         .json({ success: false, message: "Incorrect email or password" });
     }
 
-    const { role } = req.body;
-    if (user.role !== role) {
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect email or password",
-      });
-    }
+    // Role check removed. Users can log in using just email and password.
+    // This allows hiding the Admin role from the frontend UI securely.
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -163,7 +173,7 @@ export const loginUser = async (req, res) => {
         },
       });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -197,7 +207,7 @@ export const getCurrentUser = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -212,7 +222,7 @@ export const logoutUser = async (req, res) => {
       })
       .json({ success: true, message: "Logout successful" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -309,7 +319,7 @@ export const updateProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -336,7 +346,7 @@ export const getEnrolledCourses = async (req, res) => {
       progress,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -359,7 +369,7 @@ export const getWishlistCourses = async (req, res) => {
       courses: user.wishlist,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -419,7 +429,7 @@ export const getInstructorProfile = async (req, res) => {
       courses,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -438,7 +448,8 @@ export const forgotPassword = async (req, res) => {
     }
 
     // Generate random token
-    const token = crypto.randomBytes(20).toString("hex");
+    // BUG-028 FIX: Use 32 bytes for consistency and stronger security
+    const token = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     // Set token and expiry (1 hour)
@@ -468,7 +479,7 @@ export const forgotPassword = async (req, res) => {
       message: "Password reset link has been sent to your email address.",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -512,7 +523,7 @@ export const resetPassword = async (req, res) => {
       message: "Password has been reset successfully. You can now login.",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -545,7 +556,7 @@ export const getAllUsers = async (req, res) => {
       currentPage: Number(page),
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -588,7 +599,7 @@ export const toggleBanUser = async (req, res) => {
       user,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -631,7 +642,7 @@ export const changeUserRole = async (req, res) => {
       user,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -663,7 +674,22 @@ export const deleteUser = async (req, res) => {
       });
     }
 
+    // BUG-NEW-H FIX: Prevent deleting a teacher if they have created courses.
+    // If a teacher with courses is deleted, their courses become orphaned (creator = null).
+    // The admin must reassign or delete the courses first.
+    if (user.role === "teacher") {
+      const coursesCount = await Course.countDocuments({ creator: userId });
+      if (coursesCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete this teacher because they have ${coursesCount} courses. Please reassign or delete their courses first.`,
+        });
+      }
+    }
+
     // Cascade: clean up all user-owned documents
+    // BUG-NEW-G FIX: Added missing models to the cascade delete list.
+    // Previously Cart, QA, Notes, ForumPost, ForumComment, and BlogComment were left orphaned.
     await Promise.all([
       Purchase.deleteMany({ userId }),
       CourseProgress.deleteMany({ userId }),
@@ -672,12 +698,24 @@ export const deleteUser = async (req, res) => {
       Points.deleteMany({ userId }),
       Notification.deleteMany({ userId }),
       Certificate.deleteMany({ userId }),
+      Cart.deleteMany({ userId }),
+      QA.deleteMany({ userId }),
+      Notes.deleteMany({ userId }),
+      ForumPost.deleteMany({ userId }),
+      ForumComment.deleteMany({ userId }),
+      BlogComment.deleteMany({ userId }),
     ]);
 
     // Remove user from enrolled courses and wishlists
     await Course.updateMany(
-      { $or: [{ enrolledStudents: userId }, { creator: userId }] },
-      { $pull: { enrolledStudents: userId } },
+      { $or: [{ enrolledStudents: userId }, { wishlist: userId }] },
+      { $pull: { enrolledStudents: userId, wishlist: userId } },
+    );
+
+    // If the user had any QA replies (but didn't create the QA), pull their replies
+    await QA.updateMany(
+      { "replies.userId": userId },
+      { $pull: { replies: { userId } } }
     );
 
     await User.findByIdAndDelete(userId);
@@ -687,7 +725,7 @@ export const deleteUser = async (req, res) => {
       message: `User "${user.name}" and all related data have been deleted.`,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -764,7 +802,7 @@ export const verifyEmail = async (req, res) => {
         },
       });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -816,7 +854,7 @@ export const resendVerification = async (req, res) => {
         "A new verification link has been sent. Please check your inbox.",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };
 
@@ -864,6 +902,6 @@ export const changePassword = async (req, res) => {
       message: "Password changed successfully.",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "userController");
   }
 };

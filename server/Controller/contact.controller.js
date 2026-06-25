@@ -1,5 +1,6 @@
 import { sendMail } from "../utils/email.js";
 import Contact from "../models/contact.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 /**
  * Handle contact form submissions.
@@ -116,7 +117,7 @@ export const getContacts = async (req, res) => {
     const contacts = await Contact.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, contacts });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "contactController");
   }
 };
 
@@ -127,6 +128,6 @@ export const markContactRead = async (req, res) => {
     await Contact.findByIdAndUpdate(id, { isRead: true });
     return res.status(200).json({ success: true, message: "Marked as read" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "contactController");
   }
 };

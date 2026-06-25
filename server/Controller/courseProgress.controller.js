@@ -7,6 +7,7 @@ import Points from "../models/points.model.js";
 import Purchase from "../models/purchase.model.js";
 import { createNotification } from "./notification.controller.js";
 import { sendCourseCompletionEmail } from "../utils/email.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get User Course Progress
 export const getUserCourseProgress = async (req, res) => {
@@ -67,7 +68,7 @@ export const getUserCourseProgress = async (req, res) => {
       lectures: enrichedLectures
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "courseProgressController");
   }
 };
 
@@ -77,13 +78,27 @@ export const updateLectureProgress = async (req, res) => {
     const { courseId, lectureId } = req.params;
     const userId = req.user.id;
 
-    // Enrollment check
+    // BUG-004 FIX: Verify purchase/enrollment integrity
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
     const user = await User.findById(userId);
-    if (!user.enrolledCourses.includes(courseId)) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized. You are not enrolled in this course.",
-      });
+    if (course.price > 0) {
+      // For paid courses, ensure there's a completed purchase
+      const purchase = await Purchase.findOne({ userId, courseId, status: "completed" });
+      if (!purchase) {
+        return res.status(403).json({ success: false, message: "You must purchase this course to track progress." });
+      }
+    } else {
+      // For free courses, rely on enrolledCourses
+      if (!user.enrolledCourses.includes(courseId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized. You are not enrolled in this course.",
+        });
+      }
     }
 
     // Find or Create Progress
@@ -94,40 +109,52 @@ export const updateLectureProgress = async (req, res) => {
         userId,
         courseId,
         completedLectures: [],
+        rewardedLectures: [], // Added for BUG-018
       });
     }
 
     // Toggle lecture completion
     const index = progress.completedLectures.indexOf(lectureId);
+    let messageStr = "";
+
     if (index === -1) {
       // Mark as completed
       progress.completedLectures.push(lectureId);
+      messageStr = "Lecture marked as completed.";
       
-      // Reward points for completion
-      await Points.findOneAndUpdate(
-        { userId },
-        { 
-          $inc: { totalPoints: 10 }, 
-          $push: { history: { points: 10, reason: "Completed a lecture" } } 
-        },
-        { upsert: true }
-      );
+      // BUG-018 FIX: Only reward points once per lecture
+      if (!progress.rewardedLectures.includes(lectureId)) {
+        progress.rewardedLectures.push(lectureId);
+        await Points.findOneAndUpdate(
+          { userId },
+          { 
+            $inc: { totalPoints: 10 }, 
+            $push: { history: { points: 10, reason: "Completed a lecture" } } 
+          },
+          { upsert: true }
+        );
+      }
     } else {
       // Unmark as completed
       progress.completedLectures.splice(index, 1);
+      messageStr = "Lecture unmarked.";
       
-      // Deduct points for unmarking (optional but fair for consistency)
-      await Points.findOneAndUpdate(
-        { userId },
-        { 
-          $inc: { totalPoints: -10 }, 
-          $push: { history: { points: -10, reason: "Unmarked a lecture completion" } } 
-        }
-      );
+      // BUG-011 FIX: Deduct points ONLY if user has enough points
+      // BUG-018 FIX: If we deduct, we must remove it from rewardedLectures so they can earn it back if they re-complete
+      const userPoints = await Points.findOne({ userId });
+      if (userPoints && userPoints.totalPoints >= 10 && progress.rewardedLectures.includes(lectureId)) {
+        progress.rewardedLectures = progress.rewardedLectures.filter(id => id.toString() !== lectureId.toString());
+        await Points.findOneAndUpdate(
+          { userId },
+          { 
+            $inc: { totalPoints: -10 }, 
+            $push: { history: { points: -10, reason: "Unmarked a lecture completion" } } 
+          }
+        );
+      }
     }
 
     // Check if course is fully completed (Lectures + Quizzes)
-    const course = await Course.findById(courseId);
     if (course) {
       const totalLectures = course.lectures.length;
       const allLecturesDone = progress.completedLectures.length === totalLectures;
@@ -190,11 +217,11 @@ export const updateLectureProgress = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Progress updated successfully",
+      message: messageStr,
       progress,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "courseProgressController");
   }
 };
 
@@ -204,13 +231,27 @@ export const resetCourseProgress = async (req, res) => {
     const { courseId } = req.params;
     const userId = req.user.id;
 
-    // Enrollment check
+    // BUG-004 FIX: Verify purchase/enrollment integrity
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
     const user = await User.findById(userId);
-    if (!user.enrolledCourses.includes(courseId)) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized. You are not enrolled in this course.",
-      });
+    if (course.price > 0) {
+      // For paid courses, ensure there's a completed purchase
+      const purchase = await Purchase.findOne({ userId, courseId, status: "completed" });
+      if (!purchase) {
+        return res.status(403).json({ success: false, message: "You must purchase this course to track progress." });
+      }
+    } else {
+      // For free courses, rely on enrolledCourses
+      if (!user.enrolledCourses.includes(courseId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized. You are not enrolled in this course.",
+        });
+      }
     }
 
     const progress = await CourseProgress.findOne({ userId, courseId });
@@ -225,6 +266,6 @@ export const resetCourseProgress = async (req, res) => {
       message: "Progress reset successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "courseProgressController");
   }
 };

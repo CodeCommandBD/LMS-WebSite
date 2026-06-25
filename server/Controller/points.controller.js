@@ -1,5 +1,6 @@
 import Points from "../models/points.model.js";
 import User from "../models/user.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get Global Leaderboard (Students only)
 export const getLeaderboard = async (req, res) => {
@@ -35,7 +36,7 @@ export const getLeaderboard = async (req, res) => {
       leaderboard,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "pointsController");
   }
 };
 
@@ -78,6 +79,6 @@ export const getMyPoints = async (req, res) => {
       rank,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "pointsController");
   }
 };

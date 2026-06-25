@@ -2,13 +2,22 @@ import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import Points from "../models/points.model.js";
 import { createNotification } from "./notification.controller.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // --- ADMIN CONTROLLERS ---
 
 // 1. Create Quiz for Course Section
 export const createQuiz = async (req, res) => {
   try {
-    const { courseId, sectionName, title, description, questions } = req.body;
+    const { courseId, sectionName, title, description, questions, passingMark } = req.body;
+
+    // BUG-015 FIX: Validate required fields before creating a quiz
+    if (!courseId || !title || !questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Course ID, title, and at least one question are required." 
+      });
+    }
 
     const quiz = await Quiz.create({
       courseId,
@@ -16,6 +25,7 @@ export const createQuiz = async (req, res) => {
       title,
       description,
       questions,
+      passingMark: passingMark || 60,
     });
 
     return res.status(201).json({
@@ -24,7 +34,7 @@ export const createQuiz = async (req, res) => {
       quiz,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -39,7 +49,7 @@ export const getCourseQuizzes = async (req, res) => {
       quizzes,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -47,7 +57,17 @@ export const getCourseQuizzes = async (req, res) => {
 export const editQuiz = async (req, res) => {
   try {
     const { quizId } = req.params;
-    const updateData = req.body;
+    
+    // BUG-016 FIX: Prevent mass assignment by extracting only allowed fields.
+    // Previously `const updateData = req.body;` allowed an attacker to overwrite
+    // any field in the document (like setting _id or internal flags).
+    const { title, description, questions, passingMark, sectionName } = req.body;
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (questions !== undefined && Array.isArray(questions)) updateData.questions = questions;
+    if (passingMark !== undefined) updateData.passingMark = passingMark;
+    if (sectionName !== undefined) updateData.sectionName = sectionName;
 
     const quiz = await Quiz.findByIdAndUpdate(quizId, updateData, {
       new: true,
@@ -65,7 +85,7 @@ export const editQuiz = async (req, res) => {
       quiz,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -100,7 +120,7 @@ export const getQuizForStudent = async (req, res) => {
       latestAttempt,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -144,7 +164,7 @@ export const getCourseQuizzesWithStatus = async (req, res) => {
       quizzes: quizzesWithStatus,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -168,7 +188,7 @@ export const deleteQuiz = async (req, res) => {
       message: "Quiz and all its attempts deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };
 
@@ -255,6 +275,6 @@ export const submitQuizAttempt = async (req, res) => {
       attempt,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "quizController");
   }
 };

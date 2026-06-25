@@ -1,6 +1,7 @@
 import QA from "../models/qa.model.js";
 import CourseProgress from "../models/courseProgress.model.js";
 import User from "../models/user.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get all Q&A questions for a lecture (enrolled users only)
 export const getLectureQA = async (req, res) => {
@@ -27,7 +28,7 @@ export const getLectureQA = async (req, res) => {
 
     return res.status(200).json({ success: true, questions });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };
 
@@ -71,7 +72,7 @@ export const postQuestion = async (req, res) => {
       question: newQuestion,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };
 
@@ -114,7 +115,7 @@ export const replyToQuestion = async (req, res) => {
       question: qa,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };
 
@@ -152,7 +153,7 @@ export const toggleResolvedStatus = async (req, res) => {
       isResolved: qa.isResolved,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };
 
@@ -182,7 +183,7 @@ export const deleteQuestion = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Question deleted." });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };
 
@@ -219,6 +220,6 @@ export const getAllMyQuestions = async (req, res) => {
       courses: Object.values(grouped),
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "qaController");
   }
 };

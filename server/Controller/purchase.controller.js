@@ -6,15 +6,20 @@ import CourseProgress from "../models/courseProgress.model.js";
 import Review from "../models/review.model.js";
 import Contact from "../models/contact.model.js";
 import { sendEnrollmentEmail } from "../utils/email.js";
+import { sendError } from "../utils/errorHandler.js";
 
-// Helper to get Stripe instance
+// Helper to get Stripe instance (BUG-022 FIX: Singleton)
+let stripeInstance = null;
 const getStripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error(
       "STRIPE_SECRET_KEY is not defined in environment variables",
     );
   }
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
+  if (!stripeInstance) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+  return stripeInstance;
 };
 
 import Coupon from "../models/coupon.model.js";
@@ -57,8 +62,22 @@ export const createCheckoutSession = async (req, res) => {
     let appliedCoupon = null;
 
     if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
-      if (coupon && (new Date() < coupon.expiresAt) && (coupon.usedCount < coupon.usageLimit)) {
+      // BUG-001 FIX: Atomic reservation of coupon to prevent race conditions.
+      // Previously, we just checked if it was valid, but incremented it in the webhook.
+      // A user could open multiple checkout sessions and use the coupon multiple times.
+      // Now, we increment `usedCount` atomically during checkout session creation.
+      const coupon = await Coupon.findOneAndUpdate(
+        { 
+          code: couponCode.toUpperCase(), 
+          isActive: true, 
+          expiresAt: { $gt: new Date() },
+          $expr: { $lt: ["$usedCount", "$usageLimit"] }
+        },
+        { $inc: { usedCount: 1 } },
+        { new: true }
+      );
+
+      if (coupon) {
         if (subtotal >= coupon.minPurchaseAmount) {
           let discount = 0;
           if (coupon.discountType === "percentage") {
@@ -68,6 +87,9 @@ export const createCheckoutSession = async (req, res) => {
           }
           finalAmount = Math.max(0, subtotal - discount);
           appliedCoupon = coupon;
+        } else {
+          // If min purchase amount not met, rollback the usage count
+          await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: -1 } });
         }
       }
     }
@@ -151,7 +173,7 @@ export const createCheckoutSession = async (req, res) => {
     });
   } catch (error) {
     console.error("Stripe Session Error Details:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "createCheckoutSession");
   }
 };
 
@@ -204,8 +226,11 @@ export const stripeWebhook = async (req, res) => {
       // 1. Update purchase status for ALL courses in this session
       const purchases = await Purchase.find({ paymentId: session.id });
       
-      // Idempotency check: If first purchase is already completed, skip all
-      if (purchases.length > 0 && purchases[0].status === "completed") {
+      // BUG-002 FIX: Idempotency check should ensure ALL purchases are completed.
+      // Previously it only checked purchases[0], meaning if a multi-course purchase 
+      // partially completed, it might skip processing the rest.
+      const allCompleted = purchases.length > 0 && purchases.every(p => p.status === "completed");
+      if (allCompleted) {
         console.log("Session already processed, skipping:", session.id);
         return res.status(200).json({ received: true });
       }
@@ -221,10 +246,8 @@ export const stripeWebhook = async (req, res) => {
           await purchase.save();
       }
 
-      // 2. Increment Coupon usage count
-      if (couponCode) {
-        await Coupon.findOneAndUpdate({ code: couponCode }, { $inc: { usedCount: 1 } });
-      }
+      // Note: Coupon usedCount is now atomically incremented during checkout session creation
+      // to prevent race conditions. We no longer increment it here.
 
       // 3. Enroll user in ALL courses
       const user = await User.findById(userId);
@@ -440,16 +463,31 @@ export const getDashboardStats = async (req, res) => {
     }
 
     // --- NEW: Recent Reviews ---
-    const recentReviews = await Review.find()
-      .limit(5)
-      .sort({ createdAt: -1 })
-      .populate("userId", "name profilePicture")
-      .populate("courseId", "courseTitle");
+    let recentReviews = [];
+    if (userRole === "admin") {
+      recentReviews = await Review.find()
+        .limit(5)
+        .sort({ createdAt: -1 })
+        .populate("userId", "name profilePicture")
+        .populate("courseId", "courseTitle");
+    } else if (userRole === "teacher") {
+      const teacherCourses = await Course.find({ creator: userId });
+      const myCourseIds = teacherCourses.map((c) => c._id);
+      recentReviews = await Review.find({ courseId: { $in: myCourseIds } })
+        .limit(5)
+        .sort({ createdAt: -1 })
+        .populate("userId", "name profilePicture")
+        .populate("courseId", "courseTitle");
+    }
 
     // --- NEW: Recent Contacts ---
-    const recentContacts = await Contact.find()
-      .limit(5)
-      .sort({ createdAt: -1 });
+    // BUG-023 FIX: Only admins should see contact messages
+    let recentContacts = [];
+    if (userRole === "admin") {
+      recentContacts = await Contact.find()
+        .limit(5)
+        .sort({ createdAt: -1 });
+    }
 
     // --- NEW: Monthly Results (Last 12 Months) ---
     const twelveMonthsAgo = new Date();
@@ -523,7 +561,7 @@ export const getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Stats Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "getDashboardStats");
   }
 };
 
@@ -564,6 +602,6 @@ export const unenrollCourse = async (req, res) => {
     });
   } catch (error) {
     console.error("Unenroll Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "unenrollCourse");
   }
 };

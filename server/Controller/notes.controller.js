@@ -1,5 +1,6 @@
 import Notes from "../models/notes.model.js";
 import User from "../models/user.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get notes for a specific lecture
 export const getNotes = async (req, res) => {
@@ -25,7 +26,7 @@ export const getNotes = async (req, res) => {
       content: notes?.content || "",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notesController");
   }
 };
 
@@ -60,7 +61,7 @@ export const saveNotes = async (req, res) => {
       content: notes.content,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notesController");
   }
 };
 
@@ -101,6 +102,6 @@ export const getAllMyNotes = async (req, res) => {
       courses: Object.values(grouped),
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notesController");
   }
 };

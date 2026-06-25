@@ -1,4 +1,5 @@
 import BlogComment from "../models/blogComment.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Add Comment
 export const addComment = async (req, res) => {
@@ -24,7 +25,7 @@ export const addComment = async (req, res) => {
       comment: populatedComment,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogCommentController");
   }
 };
 
@@ -42,7 +43,7 @@ export const getBlogComments = async (req, res) => {
       comments,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogCommentController");
   }
 };
 
@@ -70,6 +71,6 @@ export const deleteComment = async (req, res) => {
       message: "Comment deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "blogCommentController");
   }
 };

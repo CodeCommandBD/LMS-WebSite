@@ -6,6 +6,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, "..", "uploads");
 
+/**
+ * BUG-008 FIX: Sanitize filenames to prevent path traversal attacks.
+ * Strips: path separators, null bytes, relative refs (.. / .) and
+ * any characters outside the safe alphanumeric/dash/dot/underscore set.
+ *
+ * @param {string} filename - Original filename from client
+ * @returns {string} - Sanitized safe filename
+ */
+const sanitizeFilename = (filename) => {
+  // Remove any path components (e.g., ../../etc/passwd.jpg -> passwd.jpg)
+  const basename = filename.split(/[\\/]/).pop() || "upload";
+  // Remove null bytes and control characters
+  const noNull = basename.replace(/\0/g, "");
+  // Keep only safe characters: alphanumeric, dash, underscore, dot
+  const safe = noNull.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+  // Prevent hidden files (leading dot) and double extensions like .php.jpg
+  return safe.replace(/^\.+/, "").substring(0, 200) || "upload";
+};
+
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -13,7 +32,8 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "profile-" + uniqueSuffix + path.extname(file.originalname));
+    const safeExt = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+    cb(null, "profile-" + uniqueSuffix + safeExt);
   },
 });
 
@@ -64,7 +84,8 @@ const courseStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "course-" + uniqueSuffix + path.extname(file.originalname));
+    const safeExt = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+    cb(null, "course-" + uniqueSuffix + safeExt);
   },
 });
 

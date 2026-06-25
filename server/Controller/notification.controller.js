@@ -1,4 +1,5 @@
 import Notification from "../models/notification.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get all notifications for a user
 export const getNotifications = async (req, res) => {
@@ -11,7 +12,7 @@ export const getNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notificationController");
   }
 };
 
@@ -26,7 +27,7 @@ export const markAsRead = async (req, res) => {
       message: "Notification marked as read",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notificationController");
   }
 };
 
@@ -41,7 +42,7 @@ export const markAllAsRead = async (req, res) => {
       message: "All notifications marked as read",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notificationController");
   }
 };
 
@@ -115,6 +116,6 @@ export const sendNotification = async (req, res) => {
       count: userIds.length,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "notificationController");
   }
 };

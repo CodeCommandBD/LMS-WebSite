@@ -1,5 +1,6 @@
 import Review from "../models/review.model.js";
 import Course from "../models/course.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // Create or update a review (one per user per course)
 export const createOrUpdateReview = async (req, res) => {
@@ -50,7 +51,7 @@ export const createOrUpdateReview = async (req, res) => {
         .status(400)
         .json({ success: false, message: "You already reviewed this course" });
     }
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "reviewController");
   }
 };
 
@@ -84,7 +85,7 @@ export const getCourseReviews = async (req, res) => {
       distribution,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "reviewController");
   }
 };
 
@@ -105,6 +106,6 @@ export const deleteReview = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Review deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "reviewController");
   }
 };

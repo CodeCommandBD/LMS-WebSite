@@ -1,4 +1,5 @@
 import Category from "../models/category.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Get All Categories
 export const getCategories = async (req, res) => {
@@ -11,7 +12,7 @@ export const getCategories = async (req, res) => {
       categories,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "categoryController");
   }
 };
 
@@ -41,7 +42,7 @@ export const createCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "categoryController");
   }
 };
 
@@ -63,6 +64,6 @@ export const deleteCategory = async (req, res) => {
       message: "Category deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "categoryController");
   }
 };

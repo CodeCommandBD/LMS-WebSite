@@ -1,6 +1,7 @@
 import ForumPost from "../models/forumPost.model.js";
 import ForumComment from "../models/forumComment.model.js";
 import User from "../models/user.model.js";
+import { sendError } from "../utils/errorHandler.js";
 
 // 1. Create Post
 export const createPost = async (req, res) => {
@@ -35,7 +36,7 @@ export const createPost = async (req, res) => {
       post,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "forumController");
   }
 };
 
@@ -63,7 +64,7 @@ export const getPostsByCourse = async (req, res) => {
       posts,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "forumController");
   }
 };
 
@@ -84,7 +85,7 @@ export const getPostDetails = async (req, res) => {
       comments,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "forumController");
   }
 };
 
@@ -117,7 +118,7 @@ export const createComment = async (req, res) => {
       comment,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "forumController");
   }
 };
 
@@ -139,6 +140,6 @@ export const deletePost = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Post deleted" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sendError(res, error, "forumController");
   }
 };
