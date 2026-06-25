@@ -16,7 +16,7 @@ export const signupSchema = z.object({
       /[^a-zA-Z0-9]/,
       "Password must contain at least one special character",
     ),
-  role: z.enum(["student", "teacher", "admin"], {
+  role: z.enum(["student", "teacher"], {
     errorMap: () => ({ message: "Please select a role" }),
   }),
 });

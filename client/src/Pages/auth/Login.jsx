@@ -148,52 +148,7 @@ const Login = () => {
               )}
             </div>
 
-            {/* Role Field */}
-            <div className="space-y-3">
-              <Label className="text-gray-300 text-sm font-bold block ml-1">Login as</Label>
-              <Controller
-                name="role"
-                control={control}
-                render={({ field }) => (
-                  <RadioGroup
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    className="flex gap-4 p-1"
-                  >
-                    <div className="flex items-center gap-2 cursor-pointer group">
-                      <RadioGroupItem
-                        value="student"
-                        id="student"
-                        className="border-white/20 text-purple-500 focus:ring-purple-500"
-                      />
-                      <Label htmlFor="student" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
-                        Student
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2 cursor-pointer group">
-                      <RadioGroupItem
-                        value="teacher"
-                        id="teacher"
-                        className="border-white/20 text-purple-500 focus:ring-purple-500"
-                      />
-                      <Label htmlFor="teacher" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
-                        Teacher
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2 cursor-pointer group">
-                      <RadioGroupItem
-                        value="admin"
-                        id="admin"
-                        className="border-white/20 text-purple-500 focus:ring-purple-500"
-                      />
-                      <Label htmlFor="admin" className="text-gray-400 group-hover:text-white transition-colors cursor-pointer">
-                        Admin
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                )}
-              />
-            </div>
+            {/* Role Field Removed - Handled by Backend Automatically */}
 
             {/* Submit Button */}
             <Button
