@@ -261,7 +261,7 @@ VITE_SERVER_URL=http://localhost:4000
 ## 🔗 Links
 
 - **Live Demo**: [EduHub LMS](https://lms-eduhub.vercel.app/)
-- **Repository**: [LMS-WebSite](https://github.com/CodeCommandBD/LMS-WebSite)
+- **Repository**: [LMS-WebSite](https://github.com/shantokumarBD/LMS-WebSite)
 
 ---
 
