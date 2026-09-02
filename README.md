@@ -32,26 +32,27 @@
 ## 📋 Table of Contents
 
 - [📖 Introduction](#-introduction)
-- [🛡️ Enterprise Security & Data Integrity](#️-enterprise-security--data-integrity)
+- [🛡️ Security](#️-security)
 - [✨ Key Features](#-key-features)
 - [🎯 Feature Showcase](#-feature-showcase)
 - [📊 System Architecture](#-system-architecture)
 - [⚙️ Tech Stack](#️-tech-stack)
+- [📦 Dependencies](#-dependencies)
 - [🚀 Getting Started](#-getting-started)
 - [🔐 Environment Configuration](#-environment-configuration)
-- [🤝 Contributing](#-contributing)
+- [🔗 Links](#-links)
 
 ---
 
 ## 📖 Introduction
 
-**EduHub LMS** is a modern, production-ready full-stack learning platform designed to revolutionize digital education. Built with **React Native (Vite)** and a robust **Node.js/Express** backend, it offers highly engaging learning experiences wrapped in enterprise-grade security.
+**EduHub LMS** is a modern, production-ready full-stack Learning Management System designed to revolutionize digital education for students, instructors, and administrators. Built with **React + Vite** and a robust **Node.js/Express** backend, this repository contains the complete frontend and backend structure for the application.
 
 ---
 
-## 🛡️ Enterprise Security & Data Integrity
+## 🛡️ Security
 
-Our platform has undergone rigorous deep security audits to ensure zero data leaks and maximum protection:
+The platform includes several security measures designed to protect user data, prevent unauthorized access, and reduce common API security risks:
 
 - **🔒 IDOR Protection**: Strict ownership validation on all content creation, modification, and deletion (Blogs, Courses, Comments, Q&A).
 - **🛑 Mass Assignment Prevention**: Whitelisted payload fields for updates to prevent malicious privilege escalation.
@@ -130,17 +131,47 @@ graph TB
 ## ⚙️ Tech Stack
 
 ### Frontend
-- **Framework**: React 18, Vite
-- **Styling**: Tailwind CSS, Shadcn UI
-- **State Management**: Redux Toolkit
-- **Data Fetching**: React Query (TanStack)
+- React
+- Vite
+- Tailwind CSS
+- Shadcn UI
+- Redux Toolkit
+- TanStack React Query
 
 ### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB (Mongoose ODM)
-- **Authentication**: JWT, bcryptjs
-- **Real-time**: Socket.io
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT
+- bcryptjs
+- Socket.io
+
+---
+
+## 📦 Dependencies
+
+### Frontend
+- `@reduxjs/toolkit`
+- `@stripe/stripe-js`
+- `@tanstack/react-query`
+- `axios`
+- `react-hook-form`
+- `react-router` / `react-router-dom`
+- `socket.io-client`
+- `tailwindcss`
+- `zod`
+
+### Backend
+- `bcryptjs`
+- `cloudinary`
+- `express`
+- `helmet`
+- `jsonwebtoken`
+- `mongoose`
+- `nodemailer`
+- `socket.io`
+- `stripe`
 
 ---
 
@@ -191,18 +222,29 @@ PORT=4000
 NODE_ENV=development
 
 # Database
-MONGO_URL=mongodb+srv://...
+MONGO_URL=your_mongodb_connection_string
 
+# Security
+JWT_SECRET=your_jwt_secret_key
 
 # Cloudinary (Media)
-CLOUD_NAME=your_cloud_name
-CLOUD_API_KEY=your_api_key
-CLOUD_API_SECRET=your_api_secret
+CLOUD_NAME=your_cloudinary_cloud_name
+CLOUD_API_KEY=your_cloudinary_api_key
+CLOUD_API_SECRET=your_cloudinary_api_secret
 
 # Stripe (Payments)
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
+# Email (Nodemailer)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email_address
+EMAIL_PASS=your_app_password
+EMAIL_FROM="LMS Platform <noreply@lms.com>"
+
+# Frontend URLs (Comma separated or matched in server config)
+CLIENT_URL=http://localhost:5173
 ```
 
 Create a `.env` file in the **`client` directory**:
@@ -213,6 +255,13 @@ VITE_SERVER_URL=http://localhost:4000
 ```
 
 > **Note on Admin Access**: For security reasons, the Admin role cannot be created via the registration UI. Admins must be seeded directly into the MongoDB database or created via the provided `server/create-admin.js` script.
+
+---
+
+## 🔗 Links
+
+- **Live Demo**: [EduHub LMS](https://lms-eduhub.vercel.app/)
+- **Repository**: [LMS-WebSite](https://github.com/CodeCommandBD/LMS-WebSite)
 
 ---
 
